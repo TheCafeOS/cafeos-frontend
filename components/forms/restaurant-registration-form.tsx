@@ -25,13 +25,13 @@ export function RestaurantRegistrationForm() {
     resolver: zodResolver(restaurantRegistrationSchema),
     defaultValues: {
       restaurantName: "",
+      restaurantEmail: "",
+      restaurantPhone: "",
+      address: "",
       ownerName: "",
-      email: "",
-      phone: "",
+      ownerEmail: "",
       password: "",
       confirmPassword: "",
-      city: "",
-      country: "",
     },
   });
 
@@ -42,17 +42,17 @@ export function RestaurantRegistrationForm() {
     try {
       await registerRestaurant({
         restaurantName: values.restaurantName,
+        restaurantEmail: values.restaurantEmail,
+        restaurantPhone: values.restaurantPhone,
+        address: values.address,
         ownerName: values.ownerName,
-        email: values.email,
-        phone: values.phone,
+        ownerEmail: values.ownerEmail,
         password: values.password,
-        city: values.city,
-        country: values.country,
       });
 
       setIsSuccess(true);
       reset();
-      toast.success("Restaurant registration request submitted successfully.");
+      toast.success("Restaurant registered successfully.");
     } catch (error) {
       console.error(error);
       toast.error("Unable to register your restaurant right now. Please try again.");
@@ -76,7 +76,7 @@ export function RestaurantRegistrationForm() {
         <div className="grid gap-5 md:grid-cols-2">
           <div className="space-y-2">
             <label htmlFor="restaurantName" className="text-sm font-medium text-stone-700">
-              Restaurant name
+              Restaurant Name
             </label>
             <input id="restaurantName" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("restaurantName")} />
             {errors.restaurantName ? (
@@ -84,25 +84,39 @@ export function RestaurantRegistrationForm() {
             ) : null}
           </div>
           <div className="space-y-2">
+            <label htmlFor="restaurantEmail" className="text-sm font-medium text-stone-700">
+              Restaurant Email
+            </label>
+            <input id="restaurantEmail" type="email" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("restaurantEmail")} />
+            {errors.restaurantEmail ? <p className="text-sm text-red-600">{errors.restaurantEmail.message}</p> : null}
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="restaurantPhone" className="text-sm font-medium text-stone-700">
+              Restaurant Phone
+            </label>
+            <input id="restaurantPhone" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("restaurantPhone")} />
+            {errors.restaurantPhone ? <p className="text-sm text-red-600">{errors.restaurantPhone.message}</p> : null}
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="address" className="text-sm font-medium text-stone-700">
+              Restaurant Address
+            </label>
+            <input id="address" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("address")} />
+            {errors.address ? <p className="text-sm text-red-600">{errors.address.message}</p> : null}
+          </div>
+          <div className="space-y-2">
             <label htmlFor="ownerName" className="text-sm font-medium text-stone-700">
-              Owner name
+              Owner Name
             </label>
             <input id="ownerName" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("ownerName")} />
             {errors.ownerName ? <p className="text-sm text-red-600">{errors.ownerName.message}</p> : null}
           </div>
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium text-stone-700">
-              Email
+            <label htmlFor="ownerEmail" className="text-sm font-medium text-stone-700">
+              Owner Email
             </label>
-            <input id="email" type="email" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("email")} />
-            {errors.email ? <p className="text-sm text-red-600">{errors.email.message}</p> : null}
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="phone" className="text-sm font-medium text-stone-700">
-              Phone
-            </label>
-            <input id="phone" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("phone")} />
-            {errors.phone ? <p className="text-sm text-red-600">{errors.phone.message}</p> : null}
+            <input id="ownerEmail" type="email" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("ownerEmail")} />
+            {errors.ownerEmail ? <p className="text-sm text-red-600">{errors.ownerEmail.message}</p> : null}
           </div>
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium text-stone-700">
@@ -113,26 +127,12 @@ export function RestaurantRegistrationForm() {
           </div>
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-sm font-medium text-stone-700">
-              Confirm password
+              Confirm Password
             </label>
             <input id="confirmPassword" type="password" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("confirmPassword")} />
             {errors.confirmPassword ? (
               <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
             ) : null}
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="city" className="text-sm font-medium text-stone-700">
-              City
-            </label>
-            <input id="city" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("city")} />
-            {errors.city ? <p className="text-sm text-red-600">{errors.city.message}</p> : null}
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="country" className="text-sm font-medium text-stone-700">
-              Country
-            </label>
-            <input id="country" className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none ring-0" {...register("country")} />
-            {errors.country ? <p className="text-sm text-red-600">{errors.country.message}</p> : null}
           </div>
         </div>
 
