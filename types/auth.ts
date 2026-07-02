@@ -29,3 +29,18 @@ export type RestaurantRegistrationResponse = {
     };
   };
 };
+
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+export type LoginResponse = {
+  token: string;
+  employee: {
+    id: string;
+    restaurantId: string;
+    email: string;
+    role: string;
+  };
+};
