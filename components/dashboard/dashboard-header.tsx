@@ -1,4 +1,7 @@
-import { Bell, Menu } from "lucide-react";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Bell, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type DashboardHeaderProps = {
@@ -8,6 +11,13 @@ type DashboardHeaderProps = {
 };
 
 export function DashboardHeader({ title, description, onMenuClick }: DashboardHeaderProps) {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
+
   return (
     <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
       <div className="flex items-center gap-3">
@@ -26,9 +36,20 @@ export function DashboardHeader({ title, description, onMenuClick }: DashboardHe
         </div>
       </div>
 
-      <Button variant="ghost" size="icon" aria-label="Notifications">
-        <Bell className="h-5 w-5" />
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" aria-label="Notifications">
+          <Bell className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Logout"
+          onClick={handleLogout}
+          title="Logout"
+        >
+          <LogOut className="h-5 w-5" />
+        </Button>
+      </div>
     </header>
   );
 }
