@@ -30,14 +30,17 @@ export function HeroSection() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg" className="rounded-full bg-amber-600 text-white hover:bg-amber-700">
-              <Link href="#contact" className="inline-flex items-center gap-2">
-                See CafeOS in action
+            <Button asChild size="lg" className="rounded-full bg-orange-500 text-white hover:bg-orange-600">
+              <Link href="/scan" className="inline-flex items-center gap-2">
+                Scan QR to Order
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="rounded-full border-stone-300 text-stone-800 hover:bg-stone-100">
-              <Link href="#features">Explore the platform</Link>
+            <Button asChild size="lg" className="rounded-full bg-amber-600 text-white hover:bg-amber-700">
+              <Link href="#contact" className="inline-flex items-center gap-2">
+                For Restaurants
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </Button>
           </div>
 
