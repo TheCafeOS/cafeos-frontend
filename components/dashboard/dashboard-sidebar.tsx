@@ -1,3 +1,6 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Coffee,
@@ -5,19 +8,23 @@ import {
   Package2,
   Settings,
   ShoppingBag,
+  Table2,
 } from "lucide-react";
 import { DashboardNavItem } from "@/components/dashboard/dashboard-nav-item";
 
 const navItems = [
-  { href: "/dashboard", label: "Overview", icon: LayoutGrid, active: true },
+  { href: "/dashboard", label: "Overview", icon: LayoutGrid },
   { href: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
   { href: "/dashboard/menu", label: "Menu", icon: Coffee },
+  { href: "/dashboard/tables", label: "Tables", icon: Table2 },
   { href: "/dashboard/inventory", label: "Inventory", icon: Package2 },
   { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export function DashboardSidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="hidden w-72 shrink-0 border-r border-stone-200 bg-stone-50/80 lg:flex lg:flex-col lg:justify-between">
       <div className="p-6">
@@ -25,16 +32,30 @@ export function DashboardSidebar() {
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-600 text-white">
             <Coffee className="h-5 w-5" />
           </div>
+
           <div>
-            <p className="text-lg font-semibold tracking-tight text-stone-900">CafeOS</p>
+            <p className="text-lg font-semibold tracking-tight text-stone-900">
+              CafeOS
+            </p>
             <p className="text-sm text-stone-500">Operations</p>
           </div>
         </div>
 
         <nav className="space-y-1">
-          {navItems.map((item) => (
-            <DashboardNavItem key={item.href} {...item} />
-          ))}
+          {navItems.map((item) => {
+            const active =
+              item.href === "/dashboard"
+                ? pathname === "/dashboard"
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+            return (
+              <DashboardNavItem
+                key={item.href}
+                {...item}
+                active={active}
+              />
+            );
+          })}
         </nav>
       </div>
 
