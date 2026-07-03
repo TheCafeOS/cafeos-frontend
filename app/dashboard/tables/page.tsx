@@ -1,14 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Loader2, Trash2, Check, X, Copy } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { getTables, createTable, updateTable, deleteTable } from "@/services/table.service";
-import type { RestaurantTable, CreateTablePayload, UpdateTablePayload } from "@/types/table";
+import {
+  createTable,
+  deleteTable,
+  getTables,
+  updateTable,
+} from "@/services/table.service";
+import type {
+  CreateTablePayload,
+  RestaurantTable,
+  UpdateTablePayload,
+} from "@/types/table";
 
-const TABLE_STATUSES = ["AVAILABLE", "OCCUPIED", "RESERVED", "INACTIVE"] as const;
+const TABLE_STATUSES = [
+  "AVAILABLE",
+  "OCCUPIED",
+  "RESERVED",
+  "INACTIVE",
+] as const;
+
+type TableStatus = (typeof TABLE_STATUSES)[number];
 
 export default function TablesPage() {
   const [tables, setTables] = useState<RestaurantTable[]>([]);
@@ -17,24 +33,32 @@ export default function TablesPage() {
   const [newTableName, setNewTableName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [editingStatus, setEditingStatus] = useState<"AVAILABLE" | "OCCUPIED" | "RESERVED" | "INACTIVE">("AVAILABLE");
+  const [editingStatus, setEditingStatus] =
+    useState<TableStatus>("AVAILABLE");
 
-  // Fetch tables on mount
   useEffect(() => {
-    fetchTables();
+    void fetchTables();
   }, []);
+
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return fallback;
+  };
 
   const fetchTables = async () => {
     setIsLoading(true);
     setError(null);
+
     try {
       const data = await getTables();
       setTables(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to load tables";
+    } catch (error) {
+      const message = getErrorMessage(error, "Failed to load tables");
       setError(message);
       toast.error(message);
     } finally {
@@ -42,24 +66,27 @@ export default function TablesPage() {
     }
   };
 
-  const handleAddTable = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddTable = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-    if (!newTableName.trim()) {
+    const name = newTableName.trim();
+
+    if (!name) {
       toast.error("Table name is required");
       return;
     }
 
     setIsSubmitting(true);
+
     try {
-      const payload: CreateTablePayload = { name: newTableName };
+      const payload: CreateTablePayload = { name };
       const newTable = await createTable(payload);
-      setTables([...tables, newTable]);
+
+      setTables((currentTables) => [...currentTables, newTable]);
       setNewTableName("");
       toast.success("Table created successfully");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create table";
-      toast.error(message);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to create table"));
     } finally {
       setIsSubmitting(false);
     }
@@ -68,7 +95,7 @@ export default function TablesPage() {
   const handleStartEdit = (table: RestaurantTable) => {
     setEditingId(table.id);
     setEditingName(table.name);
-    setEditingStatus(table.status);
+    setEditingStatus(table.status as TableStatus);
   };
 
   const handleCancelEdit = () => {
@@ -78,51 +105,71 @@ export default function TablesPage() {
   };
 
   const handleSaveEdit = async (tableId: string) => {
-    if (!editingName.trim()) {
+    const name = editingName.trim();
+
+    if (!name) {
       toast.error("Table name is required");
       return;
     }
 
     try {
       const payload: UpdateTablePayload = {
-        name: editingName,
+        name,
         status: editingStatus,
       };
+
       const updatedTable = await updateTable(tableId, payload);
-      setTables(
-        tables.map((table) => (table.id === tableId ? updatedTable : table))
+
+      setTables((currentTables) =>
+        currentTables.map((table) =>
+          table.id === tableId ? updatedTable : table,
+        ),
       );
-      setEditingId(null);
-      setEditingName("");
-      setEditingStatus("AVAILABLE");
+
+      handleCancelEdit();
       toast.success("Table updated successfully");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to update table";
-      toast.error(message);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to update table"));
     }
   };
 
   const handleDeleteTable = async (tableId: string, tableName: string) => {
-    if (!window.confirm(`Delete table "${tableName}"?`)) {
+    const shouldDelete = window.confirm(
+      `Are you sure you want to delete "${tableName}"?`,
+    );
+
+    if (!shouldDelete) {
       return;
     }
 
     try {
       await deleteTable(tableId);
-      setTables(tables.filter((table) => table.id !== tableId));
+
+      setTables((currentTables) =>
+        currentTables.filter((table) => table.id !== tableId),
+      );
+
       toast.success("Table deleted successfully");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to delete table";
-      toast.error(message);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to delete table"));
     }
   };
 
-  const handleCopyQRLink = async (qrCode: string) => {
+  const handleCopyQRLink = async (qrCode: string | null | undefined) => {
+    const qrToken = qrCode?.split("/").filter(Boolean).pop();
+
+    if (!qrToken) {
+      toast.error("QR code is unavailable for this table");
+      return;
+    }
+
     try {
-      const qrUrl = `${window.location.origin}/menu/${qrCode}`;
-      await navigator.clipboard.writeText(qrUrl);
+      const customerMenuUrl = `${window.location.origin}/menu/${qrToken}`;
+
+      await navigator.clipboard.writeText(customerMenuUrl);
+
       toast.success("QR link copied to clipboard");
-    } catch (err) {
+    } catch {
       toast.error("Failed to copy QR link");
     }
   };
@@ -130,33 +177,39 @@ export default function TablesPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "AVAILABLE":
-        return "bg-green-50 text-green-700 border-green-200";
+        return "border-green-200 bg-green-50 text-green-700";
       case "OCCUPIED":
-        return "bg-amber-50 text-amber-700 border-amber-200";
+        return "border-amber-200 bg-amber-50 text-amber-700";
       case "RESERVED":
-        return "bg-blue-50 text-blue-700 border-blue-200";
+        return "border-blue-200 bg-blue-50 text-blue-700";
       case "INACTIVE":
-        return "bg-stone-100 text-stone-600 border-stone-300";
+        return "border-stone-300 bg-stone-100 text-stone-600";
       default:
-        return "bg-stone-50 text-stone-700 border-stone-200";
+        return "border-stone-200 bg-stone-50 text-stone-700";
     }
   };
 
   return (
-    <DashboardShell title="Tables" description="Manage your restaurant's dining tables">
+    <DashboardShell
+      title="Tables"
+      description="Manage your restaurant's dining tables"
+    >
       <div className="space-y-6">
-        {/* Add Table Form */}
-        <div className="rounded-lg border border-stone-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-stone-900">Add New Table</h2>
+        <section className="rounded-lg border border-stone-200 bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-stone-900">
+            Add New Table
+          </h2>
+
           <form onSubmit={handleAddTable} className="flex gap-3">
             <input
               type="text"
-              placeholder="Enter table name (e.g., Table 1, Window Seat)"
               value={newTableName}
-              onChange={(e) => setNewTableName(e.target.value)}
-              className="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm outline-none placeholder:text-stone-500"
+              onChange={(event) => setNewTableName(event.target.value)}
+              placeholder="Enter table name (e.g., Table 1, Window Seat)"
               disabled={isSubmitting}
+              className="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm outline-none placeholder:text-stone-500"
             />
+
             <Button
               type="submit"
               disabled={isSubmitting}
@@ -172,149 +225,177 @@ export default function TablesPage() {
               )}
             </Button>
           </form>
-        </div>
+        </section>
 
-        {/* Loading State */}
-        {isLoading && (
+        {isLoading ? (
           <div className="flex items-center justify-center rounded-lg border border-stone-200 bg-stone-50 py-12">
             <div className="flex flex-col items-center gap-2 text-stone-600">
               <Loader2 className="h-6 w-6 animate-spin" />
               <p>Loading tables...</p>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {/* Error State */}
-        {error && !isLoading && (
+        {error && !isLoading ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">{error}</p>
             <Button
-              onClick={fetchTables}
+              onClick={() => void fetchTables()}
               variant="outline"
               className="mt-3 text-sm"
             >
               Try Again
             </Button>
           </div>
-        )}
+        ) : null}
 
-        {/* Empty State */}
-        {!isLoading && !error && tables.length === 0 && (
+        {!isLoading && !error && tables.length === 0 ? (
           <div className="flex items-center justify-center rounded-lg border border-stone-200 bg-stone-50 py-12">
-            <div className="text-center">
-              <p className="text-stone-600">No tables yet. Create your first one above.</p>
-            </div>
+            <p className="text-stone-600">
+              No tables yet. Create your first one above.
+            </p>
           </div>
-        )}
+        ) : null}
 
-        {/* Tables List */}
-        {!isLoading && !error && tables.length > 0 && (
+        {!isLoading && !error && tables.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {tables.map((table) => (
-              <div
-                key={table.id}
-                className={`rounded-lg border ${editingId === table.id ? "border-amber-300 bg-amber-50" : "border-stone-200 bg-white"} overflow-hidden`}
-              >
-                {editingId === table.id ? (
-                  // Edit Mode
-                  <div className="p-4 space-y-3">
-                    <div>
-                      <label className="text-xs font-medium text-stone-700">Table Name *</label>
-                      <input
-                        type="text"
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
-                        autoFocus
-                      />
-                    </div>
+            {tables.map((table) => {
+              const isEditing = editingId === table.id;
 
-                    <div>
-                      <label className="text-xs font-medium text-stone-700">Status</label>
-                      <select
-                        value={editingStatus}
-                        onChange={(e) => setEditingStatus(e.target.value as any)}
-                        className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
-                      >
-                        {TABLE_STATUSES.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              return (
+                <article
+                  key={table.id}
+                  className={`overflow-hidden rounded-lg border ${
+                    isEditing
+                      ? "border-amber-300 bg-amber-50"
+                      : "border-stone-200 bg-white"
+                  }`}
+                >
+                  {isEditing ? (
+                    <div className="space-y-3 p-4">
+                      <div>
+                        <label className="text-xs font-medium text-stone-700">
+                          Table Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editingName}
+                          onChange={(event) =>
+                            setEditingName(event.target.value)
+                          }
+                          autoFocus
+                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
+                        />
+                      </div>
 
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleSaveEdit(table.id)}
-                        className="flex-1 bg-green-600 text-white hover:bg-green-700"
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCancelEdit}
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  // View Mode
-                  <div className="p-4 space-y-3">
-                    <div>
-                      <p className="font-semibold text-stone-900">{table.name}</p>
-                      <div className={`mt-2 inline-block rounded-full border px-3 py-1 text-xs font-medium ${getStatusColor(table.status)}`}>
-                        {table.status}
+                      <div>
+                        <label className="text-xs font-medium text-stone-700">
+                          Status
+                        </label>
+                        <select
+                          value={editingStatus}
+                          onChange={(event) =>
+                            setEditingStatus(event.target.value as TableStatus)
+                          }
+                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
+                        >
+                          {TABLE_STATUSES.map((status) => (
+                            <option key={status} value={status}>
+                              {status}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          onClick={() => void handleSaveEdit(table.id)}
+                          className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                        >
+                          Save
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleCancelEdit}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-stone-600">QR Code URL</p>
-                      <div className="overflow-hidden rounded-lg border border-stone-300 bg-stone-50 p-2">
-                        <p className="truncate text-xs text-stone-600 font-mono">
-                          {table.qrCode}
+                  ) : (
+                    <div className="space-y-3 p-4">
+                      <div>
+                        <p className="font-semibold text-stone-900">
+                          {table.name}
                         </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleCopyQRLink(table.qrCode)}
-                        className="w-full text-xs"
-                      >
-                        <Copy className="mr-1 h-3 w-3" />
-                        Copy QR Link
-                      </Button>
-                    </div>
 
-                    <div className="flex gap-2 pt-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleStartEdit(table)}
-                        className="flex-1 text-xs"
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleDeleteTable(table.id, table.name)}
-                        className="text-red-600 hover:bg-red-50"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        <span
+                          className={`mt-2 inline-block rounded-full border px-3 py-1 text-xs font-medium ${getStatusColor(
+                            table.status,
+                          )}`}
+                        >
+                          {table.status}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-stone-600">
+                          QR Code URL
+                        </p>
+
+                        <div className="overflow-hidden rounded-lg border border-stone-300 bg-stone-50 p-2">
+                          <p className="truncate font-mono text-xs text-stone-600">
+                            {table.qrCode || "Not generated"}
+                          </p>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!table.qrCode}
+                          onClick={() =>
+                            void handleCopyQRLink(table.qrCode)
+                          }
+                          className="w-full text-xs"
+                        >
+                          <Copy className="mr-1 h-3 w-3" />
+                          Copy QR Link
+                        </Button>
+                      </div>
+
+                      <div className="flex gap-2 pt-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStartEdit(table)}
+                          className="flex-1 text-xs"
+                        >
+                          Edit
+                        </Button>
+
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            void handleDeleteTable(table.id, table.name)
+                          }
+                          className="text-red-600 hover:bg-red-50"
+                          title="Delete table"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </article>
+              );
+            })}
           </div>
-        )}
+        ) : null}
       </div>
     </DashboardShell>
   );
