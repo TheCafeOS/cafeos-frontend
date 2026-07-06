@@ -729,6 +729,12 @@ export default function MenuPage() {
                         {getCategoryName(item.categoryId)}
                       </p>
 
+                      {item.description?.trim() ? (
+                        <p className="text-sm leading-6 text-stone-600">
+                          {item.description}
+                        </p>
+                      ) : null}
+
                       <p className="font-semibold text-amber-600">
                         {formatPrice(item.price)}
                       </p>
