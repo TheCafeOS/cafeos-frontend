@@ -31,6 +31,12 @@ type PublicMenuResponse = {
   menuItems: MenuItem[];
 };
 
+type ApiResponse<T> = {
+  success?: boolean;
+  message?: string;
+  data?: T;
+};
+
 type MenuPageProps = {
   params: Promise<{
     qrToken: string;
@@ -42,6 +48,49 @@ type StoredOrder = {
 };
 
 const API_BASE_URL = "http://localhost:4000";
+
+function unwrapApiResponse<T>(body: ApiResponse<T> | T): T {
+  if (
+    body &&
+    typeof body === "object" &&
+    "data" in body &&
+    (body as ApiResponse<T>).data !== undefined
+  ) {
+    return (body as ApiResponse<T>).data as T;
+  }
+
+  return body as T;
+}
+
+function normalizeMenu(data: PublicMenuResponse): PublicMenuResponse {
+  return {
+    table: data.table,
+    restaurant: data.restaurant,
+    categories: Array.isArray(data.categories) ? data.categories : [],
+    menuItems: Array.isArray(data.menuItems) ? data.menuItems : [],
+  };
+}
+
+async function safelyReadJson<T>(response: Response): Promise<T | null> {
+  try {
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+function getApiMessage(body: unknown): string {
+  if (
+    body &&
+    typeof body === "object" &&
+    "message" in body &&
+    typeof (body as { message?: unknown }).message === "string"
+  ) {
+    return (body as { message: string }).message;
+  }
+
+  return "";
+}
 
 export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [menu, setMenu] = useState<PublicMenuResponse | null>(null);
@@ -64,55 +113,111 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   useEffect(() => {
     const loadMenu = async () => {
       try {
+        setIsLoading(true);
+        setError("");
+        setMenu(null);
+
         const resolvedParams = await params;
         const token = resolvedParams.qrToken;
+
+        if (!token) {
+          throw new Error("Invalid QR code.");
+        }
 
         setQrToken(token);
 
         const response = await fetch(
-          `${API_BASE_URL}/public/menu/${encodeURIComponent(token)}`,
+          `${API_BASE_URL}/api/v1/public/menu/${encodeURIComponent(token)}`,
         );
 
-        const data = await response.json();
+        const responseBody = await safelyReadJson<
+          ApiResponse<PublicMenuResponse> | PublicMenuResponse
+        >(response);
 
         if (!response.ok) {
-          throw new Error(data.message || "Unable to load this menu");
+          const backendMessage = getApiMessage(responseBody);
+
+          if (response.status === 403) {
+            throw new Error(
+              "This table is currently inactive. Please ask a staff member for assistance.",
+            );
+          }
+
+          if (response.status === 404) {
+            throw new Error(
+              "This QR code is invalid or this table is no longer available.",
+            );
+          }
+
+          throw new Error(
+            backendMessage || "We could not load this menu. Please try again.",
+          );
         }
 
-        setMenu(data);
+        if (!responseBody) {
+          throw new Error("The café server returned an invalid menu response.");
+        }
+
+        const menuData = unwrapApiResponse<PublicMenuResponse>(responseBody);
+
+        if (!menuData?.table || !menuData?.restaurant) {
+          throw new Error("Invalid menu response received from server.");
+        }
+
+        setMenu(normalizeMenu(menuData));
 
         const storageKey = `cafeos-current-order-${token}`;
         const savedOrder = localStorage.getItem(storageKey);
 
-        if (savedOrder) {
-          try {
-            const parsedOrder = JSON.parse(savedOrder) as StoredOrder;
+        if (!savedOrder) {
+          setCurrentOrder(null);
+          return;
+        }
 
-            if (parsedOrder.orderId) {
-              const orderResponse = await fetch(
-                `${API_BASE_URL}/public/orders/${encodeURIComponent(
-                  token,
-                )}/${encodeURIComponent(parsedOrder.orderId)}`,
-              );
+        try {
+          const parsedOrder = JSON.parse(savedOrder) as StoredOrder;
 
-              const orderData = await orderResponse.json();
-
-              if (orderResponse.ok) {
-                setCurrentOrder(orderData);
-              } else {
-                localStorage.removeItem(storageKey);
-              }
-            }
-          } catch {
+          if (!parsedOrder.orderId) {
             localStorage.removeItem(storageKey);
+            setCurrentOrder(null);
+            return;
           }
+
+          const orderResponse = await fetch(
+            `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(
+              token,
+            )}/${encodeURIComponent(parsedOrder.orderId)}`,
+          );
+
+          const orderBody =
+            await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(
+              orderResponse,
+            );
+
+          if (orderResponse.ok && orderBody) {
+            setCurrentOrder(unwrapApiResponse<CurrentOrder>(orderBody));
+          } else {
+            localStorage.removeItem(storageKey);
+            setCurrentOrder(null);
+          }
+        } catch {
+          localStorage.removeItem(storageKey);
+          setCurrentOrder(null);
         }
       } catch (caughtError) {
-        setError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Unable to load this menu",
-        );
+        setMenu(null);
+
+        if (caughtError instanceof TypeError) {
+          setError(
+            "We could not connect to the café server. Please ask a staff member for assistance.",
+          );
+        } else {
+          setError(
+            caughtError instanceof Error
+              ? caughtError.message
+              : "Unable to load this menu.",
+          );
+        }
       } finally {
         setIsLoading(false);
       }
@@ -202,23 +307,28 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/public/orders/${encodeURIComponent(
+        `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(
           qrToken,
         )}/${encodeURIComponent(orderId)}`,
       );
 
-      const data = await response.json();
+      const responseBody =
+        await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(
+          response,
+        );
 
-      if (!response.ok) {
-        throw new Error(data.message || "Could not fetch order status");
+      if (!response.ok || !responseBody) {
+        throw new Error(
+          getApiMessage(responseBody) || "Could not fetch order status.",
+        );
       }
 
-      setCurrentOrder(data);
+      setCurrentOrder(unwrapApiResponse<CurrentOrder>(responseBody));
     } catch (caughtError) {
       setCurrentOrderError(
         caughtError instanceof Error
           ? caughtError.message
-          : "Could not fetch order status",
+          : "Could not fetch order status.",
       );
     } finally {
       if (showLoading) {
@@ -238,7 +348,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/public/orders/${encodeURIComponent(qrToken)}`,
+        `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(qrToken)}`,
         {
           method: "POST",
           headers: {
@@ -254,22 +364,32 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
         },
       );
 
-      const data = await response.json();
+      const responseBody =
+        await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(
+          response,
+        );
 
-      if (!response.ok) {
+      if (!response.ok || !responseBody) {
         throw new Error(
-          data.message ||
+          getApiMessage(responseBody) ||
             "Failed to place order. Please ask the café staff for help.",
         );
+      }
+
+      const createdOrder = unwrapApiResponse<CurrentOrder>(responseBody);
+
+      if (!createdOrder?.id) {
+        throw new Error("The café server returned an invalid order response.");
       }
 
       localStorage.setItem(
         `cafeos-current-order-${qrToken}`,
         JSON.stringify({
-          orderId: data.id,
+          orderId: createdOrder.id,
         }),
       );
 
+      setCurrentOrder(createdOrder);
       setOrderMessage(
         "Order placed successfully. You can track it from the Orders button.",
       );
@@ -278,7 +398,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
       setCustomerPhone("");
       setIsCartOpen(false);
 
-      await fetchCurrentOrder(data.id, false);
+      await fetchCurrentOrder(createdOrder.id, false);
     } catch (caughtError) {
       setOrderError(
         caughtError instanceof Error
@@ -321,7 +441,9 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
     );
   }
 
-  const uncategorizedItems = menu.menuItems.filter((item) => !item.categoryId);
+  const categories = menu.categories ?? [];
+  const menuItems = menu.menuItems ?? [];
+  const uncategorizedItems = menuItems.filter((item) => !item.categoryId);
 
   return (
     <main className="min-h-screen bg-stone-50 pb-32">
@@ -387,8 +509,8 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
       ) : null}
 
       <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
-        {menu.categories.map((category) => {
-          const categoryItems = menu.menuItems.filter(
+        {categories.map((category) => {
+          const categoryItems = menuItems.filter(
             (item) => item.categoryId === category.id,
           );
 
@@ -435,7 +557,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
           </section>
         ) : null}
 
-        {menu.menuItems.length === 0 ? (
+        {menuItems.length === 0 ? (
           <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-stone-600">
             No menu items are available right now.
           </div>

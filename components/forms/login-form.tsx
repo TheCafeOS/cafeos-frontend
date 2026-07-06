@@ -37,7 +37,7 @@ export function LoginForm() {
         password: values.password,
       });
 
-      localStorage.setItem("token", response.token);
+      localStorage.setItem("token", response.accessToken);
 
       toast.success("Login successful. Redirecting to dashboard...");
       router.push("/dashboard");

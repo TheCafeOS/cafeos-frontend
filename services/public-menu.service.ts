@@ -35,8 +35,12 @@ export interface PublicMenuResponse {
   menuItems: MenuItemResponse[];
 }
 
-export async function fetchPublicMenu(qrToken: string): Promise<PublicMenuResponse> {
-  // Use a separate axios instance without token authentication
-  const response = await api.get<PublicMenuResponse>(`/public/menu/${qrToken}`);
+export async function fetchPublicMenu(
+  qrToken: string,
+): Promise<PublicMenuResponse> {
+  const response = await api.get<PublicMenuResponse>(
+    `/api/v1/public/menu/${qrToken}`,
+  );
+
   return response.data;
 }

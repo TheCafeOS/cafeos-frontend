@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Copy, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,14 +18,49 @@ import type {
   UpdateTablePayload,
 } from "@/types/table";
 
-const TABLE_STATUSES = [
+type TableStatus =
+  | "AVAILABLE"
+  | "OCCUPIED"
+  | "RESERVED"
+  | "INACTIVE";
+
+const TABLE_STATUS_OPTIONS: TableStatus[] = [
   "AVAILABLE",
   "OCCUPIED",
   "RESERVED",
   "INACTIVE",
-] as const;
+];
 
-type TableStatus = (typeof TABLE_STATUSES)[number];
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+function isValidTable(value: unknown): value is RestaurantTable {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const table = value as Partial<RestaurantTable>;
+
+  return Boolean(table.id && table.name);
+}
+
+function normalizeStatus(status: unknown): TableStatus {
+  if (
+    status === "AVAILABLE" ||
+    status === "OCCUPIED" ||
+    status === "RESERVED" ||
+    status === "INACTIVE"
+  ) {
+    return status;
+  }
+
+  return "AVAILABLE";
+}
 
 export default function TablesPage() {
   const [tables, setTables] = useState<RestaurantTable[]>([]);
@@ -38,41 +74,56 @@ export default function TablesPage() {
   const [editingStatus, setEditingStatus] =
     useState<TableStatus>("AVAILABLE");
 
-  useEffect(() => {
-    void fetchTables();
-  }, []);
-
-  const getErrorMessage = (error: unknown, fallback: string) => {
-    if (error instanceof Error) {
-      return error.message;
-    }
-
-    return fallback;
-  };
-
-  const fetchTables = async () => {
+  async function fetchTables() {
     setIsLoading(true);
     setError(null);
 
     try {
       const data = await getTables();
-      setTables(data);
+
+      const validTables = Array.isArray(data)
+        ? data.filter(isValidTable)
+        : [];
+
+      setTables(validTables);
     } catch (error) {
-      const message = getErrorMessage(error, "Failed to load tables");
+      const message = getErrorMessage(error, "Failed to load tables.");
       setError(message);
       toast.error(message);
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
-  const handleAddTable = async (event: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchTables();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function handleStartEdit(table: RestaurantTable) {
+    setEditingId(table.id);
+    setEditingName(table.name);
+    setEditingStatus(normalizeStatus(table.status));
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setEditingName("");
+    setEditingStatus("AVAILABLE");
+  }
+
+  async function handleAddTable(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
     const name = newTableName.trim();
 
     if (!name) {
-      toast.error("Table name is required");
+      toast.error("Table name is required.");
       return;
     }
 
@@ -80,37 +131,37 @@ export default function TablesPage() {
 
     try {
       const payload: CreateTablePayload = { name };
-      const newTable = await createTable(payload);
+      const createdTable = await createTable(payload);
 
-      setTables((currentTables) => [...currentTables, newTable]);
+      if (!isValidTable(createdTable)) {
+        throw new Error("Server did not return a valid table.");
+      }
+
+      setTables((currentTables) => [
+        ...currentTables,
+        createdTable,
+      ]);
+
       setNewTableName("");
-      toast.success("Table created successfully");
+      toast.success("Table created successfully.");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to create table"));
+      toast.error(
+        getErrorMessage(error, "Failed to create table."),
+      );
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
-  const handleStartEdit = (table: RestaurantTable) => {
-    setEditingId(table.id);
-    setEditingName(table.name);
-    setEditingStatus(table.status as TableStatus);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditingName("");
-    setEditingStatus("AVAILABLE");
-  };
-
-  const handleSaveEdit = async (tableId: string) => {
+  async function handleSaveEdit(tableId: string) {
     const name = editingName.trim();
 
     if (!name) {
-      toast.error("Table name is required");
+      toast.error("Table name is required.");
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       const payload: UpdateTablePayload = {
@@ -120,6 +171,10 @@ export default function TablesPage() {
 
       const updatedTable = await updateTable(tableId, payload);
 
+      if (!isValidTable(updatedTable)) {
+        throw new Error("Server did not return a valid updated table.");
+      }
+
       setTables((currentTables) =>
         currentTables.map((table) =>
           table.id === tableId ? updatedTable : table,
@@ -127,13 +182,20 @@ export default function TablesPage() {
       );
 
       handleCancelEdit();
-      toast.success("Table updated successfully");
+      toast.success("Table updated successfully.");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to update table"));
+      toast.error(
+        getErrorMessage(error, "Failed to update table."),
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }
 
-  const handleDeleteTable = async (tableId: string, tableName: string) => {
+  async function handleDeleteTable(
+    tableId: string,
+    tableName: string,
+  ) {
     const shouldDelete = window.confirm(
       `Are you sure you want to delete "${tableName}"?`,
     );
@@ -142,6 +204,8 @@ export default function TablesPage() {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
       await deleteTable(tableId);
 
@@ -149,32 +213,38 @@ export default function TablesPage() {
         currentTables.filter((table) => table.id !== tableId),
       );
 
-      toast.success("Table deleted successfully");
+      if (editingId === tableId) {
+        handleCancelEdit();
+      }
+
+      toast.success("Table deleted successfully.");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to delete table"));
+      toast.error(
+        getErrorMessage(error, "Failed to delete table."),
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }
 
-  const handleCopyQRLink = async (qrCode: string | null | undefined) => {
-    const qrToken = qrCode?.split("/").filter(Boolean).pop();
-
-    if (!qrToken) {
-      toast.error("QR code is unavailable for this table");
+  async function handleCopyQRLink(qrCode: string | null | undefined) {
+    if (!qrCode) {
+      toast.error("QR code is unavailable for this table.");
       return;
     }
 
     try {
-      const customerMenuUrl = `${window.location.origin}/menu/${qrToken}`;
+      const customerMenuUrl = `${window.location.origin}/menu/${qrCode}`;
 
       await navigator.clipboard.writeText(customerMenuUrl);
 
-      toast.success("QR link copied to clipboard");
+      toast.success("QR link copied to clipboard.");
     } catch {
-      toast.error("Failed to copy QR link");
+      toast.error("Failed to copy QR link.");
     }
-  };
+  }
 
-  const getStatusColor = (status: string) => {
+  function getStatusColor(status: string) {
     switch (status) {
       case "AVAILABLE":
         return "border-green-200 bg-green-50 text-green-700";
@@ -187,7 +257,7 @@ export default function TablesPage() {
       default:
         return "border-stone-200 bg-stone-50 text-stone-700";
     }
-  };
+  }
 
   return (
     <DashboardShell
@@ -204,7 +274,9 @@ export default function TablesPage() {
             <input
               type="text"
               value={newTableName}
-              onChange={(event) => setNewTableName(event.target.value)}
+              onChange={(event) =>
+                setNewTableName(event.target.value)
+              }
               placeholder="Enter table name (e.g., Table 1, Window Seat)"
               disabled={isSubmitting}
               className="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm outline-none placeholder:text-stone-500"
@@ -239,6 +311,7 @@ export default function TablesPage() {
         {error && !isLoading ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">{error}</p>
+
             <Button
               onClick={() => void fetchTables()}
               variant="outline"
@@ -277,6 +350,7 @@ export default function TablesPage() {
                         <label className="text-xs font-medium text-stone-700">
                           Table Name
                         </label>
+
                         <input
                           type="text"
                           value={editingName}
@@ -284,6 +358,7 @@ export default function TablesPage() {
                             setEditingName(event.target.value)
                           }
                           autoFocus
+                          disabled={isSubmitting}
                           className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
                         />
                       </div>
@@ -292,14 +367,18 @@ export default function TablesPage() {
                         <label className="text-xs font-medium text-stone-700">
                           Status
                         </label>
+
                         <select
                           value={editingStatus}
                           onChange={(event) =>
-                            setEditingStatus(event.target.value as TableStatus)
+                            setEditingStatus(
+                              event.target.value as TableStatus,
+                            )
                           }
+                          disabled={isSubmitting}
                           className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
                         >
-                          {TABLE_STATUSES.map((status) => (
+                          {TABLE_STATUS_OPTIONS.map((status) => (
                             <option key={status} value={status}>
                               {status}
                             </option>
@@ -310,15 +389,17 @@ export default function TablesPage() {
                       <div className="flex gap-2 pt-2">
                         <Button
                           size="sm"
+                          disabled={isSubmitting}
                           onClick={() => void handleSaveEdit(table.id)}
                           className="flex-1 bg-green-600 text-white hover:bg-green-700"
                         >
-                          Save
+                          {isSubmitting ? "Saving..." : "Save"}
                         </Button>
 
                         <Button
                           size="sm"
                           variant="outline"
+                          disabled={isSubmitting}
                           onClick={handleCancelEdit}
                           className="flex-1"
                         >
@@ -371,6 +452,7 @@ export default function TablesPage() {
                         <Button
                           size="sm"
                           variant="outline"
+                          disabled={isSubmitting}
                           onClick={() => handleStartEdit(table)}
                           className="flex-1 text-xs"
                         >
@@ -380,6 +462,7 @@ export default function TablesPage() {
                         <Button
                           size="icon"
                           variant="ghost"
+                          disabled={isSubmitting}
                           onClick={() =>
                             void handleDeleteTable(table.id, table.name)
                           }

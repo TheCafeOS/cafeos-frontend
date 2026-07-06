@@ -1,18 +1,24 @@
-export type RestaurantTable = {
+export type TableStatus =
+  | "AVAILABLE"
+  | "OCCUPIED"
+  | "RESERVED"
+  | "INACTIVE";
+
+export interface RestaurantTable {
   id: string;
   restaurantId: string;
   name: string;
   qrCode: string;
-  status: "AVAILABLE" | "OCCUPIED" | "RESERVED" | "INACTIVE";
+  status: TableStatus;
   createdAt: string;
   updatedAt: string;
-};
+}
 
-export type CreateTablePayload = {
+export interface CreateTablePayload {
   name: string;
-};
+}
 
-export type UpdateTablePayload = {
-  name: string;
-  status: "AVAILABLE" | "OCCUPIED" | "RESERVED" | "INACTIVE";
-};
+export interface UpdateTablePayload {
+  name?: string;
+  status?: TableStatus;
+}
