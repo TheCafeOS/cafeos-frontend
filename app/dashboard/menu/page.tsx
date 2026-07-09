@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ImageOff, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -68,6 +68,12 @@ export default function MenuPage() {
   );
   const [editingMenuItem, setEditingMenuItem] =
     useState<CreateMenuItemPayload>(emptyMenuItem);
+
+  const [menuSearch, setMenuSearch] = useState("");
+  const [selectedMenuCategoryId, setSelectedMenuCategoryId] = useState("ALL");
+  const [availabilityFilter, setAvailabilityFilter] = useState<
+    "ALL" | "AVAILABLE" | "UNAVAILABLE"
+  >("ALL");
 
   const menuItemFormRef = useRef<HTMLDivElement | null>(null);
 
@@ -379,6 +385,46 @@ export default function MenuPage() {
     }));
   }
 
+  const menuStats = useMemo(() => {
+    const safeItems = menuItems.filter(Boolean);
+
+    return {
+      total: safeItems.length,
+      available: safeItems.filter((item) => item.isAvailable !== false).length,
+      unavailable: safeItems.filter((item) => item.isAvailable === false)
+        .length,
+    };
+  }, [menuItems]);
+
+  const filteredMenuItems = useMemo(() => {
+    const normalizedSearch = menuSearch.trim().toLowerCase();
+
+    return menuItems.filter((item) => {
+      if (!item) return false;
+
+      const matchesSearch =
+        !normalizedSearch ||
+        item.name.toLowerCase().includes(normalizedSearch) ||
+        item.description?.toLowerCase().includes(normalizedSearch);
+
+      const matchesCategory =
+        selectedMenuCategoryId === "ALL" ||
+        item.categoryId === selectedMenuCategoryId;
+
+      const matchesAvailability =
+        availabilityFilter === "ALL" ||
+        (availabilityFilter === "AVAILABLE" && item.isAvailable !== false) ||
+        (availabilityFilter === "UNAVAILABLE" && item.isAvailable === false);
+
+      return matchesSearch && matchesCategory && matchesAvailability;
+    });
+  }, [
+    menuItems,
+    menuSearch,
+    selectedMenuCategoryId,
+    availabilityFilter,
+  ]);
+
   return (
     <DashboardShell
       title="Menu"
@@ -533,6 +579,29 @@ export default function MenuPage() {
             Menu Items
           </h2>
 
+          <div className="mb-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-lg border border-stone-200 bg-white p-4">
+              <p className="text-sm text-stone-600">Total items</p>
+              <p className="mt-1 text-2xl font-semibold text-stone-900">
+                {menuStats.total}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-sm text-emerald-700">Available</p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-800">
+                {menuStats.available}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+              <p className="text-sm text-stone-600">Unavailable</p>
+              <p className="mt-1 text-2xl font-semibold text-stone-800">
+                {menuStats.unavailable}
+              </p>
+            </div>
+          </div>
+
           <div
             ref={menuItemFormRef}
             className="rounded-lg border border-stone-200 bg-white p-6"
@@ -669,6 +738,52 @@ export default function MenuPage() {
             </form>
           </div>
 
+          <div className="mt-6 rounded-lg border border-stone-200 bg-white p-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <input
+                type="search"
+                value={menuSearch}
+                onChange={(event) => setMenuSearch(event.target.value)}
+                placeholder="Search by item name or description..."
+                className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
+              />
+
+              <select
+                value={selectedMenuCategoryId}
+                onChange={(event) =>
+                  setSelectedMenuCategoryId(event.target.value)
+                }
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
+              >
+                <option value="ALL">All categories</option>
+                <option value="">Uncategorized</option>
+
+                {categories.filter(Boolean).map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={availabilityFilter}
+                onChange={(event) =>
+                  setAvailabilityFilter(
+                    event.target.value as
+                      | "ALL"
+                      | "AVAILABLE"
+                      | "UNAVAILABLE",
+                  )
+                }
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
+              >
+                <option value="ALL">All availability</option>
+                <option value="AVAILABLE">Available</option>
+                <option value="UNAVAILABLE">Unavailable</option>
+              </select>
+            </div>
+          </div>
+
           <div className="mt-6 space-y-6">
             {isLoadingMenuItems ? (
               <div className="flex justify-center rounded-lg border border-stone-200 bg-stone-50 py-12">
@@ -701,9 +816,23 @@ export default function MenuPage() {
 
             {!isLoadingMenuItems &&
             !menuItemError &&
-            menuItems.length > 0 ? (
+            menuItems.length > 0 &&
+            filteredMenuItems.length === 0 ? (
+              <div className="rounded-lg border border-stone-200 bg-stone-50 py-12 text-center">
+                <p className="font-medium text-stone-900">
+                  No matching menu items.
+                </p>
+                <p className="mt-1 text-sm text-stone-600">
+                  Change the search or filters to see more items.
+                </p>
+              </div>
+            ) : null}
+
+            {!isLoadingMenuItems &&
+            !menuItemError &&
+            filteredMenuItems.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {menuItems.filter(Boolean).map((item) => (
+                {filteredMenuItems.map((item) => (
                   <div
                     key={item.id}
                     className="overflow-hidden rounded-lg border border-stone-200 bg-white"
@@ -735,9 +864,23 @@ export default function MenuPage() {
                         </p>
                       ) : null}
 
-                      <p className="font-semibold text-amber-600">
-                        {formatPrice(item.price)}
-                      </p>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-semibold text-amber-600">
+                          {formatPrice(item.price)}
+                        </p>
+
+                        <span
+                          className={
+                            item.isAvailable !== false
+                              ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+                              : "rounded-full bg-stone-200 px-2.5 py-1 text-xs font-semibold text-stone-700"
+                          }
+                        >
+                          {item.isAvailable !== false
+                            ? "Available"
+                            : "Unavailable"}
+                        </span>
+                      </div>
 
                       <div className="flex gap-2 pt-2">
                         <Button
