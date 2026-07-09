@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, MapPin, ShoppingBag } from "lucide-react";
+import { io } from "socket.io-client";
 
 import MenuCard, { type MenuItem } from "./components/MenuCard";
 import CartBar from "./components/CartBar";
@@ -47,8 +48,15 @@ type StoredOrder = {
   orderId: string;
 };
 
+type OrderUpdatedPayload = {
+  orderId: string;
+  status: CurrentOrder["status"];
+  timestamp: string;
+};
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
 function unwrapApiResponse<T>(body: ApiResponse<T> | T): T {
   if (
     body &&
@@ -109,6 +117,55 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [isOrderDrawerOpen, setIsOrderDrawerOpen] = useState(false);
   const [isRefreshingOrder, setIsRefreshingOrder] = useState(false);
   const [currentOrderError, setCurrentOrderError] = useState("");
+
+  const currentOrderIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    currentOrderIdRef.current = currentOrder?.id ?? null;
+  }, [currentOrder?.id]);
+
+  async function fetchCurrentOrder(orderId: string, showLoading = true) {
+    if (!qrToken) {
+      return;
+    }
+
+    if (showLoading) {
+      setIsRefreshingOrder(true);
+    }
+
+    setCurrentOrderError("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(
+          qrToken,
+        )}/${encodeURIComponent(orderId)}`,
+      );
+
+      const responseBody =
+        await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(
+          response,
+        );
+
+      if (!response.ok || !responseBody) {
+        throw new Error(
+          getApiMessage(responseBody) || "Could not fetch order status.",
+        );
+      }
+
+      setCurrentOrder(unwrapApiResponse<CurrentOrder>(responseBody));
+    } catch (caughtError) {
+      setCurrentOrderError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Could not fetch order status.",
+      );
+    } finally {
+      if (showLoading) {
+        setIsRefreshingOrder(false);
+      }
+    }
+  }
 
   useEffect(() => {
     const loadMenu = async () => {
@@ -226,6 +283,30 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
     void loadMenu();
   }, [params]);
 
+  useEffect(() => {
+    if (!qrToken) {
+      return;
+    }
+
+    const socket = io(API_BASE_URL);
+
+    socket.on("connect", () => {
+      socket.emit("join_qr", qrToken);
+    });
+
+    socket.on("ORDER_UPDATED", (payload: OrderUpdatedPayload) => {
+      if (payload.orderId !== currentOrderIdRef.current) {
+        return;
+      }
+
+      void fetchCurrentOrder(payload.orderId, false);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [qrToken]);
+
   const formatPrice = (price: string | number) => {
     const numericPrice = Number(price);
 
@@ -294,49 +375,6 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
     );
   }
 
-  async function fetchCurrentOrder(orderId: string, showLoading = true) {
-    if (!qrToken) {
-      return;
-    }
-
-    if (showLoading) {
-      setIsRefreshingOrder(true);
-    }
-
-    setCurrentOrderError("");
-
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(
-          qrToken,
-        )}/${encodeURIComponent(orderId)}`,
-      );
-
-      const responseBody =
-        await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(
-          response,
-        );
-
-      if (!response.ok || !responseBody) {
-        throw new Error(
-          getApiMessage(responseBody) || "Could not fetch order status.",
-        );
-      }
-
-      setCurrentOrder(unwrapApiResponse<CurrentOrder>(responseBody));
-    } catch (caughtError) {
-      setCurrentOrderError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Could not fetch order status.",
-      );
-    } finally {
-      if (showLoading) {
-        setIsRefreshingOrder(false);
-      }
-    }
-  }
-
   async function handlePlaceOrder() {
     if (!menu || cart.length === 0 || !qrToken) {
       return;
@@ -389,15 +427,15 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
         }),
       );
 
-  setOrderMessage(
-  "Order placed successfully. You can track it from the Orders button.",
-);
+      setOrderMessage(
+        "Order placed successfully. You can track it from the Orders button.",
+      );
 
-setCart([]);
-setCustomerPhone("");
-setIsCartOpen(false);
+      setCart([]);
+      setCustomerPhone("");
+      setIsCartOpen(false);
 
-await fetchCurrentOrder(createdOrder.id, false);
+      await fetchCurrentOrder(createdOrder.id, false);
     } catch (caughtError) {
       setOrderError(
         caughtError instanceof Error
@@ -584,10 +622,11 @@ await fetchCurrentOrder(createdOrder.id, false);
         onRemove={removeFromCart}
         onPlaceOrder={handlePlaceOrder}
       />
-<CurrentOrderDrawer
-  isOpen={isOrderDrawerOpen}
-  order={currentOrder}
-  tableName={menu.table.name}
+
+      <CurrentOrderDrawer
+        isOpen={isOrderDrawerOpen}
+        order={currentOrder}
+        tableName={menu.table.name}
         isRefreshing={isRefreshingOrder}
         error={currentOrderError}
         formatPrice={formatPrice}
