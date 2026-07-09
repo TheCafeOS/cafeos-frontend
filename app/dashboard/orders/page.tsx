@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, RefreshCw, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import {
-  getOrders,
-  updateOrderStatus,
-} from "@/services/order.service";
+import { getOrders, updateOrderStatus } from "@/services/order.service";
 import type { OrderStatus, RestaurantOrder } from "@/types/order";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -26,6 +23,28 @@ const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   CONFIRMED: "PREPARING",
   PREPARING: "READY",
   READY: "COMPLETED",
+};
+
+const STATUS_FILTERS: Array<{
+  label: string;
+  value: OrderStatus | "ALL";
+}> = [
+  { label: "All", value: "ALL" },
+  { label: "Pending", value: "PENDING" },
+  { label: "Accepted", value: "CONFIRMED" },
+  { label: "Preparing", value: "PREPARING" },
+  { label: "Ready", value: "READY" },
+  { label: "Completed", value: "COMPLETED" },
+  { label: "Cancelled", value: "CANCELLED" },
+];
+
+const STATUS_STYLES: Record<OrderStatus, string> = {
+  PENDING: "bg-amber-100 text-amber-800",
+  CONFIRMED: "bg-sky-100 text-sky-800",
+  PREPARING: "bg-violet-100 text-violet-800",
+  READY: "bg-emerald-100 text-emerald-800",
+  COMPLETED: "bg-stone-200 text-stone-700",
+  CANCELLED: "bg-red-100 text-red-800",
 };
 
 function getErrorMessage(error: unknown): string {
@@ -56,6 +75,8 @@ export default function OrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
 
   async function loadOrders() {
     try {
@@ -100,15 +121,43 @@ export default function OrdersPage() {
     }
   }
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadOrders();
-    }, 0);
+useEffect(() => {
+  const timer = window.setTimeout(() => {
+    void loadOrders();
+  }, 0);
 
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, []);
+  return () => {
+    window.clearTimeout(timer);
+  };
+}, []);
+  const filteredOrders = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return orders.filter((order) => {
+      const matchesStatus =
+        statusFilter === "ALL" || order.status === statusFilter;
+
+      if (!matchesStatus) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      const searchableText = [
+        order.id,
+        formatOrderReference(order.id),
+        order.table.name,
+        order.customerPhone ?? "",
+        ...order.items.map((item) => item.menuItem.name),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(query);
+    });
+  }, [orders, searchQuery, statusFilter]);
 
   return (
     <DashboardShell
@@ -122,7 +171,8 @@ export default function OrdersPage() {
               Recent orders
             </h2>
             <p className="mt-1 text-sm text-stone-600">
-              Newest orders appear first.
+              {filteredOrders.length} of {orders.length} order
+              {orders.length === 1 ? "" : "s"} shown.
             </p>
           </div>
 
@@ -139,6 +189,52 @@ export default function OrdersPage() {
           </Button>
         </div>
 
+        {!isLoading && !error ? (
+          <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by order ID, table, phone, or item..."
+                className="w-full rounded-lg border border-stone-200 py-2 pl-10 pr-10 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {STATUS_FILTERS.map((filter) => (
+                <Button
+                  key={filter.value}
+                  type="button"
+                  size="sm"
+                  variant={
+                    statusFilter === filter.value ? "default" : "outline"
+                  }
+                  className={
+                    statusFilter === filter.value
+                      ? "bg-amber-600 hover:bg-amber-700"
+                      : "shrink-0"
+                  }
+                  onClick={() => setStatusFilter(filter.value)}
+                >
+                  {filter.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {isLoading ? (
           <div className="flex justify-center rounded-lg border border-stone-200 bg-stone-50 py-12">
             <Loader2 className="h-6 w-6 animate-spin text-stone-600" />
@@ -148,7 +244,6 @@ export default function OrdersPage() {
         {error && !isLoading ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">{error}</p>
-
             <Button
               type="button"
               variant="outline"
@@ -166,9 +261,25 @@ export default function OrdersPage() {
           </div>
         ) : null}
 
-        {!isLoading && !error && orders.length > 0 ? (
+        {!isLoading && !error && orders.length > 0 && filteredOrders.length === 0 ? (
+          <div className="rounded-lg border border-stone-200 bg-stone-50 py-12 text-center">
+            <p className="font-medium text-stone-800">No matching orders found.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setStatusFilter("ALL");
+              }}
+              className="mt-2 text-sm font-medium text-amber-700 hover:text-amber-800"
+            >
+              Clear filters
+            </button>
+          </div>
+        ) : null}
+
+        {!isLoading && !error && filteredOrders.length > 0 ? (
           <div className="space-y-4">
-            {orders.map((order) => {
+            {filteredOrders.map((order) => {
               const nextStatus = NEXT_STATUS[order.status];
               const isUpdating = updatingOrderId === order.id;
 
@@ -187,7 +298,9 @@ export default function OrdersPage() {
                       </p>
                     </div>
 
-                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[order.status]}`}
+                    >
                       {STATUS_LABELS[order.status]}
                     </span>
                   </div>
