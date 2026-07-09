@@ -4,8 +4,9 @@ export interface MenuItemResponse {
   id: string;
   name: string;
   description: string | null;
-  price: number;
+  price: number | string;
   imageUrl: string | null;
+  isAvailable?: boolean;
   categoryId: string | null;
   category: { id: string; name: string } | null;
 }
@@ -19,7 +20,6 @@ export interface TableResponse {
   id: string;
   name: string;
   status: string;
-  restaurantId: string;
 }
 
 export interface RestaurantResponse {
@@ -35,12 +35,18 @@ export interface PublicMenuResponse {
   menuItems: MenuItemResponse[];
 }
 
+interface ApiSuccessResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 export async function fetchPublicMenu(
   qrToken: string,
 ): Promise<PublicMenuResponse> {
-  const response = await api.get<PublicMenuResponse>(
+  const response = await api.get<ApiSuccessResponse<PublicMenuResponse>>(
     `/api/v1/public/menu/${qrToken}`,
   );
 
-  return response.data;
+  return response.data.data;
 }

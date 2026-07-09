@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Copy, Loader2, Trash2 } from "lucide-react";
+import {
+  Copy,
+  Download,
+  Loader2,
+  Printer,
+  QrCode,
+  Trash2,
+  X,
+} from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -68,6 +77,8 @@ export default function TablesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTableName, setNewTableName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [selectedQrTable, setSelectedQrTable] =
+    useState<RestaurantTable | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -227,21 +238,131 @@ export default function TablesPage() {
     }
   }
 
-  async function handleCopyQRLink(qrCode: string | null | undefined) {
+  function getCustomerMenuUrl(qrCode: string | null | undefined) {
     if (!qrCode) {
+      return null;
+    }
+
+    const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(
+      /\/$/,
+      "",
+    );
+    const appUrl = configuredAppUrl || window.location.origin;
+
+    return `${appUrl}/menu/${qrCode}`;
+  }
+
+  async function handleCopyQRLink(qrCode: string | null | undefined) {
+    const customerMenuUrl = getCustomerMenuUrl(qrCode);
+
+    if (!customerMenuUrl) {
       toast.error("QR code is unavailable for this table.");
       return;
     }
 
     try {
-      const customerMenuUrl = `${window.location.origin}/menu/${qrCode}`;
-
       await navigator.clipboard.writeText(customerMenuUrl);
-
       toast.success("QR link copied to clipboard.");
     } catch {
       toast.error("Failed to copy QR link.");
     }
+  }
+
+  function handleDownloadQr(table: RestaurantTable) {
+    const svg = document.getElementById(`table-qr-${table.id}`);
+
+    if (!svg) {
+      toast.error("QR code is not ready to download.");
+      return;
+    }
+
+    const serializer = new XMLSerializer();
+    const svgMarkup = serializer.serializeToString(svg);
+    const blob = new Blob([svgMarkup], {
+      type: "image/svg+xml;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${table.name
+      .replace(/\s+/g, "-")
+      .toLowerCase()}-qr.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success("QR code downloaded.");
+  }
+
+  function handlePrintQr(table: RestaurantTable) {
+    const customerMenuUrl = getCustomerMenuUrl(table.qrCode);
+
+    if (!customerMenuUrl) {
+      toast.error("QR code is unavailable for this table.");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=600,height=700");
+
+    if (!printWindow) {
+      toast.error("Popup blocked. Please allow popups and try again.");
+      return;
+    }
+
+    const svg = document.getElementById(`table-qr-${table.id}`);
+
+    if (!svg) {
+      toast.error("QR code is not ready to print.");
+      printWindow.close();
+      return;
+    }
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>${table.name} QR Code</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 32px;
+              text-align: center;
+            }
+            .qr {
+              display: inline-block;
+              padding: 24px;
+              border: 1px solid #d6d3d1;
+              border-radius: 12px;
+            }
+            h1 {
+              font-size: 24px;
+              margin: 0 0 8px;
+            }
+            p {
+              color: #57534e;
+              font-size: 14px;
+              overflow-wrap: anywhere;
+            }
+            svg {
+              width: 280px;
+              height: 280px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="qr">
+            <h1>${table.name}</h1>
+            ${svg.outerHTML}
+            <p>${customerMenuUrl}</p>
+          </div>
+          <script>window.onload = () => window.print();</script>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
   }
 
   function getStatusColor(status: string) {
@@ -258,6 +379,10 @@ export default function TablesPage() {
         return "border-stone-200 bg-stone-50 text-stone-700";
     }
   }
+
+  const selectedQrUrl = selectedQrTable
+    ? getCustomerMenuUrl(selectedQrTable.qrCode)
+    : null;
 
   return (
     <DashboardShell
@@ -434,18 +559,31 @@ export default function TablesPage() {
                           </p>
                         </div>
 
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={!table.qrCode}
-                          onClick={() =>
-                            void handleCopyQRLink(table.qrCode)
-                          }
-                          className="w-full text-xs"
-                        >
-                          <Copy className="mr-1 h-3 w-3" />
-                          Copy QR Link
-                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!table.qrCode}
+                            onClick={() => setSelectedQrTable(table)}
+                            className="text-xs"
+                          >
+                            <QrCode className="mr-1 h-3 w-3" />
+                            View QR
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!table.qrCode}
+                            onClick={() =>
+                              void handleCopyQRLink(table.qrCode)
+                            }
+                            className="text-xs"
+                          >
+                            <Copy className="mr-1 h-3 w-3" />
+                            Copy Link
+                          </Button>
+                        </div>
                       </div>
 
                       <div className="flex gap-2 pt-3">
@@ -480,6 +618,94 @@ export default function TablesPage() {
           </div>
         ) : null}
       </div>
+
+      {selectedQrTable && selectedQrUrl ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="table-qr-title"
+          onMouseDown={() => setSelectedQrTable(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2
+                  id="table-qr-title"
+                  className="text-lg font-semibold text-stone-900"
+                >
+                  {selectedQrTable.name} QR Code
+                </h2>
+                <p className="mt-1 text-sm text-stone-600">
+                  Customers can scan this code to open the menu.
+                </p>
+              </div>
+
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setSelectedQrTable(null)}
+                title="Close QR dialog"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="mt-6 flex justify-center rounded-xl border border-stone-200 bg-stone-50 p-6">
+              <QRCodeSVG
+                id={`table-qr-${selectedQrTable.id}`}
+                value={selectedQrUrl}
+                size={240}
+                level="M"
+                includeMargin
+              />
+            </div>
+
+            <div className="mt-4">
+              <p className="text-xs font-medium text-stone-600">
+                QR destination URL
+              </p>
+              <p className="mt-1 break-all rounded-lg border border-stone-200 bg-stone-50 p-3 font-mono text-xs text-stone-700">
+                {selectedQrUrl}
+              </p>
+            </div>
+
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              <Button
+                variant="outline"
+                onClick={() =>
+                  void handleCopyQRLink(selectedQrTable.qrCode)
+                }
+                className="text-xs"
+              >
+                <Copy className="mr-1 h-3 w-3" />
+                Copy
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => handleDownloadQr(selectedQrTable)}
+                className="text-xs"
+              >
+                <Download className="mr-1 h-3 w-3" />
+                Download
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => handlePrintQr(selectedQrTable)}
+                className="text-xs"
+              >
+                <Printer className="mr-1 h-3 w-3" />
+                Print
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </DashboardShell>
   );
 }
