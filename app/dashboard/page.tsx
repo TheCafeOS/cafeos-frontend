@@ -15,8 +15,11 @@ import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { getOrders } from "@/services/order.service";
-import type { RestaurantOrder } from "@/types/order";
+import { getDashboardSummary } from "@/services/dashboard.service";
+import type {
+  DashboardStatusCount,
+  DashboardSummary,
+} from "@/types/dashboard";
 
 function formatPrice(price: number | string): string {
   const numericPrice = Number(price);
@@ -37,23 +40,23 @@ function formatTime(date: string): string {
   }).format(new Date(date));
 }
 
-function isToday(date: string): boolean {
-  const orderDate = new Date(date);
-  const today = new Date();
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : "Unable to load dashboard data.";
+}
 
+function getStatusCount(
+  statusBreakdown: DashboardStatusCount[],
+  status: DashboardStatusCount["status"],
+): number {
   return (
-    orderDate.getFullYear() === today.getFullYear() &&
-    orderDate.getMonth() === today.getMonth() &&
-    orderDate.getDate() === today.getDate()
+    statusBreakdown.find((item) => item.status === status)?.count ?? 0
   );
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unable to load dashboard data.";
-}
-
 export default function DashboardPage() {
-  const [orders, setOrders] = useState<RestaurantOrder[]>([]);
+  const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -62,10 +65,11 @@ export default function DashboardPage() {
       setIsLoading(true);
       setError("");
 
-      const data = await getOrders();
-      setOrders(data.orders);
+      const data = await getDashboardSummary();
+      setDashboard(data);
     } catch (caughtError) {
       const message = getErrorMessage(caughtError);
+
       setError(message);
       toast.error(message);
     } finally {
@@ -73,37 +77,65 @@ export default function DashboardPage() {
     }
   }
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadDashboard();
-    }, 0);
+useEffect(() => {
+  let isMounted = true;
 
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, []);
+  async function fetchInitialDashboard() {
+    try {
+      const data = await getDashboardSummary();
 
-  const summary = useMemo(() => {
-    const todayOrders = orders.filter((order) => isToday(order.createdAt));
-    const activeOrders = orders.filter((order) =>
-      ["PENDING", "CONFIRMED", "PREPARING", "READY"].includes(order.status),
-    );
-    const completedToday = todayOrders.filter(
-      (order) => order.status === "COMPLETED",
-    );
-    const todayRevenue = completedToday.reduce(
-      (total, order) => total + Number(order.total),
-      0,
-    );
+      if (isMounted) {
+        setDashboard(data);
+        setError("");
+      }
+    } catch (caughtError) {
+      if (isMounted) {
+        const message = getErrorMessage(caughtError);
+
+        setError(message);
+        toast.error(message);
+      }
+    } finally {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    }
+  }
+
+  void fetchInitialDashboard();
+
+  return () => {
+    isMounted = false;
+  };
+}, []);
+  const metrics = useMemo(() => {
+    if (!dashboard) {
+      return {
+        todayOrderCount: 0,
+        activeOrderCount: 0,
+        completedOrderCount: 0,
+        todayRevenue: 0,
+        recentOrders: [],
+      };
+    }
+
+    const activeOrderCount =
+      getStatusCount(dashboard.statusBreakdown, "PENDING") +
+      getStatusCount(dashboard.statusBreakdown, "CONFIRMED") +
+      getStatusCount(dashboard.statusBreakdown, "PREPARING") +
+      getStatusCount(dashboard.statusBreakdown, "READY");
 
     return {
-      todayOrderCount: todayOrders.length,
-      activeOrderCount: activeOrders.length,
-      completedOrderCount: completedToday.length,
-      todayRevenue,
-      recentOrders: orders.slice(0, 5),
+      todayOrderCount: dashboard.today.totalOrders,
+      activeOrderCount,
+      completedOrderCount: getStatusCount(
+        dashboard.statusBreakdown,
+        "COMPLETED",
+      ),
+      todayRevenue: dashboard.today.totalRevenue,
+      recentOrders: dashboard.recentOrders,
     };
-  }, [orders]);
+  }, [dashboard]);
 
   return (
     <DashboardShell
@@ -116,6 +148,7 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold text-stone-900">
               Today&apos;s operations
             </h2>
+
             <p className="mt-1 text-sm text-stone-600">
               Track incoming orders and daily performance at a glance.
             </p>
@@ -143,6 +176,7 @@ export default function DashboardPage() {
         {error && !isLoading ? (
           <div className="rounded-xl border border-red-200 bg-red-50 p-5">
             <p className="text-sm text-red-700">{error}</p>
+
             <Button
               type="button"
               variant="outline"
@@ -154,7 +188,7 @@ export default function DashboardPage() {
           </div>
         ) : null}
 
-        {!isLoading && !error ? (
+        {!isLoading && !error && dashboard ? (
           <>
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
@@ -164,9 +198,11 @@ export default function DashboardPage() {
                   </p>
                   <ClipboardList className="h-5 w-5 text-amber-600" />
                 </div>
+
                 <p className="mt-4 text-3xl font-semibold tracking-tight text-stone-900">
-                  {summary.todayOrderCount}
+                  {metrics.todayOrderCount}
                 </p>
+
                 <p className="mt-1 text-sm text-stone-500">
                   Orders created today
                 </p>
@@ -179,9 +215,11 @@ export default function DashboardPage() {
                   </p>
                   <Clock3 className="h-5 w-5 text-amber-600" />
                 </div>
+
                 <p className="mt-4 text-3xl font-semibold tracking-tight text-stone-900">
-                  {summary.activeOrderCount}
+                  {metrics.activeOrderCount}
                 </p>
+
                 <p className="mt-1 text-sm text-stone-500">
                   Pending, accepted, preparing, or ready
                 </p>
@@ -190,15 +228,17 @@ export default function DashboardPage() {
               <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-stone-600">
-                    Completed today
+                    Completed orders
                   </p>
                   <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                 </div>
+
                 <p className="mt-4 text-3xl font-semibold tracking-tight text-stone-900">
-                  {summary.completedOrderCount}
+                  {metrics.completedOrderCount}
                 </p>
+
                 <p className="mt-1 text-sm text-stone-500">
-                  Orders completed today
+                  All completed orders
                 </p>
               </div>
 
@@ -209,11 +249,13 @@ export default function DashboardPage() {
                   </p>
                   <IndianRupee className="h-5 w-5 text-emerald-600" />
                 </div>
+
                 <p className="mt-4 text-3xl font-semibold tracking-tight text-stone-900">
-                  {formatPrice(summary.todayRevenue)}
+                  {formatPrice(metrics.todayRevenue)}
                 </p>
+
                 <p className="mt-1 text-sm text-stone-500">
-                  From completed orders
+                  Revenue from today&apos;s orders
                 </p>
               </div>
             </section>
@@ -224,6 +266,7 @@ export default function DashboardPage() {
                   <h3 className="font-semibold text-stone-900">
                     Recent orders
                   </h3>
+
                   <p className="mt-1 text-sm text-stone-600">
                     Your five most recent customer orders.
                   </p>
@@ -238,24 +281,21 @@ export default function DashboardPage() {
                 </Link>
               </div>
 
-              {summary.recentOrders.length > 0 ? (
+              {metrics.recentOrders.length > 0 ? (
                 <div className="divide-y divide-stone-100">
-                  {summary.recentOrders.map((order) => (
+                  {metrics.recentOrders.map((order) => (
                     <div
                       key={order.id}
                       className="flex flex-wrap items-center justify-between gap-3 p-5"
                     >
                       <div>
                         <p className="text-sm font-semibold text-stone-900">
-                          {formatOrderReference(order.id)} · {order.table.name}
+                          {formatOrderReference(order.id)} · {order.tableName}
                         </p>
+
                         <p className="mt-1 text-sm text-stone-600">
-                          {order.items
-                            .map(
-                              (item) =>
-                                `${item.menuItem.name} × ${item.quantity}`,
-                            )
-                            .join(", ")}
+                          {order.status.charAt(0) +
+                            order.status.slice(1).toLowerCase()}
                         </p>
                       </div>
 
@@ -263,6 +303,7 @@ export default function DashboardPage() {
                         <p className="font-semibold text-stone-900">
                           {formatPrice(order.total)}
                         </p>
+
                         <p className="mt-1 text-sm text-stone-500">
                           {formatTime(order.createdAt)}
                         </p>
