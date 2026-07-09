@@ -1,4 +1,12 @@
-import { Loader2, RefreshCw, X } from "lucide-react";
+import {
+  Check,
+  Circle,
+  Clock3,
+  Loader2,
+  RefreshCw,
+  UtensilsCrossed,
+  X,
+} from "lucide-react";
 
 type OrderItem = {
   id: string;
@@ -24,6 +32,7 @@ export type CurrentOrder = {
 type CurrentOrderDrawerProps = {
   isOpen: boolean;
   order: CurrentOrder | null;
+  tableName: string;
   isRefreshing: boolean;
   error: string;
   formatPrice: (price: string | number) => string;
@@ -31,13 +40,46 @@ type CurrentOrderDrawerProps = {
   onRefresh: () => void;
 };
 
+const ORDER_STEPS = [
+  {
+    status: "PENDING",
+    title: "Order placed",
+    description: "Your order has been sent to the café.",
+  },
+  {
+    status: "CONFIRMED",
+    title: "Accepted",
+    description: "The café has accepted your order.",
+  },
+  {
+    status: "PREPARING",
+    title: "Preparing",
+    description: "Your items are being prepared.",
+  },
+  {
+    status: "READY",
+    title: "Ready",
+    description: "Your order is ready to be served.",
+  },
+  {
+    status: "COMPLETED",
+    title: "Completed",
+    description: "Your order has been completed. Thank you.",
+  },
+] as const;
+
 function formatStatus(status: string) {
   return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
+function getCurrentStepIndex(status: string) {
+  return ORDER_STEPS.findIndex((step) => step.status === status);
 }
 
 export default function CurrentOrderDrawer({
   isOpen,
   order,
+  tableName,
   isRefreshing,
   error,
   formatPrice,
@@ -47,6 +89,9 @@ export default function CurrentOrderDrawer({
   if (!isOpen || !order) {
     return null;
   }
+
+  const isCancelled = order.status === "CANCELLED";
+  const currentStepIndex = getCurrentStepIndex(order.status);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40">
@@ -62,7 +107,7 @@ export default function CurrentOrderDrawer({
             </h2>
 
             <p className="mt-1 text-sm text-stone-500">
-              Order ID: {order.id.slice(-6).toUpperCase()}
+              Order #{order.id.slice(-6).toUpperCase()} · {tableName}
             </p>
           </div>
 
@@ -76,27 +121,117 @@ export default function CurrentOrderDrawer({
           </button>
         </div>
 
-        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
-            Status
+        <div
+          className={`mt-5 rounded-2xl border p-4 ${
+            isCancelled
+              ? "border-red-200 bg-red-50"
+              : "border-amber-200 bg-amber-50"
+          }`}
+        >
+          <p
+            className={`text-xs font-semibold uppercase tracking-wider ${
+              isCancelled ? "text-red-700" : "text-amber-700"
+            }`}
+          >
+            Current status
           </p>
 
-          <p className="mt-1 text-lg font-bold text-amber-900">
+          <p
+            className={`mt-1 text-lg font-bold ${
+              isCancelled ? "text-red-900" : "text-amber-900"
+            }`}
+          >
             {formatStatus(order.status)}
           </p>
 
-          <p className="mt-1 text-sm text-amber-800">
+          <p
+            className={`mt-1 text-sm ${
+              isCancelled ? "text-red-800" : "text-amber-800"
+            }`}
+          >
             Placed {new Date(order.createdAt).toLocaleString()}
           </p>
         </div>
 
+        {isCancelled ? (
+          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
+            <p className="font-semibold text-red-900">Order cancelled</p>
+            <p className="mt-1 text-sm leading-6 text-red-800">
+              Please speak with the café staff if you need more information.
+            </p>
+          </div>
+        ) : (
+          <section className="mt-6">
+            <h3 className="font-semibold text-stone-900">Order progress</h3>
+
+            <div className="mt-4 space-y-4">
+              {ORDER_STEPS.map((step, index) => {
+                const isCompleted = currentStepIndex >= index;
+                const isCurrent = currentStepIndex === index;
+
+                return (
+                  <div key={step.status} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                          isCompleted
+                            ? "bg-amber-600 text-white"
+                            : "border border-stone-300 bg-white text-stone-400"
+                        }`}
+                      >
+                        {isCompleted ? (
+                          isCurrent ? (
+                            <Clock3 className="h-4 w-4" />
+                          ) : (
+                            <Check className="h-4 w-4" />
+                          )
+                        ) : (
+                          <Circle className="h-3 w-3" />
+                        )}
+                      </div>
+
+                      {index < ORDER_STEPS.length - 1 ? (
+                        <div
+                          className={`mt-1 h-8 w-px ${
+                            currentStepIndex > index
+                              ? "bg-amber-500"
+                              : "bg-stone-200"
+                          }`}
+                        />
+                      ) : null}
+                    </div>
+
+                    <div className="pb-2">
+                      <p
+                        className={`font-semibold ${
+                          isCompleted ? "text-stone-900" : "text-stone-400"
+                        }`}
+                      >
+                        {step.title}
+                      </p>
+
+                      <p
+                        className={`mt-0.5 text-sm ${
+                          isCompleted ? "text-stone-600" : "text-stone-400"
+                        }`}
+                      >
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {error ? (
-          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </p>
         ) : null}
 
-        <div className="mt-5 space-y-3">
+        <div className="mt-6 space-y-3">
           <h3 className="font-semibold text-stone-900">Order items</h3>
 
           {order.items.map((item) => (

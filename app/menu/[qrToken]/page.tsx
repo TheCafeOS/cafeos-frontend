@@ -389,16 +389,15 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
         }),
       );
 
-      setCurrentOrder(createdOrder);
-      setOrderMessage(
-        "Order placed successfully. You can track it from the Orders button.",
-      );
+  setOrderMessage(
+  "Order placed successfully. You can track it from the Orders button.",
+);
 
-      setCart([]);
-      setCustomerPhone("");
-      setIsCartOpen(false);
+setCart([]);
+setCustomerPhone("");
+setIsCartOpen(false);
 
-      await fetchCurrentOrder(createdOrder.id, false);
+await fetchCurrentOrder(createdOrder.id, false);
     } catch (caughtError) {
       setOrderError(
         caughtError instanceof Error
@@ -585,10 +584,10 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
         onRemove={removeFromCart}
         onPlaceOrder={handlePlaceOrder}
       />
-
-      <CurrentOrderDrawer
-        isOpen={isOrderDrawerOpen}
-        order={currentOrder}
+<CurrentOrderDrawer
+  isOpen={isOrderDrawerOpen}
+  order={currentOrder}
+  tableName={menu.table.name}
         isRefreshing={isRefreshingOrder}
         error={currentOrderError}
         formatPrice={formatPrice}
