@@ -428,7 +428,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
       );
 
       setOrderMessage(
-        "Order placed successfully. You can track it from the Orders button.",
+        "Order placed successfully. You can track or follow its progress below.",
       );
 
       setCart([]);
@@ -436,6 +436,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
       setIsCartOpen(false);
 
       await fetchCurrentOrder(createdOrder.id, false);
+setIsOrderDrawerOpen(true);
     } catch (caughtError) {
       setOrderError(
         caughtError instanceof Error

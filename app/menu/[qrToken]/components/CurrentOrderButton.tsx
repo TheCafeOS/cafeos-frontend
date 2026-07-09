@@ -18,10 +18,11 @@ export default function CurrentOrderButton({
       type="button"
       onClick={onClick}
       className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100"
+      aria-label="Track current order"
     >
       <ClipboardList className="h-4 w-4" />
 
-      <span className="hidden sm:inline">Orders</span>
+      <span className="hidden sm:inline">Track order</span>
 
       <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-900">
         {formatStatus(status)}
