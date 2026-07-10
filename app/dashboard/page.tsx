@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
+import { useOwnerOrderSocket } from "@/hooks/use-owner-order-socket";
 import { getDashboardSummary } from "@/services/dashboard.service";
 import type {
   DashboardStatusCount,
@@ -50,9 +51,7 @@ function getStatusCount(
   statusBreakdown: DashboardStatusCount[],
   status: DashboardStatusCount["status"],
 ): number {
-  return (
-    statusBreakdown.find((item) => item.status === status)?.count ?? 0
-  );
+  return statusBreakdown.find((item) => item.status === status)?.count ?? 0;
 }
 
 export default function DashboardPage() {
@@ -60,7 +59,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function loadDashboard() {
+  const loadDashboard = useCallback(async (showToast = true) => {
     try {
       setIsLoading(true);
       setError("");
@@ -71,43 +70,33 @@ export default function DashboardPage() {
       const message = getErrorMessage(caughtError);
 
       setError(message);
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
-useEffect(() => {
-  let isMounted = true;
-
-  async function fetchInitialDashboard() {
-    try {
-      const data = await getDashboardSummary();
-
-      if (isMounted) {
-        setDashboard(data);
-        setError("");
-      }
-    } catch (caughtError) {
-      if (isMounted) {
-        const message = getErrorMessage(caughtError);
-
-        setError(message);
+      if (showToast) {
         toast.error(message);
       }
     } finally {
-      if (isMounted) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
-  }
+  }, []);
 
-  void fetchInitialDashboard();
+  useEffect(() => {
+  const timer = window.setTimeout(() => {
+    void loadDashboard(false);
+  }, 0);
 
   return () => {
-    isMounted = false;
+    window.clearTimeout(timer);
   };
-}, []);
+}, [loadDashboard]);
+  useOwnerOrderSocket({
+    onOrderCreated: () => {
+      void loadDashboard(false);
+    },
+    onOrderUpdated: () => {
+      void loadDashboard(false);
+    },
+  });
+
   const metrics = useMemo(() => {
     if (!dashboard) {
       return {
