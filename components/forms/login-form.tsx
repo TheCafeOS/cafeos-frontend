@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
@@ -14,7 +14,9 @@ import { loginOwner } from "@/services/auth.service";
 
 export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const {
     register,
@@ -39,8 +41,15 @@ export function LoginForm() {
 
       localStorage.setItem("token", response.accessToken);
 
+      const redirectTo = searchParams.get("redirect");
+
       toast.success("Login successful. Redirecting to dashboard...");
-      router.push("/dashboard");
+
+      router.replace(
+        redirectTo && redirectTo.startsWith("/dashboard")
+          ? redirectTo
+          : "/dashboard",
+      );
     } catch (error) {
       console.error(error);
 
@@ -69,7 +78,10 @@ export function LoginForm() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium text-stone-700">
+          <label
+            htmlFor="email"
+            className="text-sm font-medium text-stone-700"
+          >
             Email
           </label>
 
@@ -87,7 +99,10 @@ export function LoginForm() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium text-stone-700">
+          <label
+            htmlFor="password"
+            className="text-sm font-medium text-stone-700"
+          >
             Password
           </label>
 

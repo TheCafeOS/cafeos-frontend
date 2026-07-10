@@ -1,11 +1,27 @@
-import type { Metadata } from "next";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+"use client";
 
-export const metadata: Metadata = {
-  title: "CafeOS Dashboard",
-  description: "Dashboard shell for CafeOS operations",
-};
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+    }
+  }, [pathname, router]);
+
+  return (
+    <div suppressHydrationWarning>
+      {children}
+    </div>
+  );
 }
