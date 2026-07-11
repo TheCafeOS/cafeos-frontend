@@ -13,5 +13,12 @@ export interface OwnerSettings {
 
 export interface SettingsResponse {
   restaurant: RestaurantSettings;
-  owner: OwnerSettings;
+  owner: OwnerSettings | null;
+}
+
+export interface UpdateSettingsRequest {
+  name: string;
+  restaurantEmail: string;
+  phone: string | null;
+  address: string | null;
 }

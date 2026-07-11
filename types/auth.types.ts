@@ -47,3 +47,7 @@ export type ApiSuccessResponse<T> = {
   message: string;
   data: T;
 };
+export type ChangePasswordRequest = {
+  currentPassword: string;
+  newPassword: string;
+};

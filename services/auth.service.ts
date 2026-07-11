@@ -1,6 +1,8 @@
 import api from "@/services/api";
+
 import type {
   ApiSuccessResponse,
+  ChangePasswordRequest,
   LoginRequest,
   LoginResponse,
   RestaurantRegistrationData,
@@ -26,4 +28,13 @@ export async function loginOwner(
   );
 
   return response.data.data;
+}
+
+export async function changePassword(
+  payload: ChangePasswordRequest,
+): Promise<void> {
+  await api.patch<ApiSuccessResponse<null>>(
+    "/api/v1/auth/change-password",
+    payload,
+  );
 }
