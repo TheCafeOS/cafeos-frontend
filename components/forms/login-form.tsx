@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
 import { loginOwner } from "@/services/auth.service";
 
+import { connectSocket } from "@/lib/socket";
+
 export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,8 +41,9 @@ export function LoginForm() {
         password: values.password,
       });
 
-      localStorage.setItem("token", response.accessToken);
+localStorage.setItem("token", response.accessToken);
 
+connectSocket();
       const redirectTo = searchParams.get("redirect");
 
       toast.success("Login successful. Redirecting to dashboard...");

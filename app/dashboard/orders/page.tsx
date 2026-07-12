@@ -8,6 +8,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { getOrders, updateOrderStatus } from "@/services/order.service";
 import type { OrderStatus, RestaurantOrder } from "@/types/order";
+import { useOwnerOrderSocket } from "@/hooks/use-owner-order-socket";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: "Pending",
@@ -130,6 +131,14 @@ useEffect(() => {
     window.clearTimeout(timer);
   };
 }, []);
+useOwnerOrderSocket({
+  onOrderCreated: () => {
+    void loadOrders();
+  },
+  onOrderUpdated: () => {
+    void loadOrders();
+  },
+});
   const filteredOrders = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 

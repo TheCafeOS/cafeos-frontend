@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { connectSocket } from "@/lib/socket";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -16,12 +18,11 @@ export default function DashboardLayout({
 
     if (!token) {
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
     }
+
+    connectSocket();
   }, [pathname, router]);
 
-  return (
-    <div suppressHydrationWarning>
-      {children}
-    </div>
-  );
+  return <div suppressHydrationWarning>{children}</div>;
 }
