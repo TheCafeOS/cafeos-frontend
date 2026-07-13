@@ -29,7 +29,7 @@ export function DashboardShell({ title, description, children, className }: Dash
           mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <DashboardSidebar />
+        <DashboardSidebar mobile />
       </div>
 
       <div className="flex min-h-screen flex-1 flex-col">

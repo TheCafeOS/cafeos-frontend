@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   createTable,
   deleteTable,
@@ -424,14 +425,34 @@ export default function TablesPage() {
           </form>
         </section>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center rounded-lg border border-stone-200 bg-stone-50 py-12">
-            <div className="flex flex-col items-center gap-2 text-stone-600">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <p>Loading tables...</p>
-            </div>
-          </div>
-        ) : null}
+  {isLoading ? (
+  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <div
+        key={index}
+        className="rounded-lg border border-stone-200 bg-white p-4"
+      >
+        <Skeleton className="h-6 w-32" />
+
+        <Skeleton className="mt-3 h-5 w-24 rounded-full" />
+
+        <Skeleton className="mt-6 h-4 w-24" />
+
+        <Skeleton className="mt-2 h-10 w-full" />
+
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+        </div>
+
+        <div className="mt-4 flex gap-2">
+          <Skeleton className="h-9 flex-1" />
+          <Skeleton className="h-9 w-9" />
+        </div>
+      </div>
+    ))}
+  </div>
+) : null}
 
         {error && !isLoading ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4">

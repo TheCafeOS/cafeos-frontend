@@ -2,9 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import axios from "axios";
+
 import { MenuContent } from "@/components/menu/menu-content";
 import { CartSidebar } from "@/components/menu/cart-sidebar";
-import { fetchPublicMenu, type PublicMenuResponse } from "@/services/public-menu.service";
+import {
+  fetchPublicMenu,
+  type PublicMenuResponse,
+} from "@/services/public-menu.service";
+
 import { Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -28,23 +34,31 @@ export function MenuPageContent() {
       try {
         setLoading(true);
         setError(null);
+
         const data = await fetchPublicMenu(qrToken);
         setMenu(data);
-      } catch (err: any) {
-        if (err.response?.status === 404) {
-          setError("Invalid QR code");
-        } else if (err.response?.status === 403) {
-          setError("This table is currently inactive");
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          const status = err.response?.status;
+
+          if (status === 404) {
+            setError("Invalid QR code");
+          } else if (status === 403) {
+            setError("This table is currently inactive");
+          } else {
+            setError("Failed to load menu. Please try again.");
+          }
         } else {
-          setError("Failed to load menu. Please try again.");
+          setError("Something went wrong. Please try again.");
         }
+
         setMenu(null);
       } finally {
         setLoading(false);
       }
     };
 
-    loadMenu();
+    void loadMenu();
   }, [qrToken]);
 
   if (loading) {
@@ -65,7 +79,9 @@ export function MenuPageContent() {
           <h1 className="text-2xl font-bold text-stone-900 mb-2">
             Unable to Load Menu
           </h1>
+
           <p className="text-stone-600 mb-6">{error}</p>
+
           <Button
             onClick={() => router.push("/")}
             className="bg-orange-500 hover:bg-orange-600"
@@ -84,19 +100,23 @@ export function MenuPageContent() {
   return (
     <div className="min-h-screen bg-stone-50">
       {/* Header */}
-      <header className="bg-white border-b border-stone-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-stone-900">
                 {menu.restaurant.name}
               </h1>
-              <p className="text-stone-600 text-sm">Table: {menu.table.name}</p>
+
+              <p className="text-sm text-stone-600">
+                Table: {menu.table.name}
+              </p>
             </div>
+
             <Button
-              onClick={() => router.push("/")}
               variant="outline"
-              className="text-stone-600 border-stone-200"
+              onClick={() => router.push("/")}
+              className="border-stone-200 text-stone-600"
             >
               Exit
             </Button>
@@ -107,7 +127,7 @@ export function MenuPageContent() {
       <div className="flex h-[calc(100vh-73px)]">
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="max-w-5xl mx-auto">
+          <div className="mx-auto max-w-5xl">
             <MenuContent
               categories={menu.categories}
               menuItems={menu.menuItems}
@@ -115,21 +135,23 @@ export function MenuPageContent() {
           </div>
         </div>
 
-        {/* Cart Sidebar - Hidden on mobile */}
+        {/* Desktop Cart */}
         <aside className="hidden lg:flex lg:w-80 border-l border-stone-200 flex-col">
-          <CartSidebar onCheckout={() => {
-            // TODO: Implement checkout flow
-          }} />
+          <CartSidebar
+            onCheckout={() => {
+              // TODO: Implement checkout flow
+            }}
+          />
         </aside>
       </div>
 
       {/* Mobile Cart Button */}
-      <div className="lg:hidden fixed bottom-4 right-4">
+      <div className="fixed bottom-4 right-4 lg:hidden">
         <Button
           onClick={() => {
             // TODO: Show mobile cart modal
           }}
-          className="bg-orange-500 hover:bg-orange-600 rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-500 shadow-lg hover:bg-orange-600"
         >
           🛒
         </Button>

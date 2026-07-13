@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { connectSocket } from "@/lib/socket";
-
+import OwnerSocketListener from "@/components/socket/owner-socket-listener";
 export default function DashboardLayout({
   children,
 }: {
@@ -24,5 +24,10 @@ export default function DashboardLayout({
     connectSocket();
   }, [pathname, router]);
 
-  return <div suppressHydrationWarning>{children}</div>;
+  return (
+    <div suppressHydrationWarning>
+      <OwnerSocketListener />
+      {children}
+    </div>
+  );
 }

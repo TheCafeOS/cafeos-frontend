@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import {
   createCategory,
@@ -469,11 +470,22 @@ export default function MenuPage() {
               </form>
             </div>
 
-            {isLoadingCategories ? (
-              <div className="flex justify-center rounded-lg border border-stone-200 bg-stone-50 py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-stone-600" />
-              </div>
-            ) : null}
+           {isLoadingMenuItems ? (
+  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <div
+        key={index}
+        className="rounded-lg border border-stone-200 bg-white p-4"
+      >
+        <Skeleton className="h-40 w-full rounded-lg" />
+        <Skeleton className="mt-4 h-5 w-3/4" />
+        <Skeleton className="mt-2 h-4 w-1/2" />
+        <Skeleton className="mt-4 h-4 w-full" />
+        <Skeleton className="mt-2 h-4 w-2/3" />
+      </div>
+    ))}
+  </div>
+) : null}
 
             {categoryError && !isLoadingCategories ? (
               <div className="rounded-lg border border-red-200 bg-red-50 p-4">

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, RefreshCw, Search, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";import { Loader2, RefreshCw, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -9,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { getOrders, updateOrderStatus } from "@/services/order.service";
 import type { OrderStatus, RestaurantOrder } from "@/types/order";
 import { useOwnerOrderSocket } from "@/hooks/use-owner-order-socket";
+import { OrderDetailsDialog } from "@/components/orders/order-details-dialog";
+
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: "Pending",
@@ -78,6 +79,11 @@ export default function OrdersPage() {
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedOrder, setSelectedOrder] =
+  useState<RestaurantOrder | null>(null);
+
+const [dialogOpen, setDialogOpen] =
+  useState(false);
 
   async function loadOrders() {
     try {
@@ -111,7 +117,9 @@ export default function OrdersPage() {
           order.id === updatedOrder.id ? updatedOrder : order,
         ),
       );
-
+if (selectedOrder?.id === updatedOrder.id) {
+  setSelectedOrder(updatedOrder);
+}
       toast.success(
         `Order ${formatOrderReference(updatedOrder.id)} marked as ${STATUS_LABELS[nextStatus]}.`,
       );
@@ -131,14 +139,51 @@ useEffect(() => {
     window.clearTimeout(timer);
   };
 }, []);
+
+const handleOrderCreated = useCallback(() => {
+  void loadOrders();
+}, []);
+
+const handleOrderUpdated = useCallback(() => {
+  void loadOrders();
+}, []);
+
 useOwnerOrderSocket({
-  onOrderCreated: () => {
-    void loadOrders();
-  },
-  onOrderUpdated: () => {
-    void loadOrders();
-  },
+  onOrderCreated: handleOrderCreated,
+  onOrderUpdated: handleOrderUpdated,
 });
+useEffect(() => {
+  const handleOpenOrderDialog = (
+    event: Event,
+  ) => {
+    const customEvent = event as CustomEvent<{
+      orderId: string;
+    }>;
+
+    const order = orders.find(
+      (item) => item.id === customEvent.detail.orderId,
+    );
+
+    if (!order) {
+      return;
+    }
+
+    setSelectedOrder(order);
+    setDialogOpen(true);
+  };
+
+  window.addEventListener(
+    "open-order-dialog",
+    handleOpenOrderDialog,
+  );
+
+  return () => {
+    window.removeEventListener(
+      "open-order-dialog",
+      handleOpenOrderDialog,
+    );
+  };
+}, [orders]);
   const filteredOrders = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
@@ -340,32 +385,62 @@ useOwnerOrderSocket({
                     </p>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-4">
-                    {nextStatus ? (
-                      <Button
-                        type="button"
-                        disabled={isUpdating}
-                        onClick={() =>
-                          void handleStatusUpdate(order.id, nextStatus)
-                        }
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : null}
-                        Mark as {STATUS_LABELS[nextStatus]}
-                      </Button>
-                    ) : (
-                      <p className="text-sm font-medium text-stone-500">
-                        This order is {STATUS_LABELS[order.status].toLowerCase()}.
-                      </p>
-                    )}
-                  </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-4">
+
+  <Button
+    variant="outline"
+    onClick={() => {
+      setSelectedOrder(order);
+      setDialogOpen(true);
+    }}
+  >
+    View Details
+  </Button>
+
+  {nextStatus ? (
+    <Button
+      type="button"
+      disabled={isUpdating}
+      onClick={() =>
+        void handleStatusUpdate(order.id, nextStatus)
+      }
+    >
+      {isUpdating ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : null}
+
+      Mark as {STATUS_LABELS[nextStatus]}
+    </Button>
+  ) : (
+    <p className="text-sm font-medium text-stone-500">
+      This order is {STATUS_LABELS[order.status].toLowerCase()}.
+    </p>
+  )}
+
+</div>
                 </article>
               );
             })}
           </div>
         ) : null}
       </div>
+      <OrderDetailsDialog
+  open={dialogOpen}
+  order={selectedOrder}
+  updating={
+    selectedOrder !== null &&
+    updatingOrderId === selectedOrder.id
+  }
+  onClose={() => {
+    setDialogOpen(false);
+    setSelectedOrder(null);
+  }}
+  onStatusUpdate={(status) => {
+    if (!selectedOrder) return;
+
+    void handleStatusUpdate(selectedOrder.id, status);
+  }}
+/>
     </DashboardShell>
   );
 }
