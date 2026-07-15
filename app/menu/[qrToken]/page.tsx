@@ -105,7 +105,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [qrToken, setQrToken] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-
+const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
@@ -480,56 +480,137 @@ setIsOrderDrawerOpen(true);
   }
 
   const categories = menu.categories ?? [];
-  const menuItems = menu.menuItems ?? [];
-  const uncategorizedItems = menuItems.filter((item) => !item.categoryId);
+const menuItems = menu.menuItems ?? [];
+
+
+const filteredMenuItems = menuItems.filter((item) => {
+  const query = searchQuery.trim().toLowerCase();
+
+  if (!query) return true;
+
+  const categoryName =
+    categories.find((category) => category.id === item.categoryId)?.name ?? "";
 
   return (
+    item.name.toLowerCase().includes(query) ||
+    (item.description ?? "").toLowerCase().includes(query) ||
+    categoryName.toLowerCase().includes(query)
+  );
+});
+
+const uncategorizedItems = filteredMenuItems.filter(
+  (item) => !item.categoryId
+);
+
+const greeting = (() => {
+  const hour = new Date().getHours();
+
+  if (hour < 12) return "Good Morning ☀️";
+  if (hour < 17) return "Good Afternoon 🌤️";
+  return "Good Evening 🌙";
+})();
+  return (
     <main className="min-h-screen bg-stone-50 pb-32">
-      <header className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-5xl px-5 py-7 sm:px-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-amber-700">
-                CafeOS Menu
-              </p>
+      <header className="sticky top-0 z-20 border-b border-orange-100 bg-gradient-to-b from-white via-orange-50/40 to-white backdrop-blur">
+  <div className="mx-auto max-w-5xl px-5 py-6 sm:px-8">
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex-1">
+        <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700">
+          🍽 CafeOS
+        </span>
 
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900">
-                {menu.restaurant.name}
-              </h1>
+        <p className="mt-4 text-sm font-medium text-stone-500">
+          {greeting}
+        </p>
 
-              <div className="mt-3 flex items-center gap-2 text-sm text-stone-600">
-                <MapPin className="h-4 w-4 text-amber-600" />
-                <span>Serving {menu.table.name}</span>
-              </div>
-            </div>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight text-stone-900">
+          {menu.restaurant.name}
+        </h1>
 
-            <div className="flex items-center gap-2">
-              {currentOrder ? (
-                <CurrentOrderButton
-                  status={currentOrder.status}
-                  onClick={() => setIsOrderDrawerOpen(true)}
-                />
-              ) : null}
+        <p className="mt-2 text-sm text-stone-600">
+          Freshly prepared food made with care.
+        </p>
 
-              <button
-                type="button"
-                onClick={() => setIsCartOpen(true)}
-                className="relative rounded-2xl bg-amber-100 p-3 text-amber-700 transition hover:bg-amber-200"
-                aria-label="Open cart"
-              >
-                <ShoppingBag className="h-6 w-6" />
+        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white px-4 py-2 shadow-sm">
+          <MapPin className="h-4 w-4 text-orange-600" />
 
-                {cartItemCount > 0 ? (
-                  <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-amber-600 px-1 text-xs font-bold text-white">
-                    {cartItemCount}
-                  </span>
-                ) : null}
-              </button>
-            </div>
-          </div>
+          <span className="text-sm font-medium text-stone-700">
+            {menu.table.name}
+          </span>
         </div>
-      </header>
+      </div>
 
+      <div className="flex items-center gap-3">
+        {currentOrder && (
+          <CurrentOrderButton
+            status={currentOrder.status}
+            onClick={() => setIsOrderDrawerOpen(true)}
+          />
+        )}
+
+        <button
+          type="button"
+          onClick={() => setIsCartOpen(true)}
+          aria-label="Open Cart"
+          className="relative rounded-2xl bg-orange-100 p-3 text-orange-700 shadow-sm transition-all duration-300 hover:scale-105 hover:bg-orange-200 hover:shadow-md"
+        >
+          <ShoppingBag className="h-6 w-6" />
+
+          {cartItemCount > 0 && (
+            <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-600 px-1 text-xs font-bold text-white shadow">
+              {cartItemCount}
+            </span>
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+ <div className="sticky top-[120px] z-10 border-b border-stone-200 bg-stone-50/90 backdrop-blur">
+  <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
+
+    <input
+      type="text"
+      placeholder="🔍 Search dishes..."
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="w-full rounded-2xl border border-stone-200 bg-white px-5 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+    />
+<div className="mt-5 flex gap-2 overflow-x-auto pb-2">
+  <button
+    type="button"
+    onClick={() =>
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      })
+    }
+    className="rounded-full bg-orange-600 px-4 py-2 text-sm font-semibold text-white whitespace-nowrap"
+  >
+    All
+  </button>
+
+  {categories.map((category) => (
+    <button
+      key={category.id}
+      type="button"
+      onClick={() =>
+        document
+          .getElementById(`category-${category.id}`)
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          })
+      }
+      className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 whitespace-nowrap hover:bg-orange-50 hover:border-orange-300 transition"
+    >
+      {category.name}
+    </button>
+  ))}
+</div>
+  </div>
+</div>
       {orderMessage ? (
         <div className="mx-auto mt-5 max-w-5xl px-5 sm:px-8">
           <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
@@ -548,16 +629,20 @@ setIsOrderDrawerOpen(true);
 
       <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
         {categories.map((category) => {
-          const categoryItems = menuItems.filter(
-            (item) => item.categoryId === category.id,
-          );
+       const categoryItems = filteredMenuItems.filter(
+  (item) => item.categoryId === category.id,
+);
 
           if (categoryItems.length === 0) {
             return null;
           }
 
           return (
-            <section key={category.id} className="mb-10">
+           <section
+  key={category.id}
+  id={`category-${category.id}`}
+  className="mb-10 scroll-mt-48"
+>
               <h2 className="text-xl font-semibold text-stone-900">
                 {category.name}
               </h2>
@@ -595,10 +680,18 @@ setIsOrderDrawerOpen(true);
           </section>
         ) : null}
 
-        {menuItems.length === 0 ? (
-          <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-stone-600">
-            No menu items are available right now.
-          </div>
+       {filteredMenuItems.length === 0 ? (
+         <div className="rounded-3xl border border-dashed border-stone-300 bg-white p-12 text-center">
+  <div className="text-5xl">🍽️</div>
+
+  <h3 className="mt-4 text-xl font-semibold text-stone-900">
+    No dishes found
+  </h3>
+
+  <p className="mt-2 text-stone-600">
+    Try searching with another keyword.
+  </p>
+</div>
         ) : null}
       </div>
 
