@@ -3,7 +3,6 @@
 import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Loader } from "lucide-react";
 
 interface QRScannerProps {
   onSuccess?: (qrCode: string) => void;
@@ -38,7 +37,7 @@ export function QRScanner({ onSuccess }: QRScannerProps) {
             scanQRCode();
           };
         }
-      } catch (err) {
+      } catch  {
         setError(
           "Unable to access camera. Please check permissions and try again."
         );
@@ -98,7 +97,7 @@ export function QRScanner({ onSuccess }: QRScannerProps) {
             animationId = requestAnimationFrame(scanQRCode);
           }
         });
-      } catch (err) {
+      } catch {
         if (scanning) {
           animationId = requestAnimationFrame(scanQRCode);
         }

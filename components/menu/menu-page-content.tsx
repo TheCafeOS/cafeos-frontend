@@ -25,8 +25,7 @@ export function MenuPageContent() {
 
   useEffect(() => {
     if (!qrToken) {
-      setError("No QR code provided");
-      setLoading(false);
+      router.replace("/");
       return;
     }
 
@@ -59,13 +58,13 @@ export function MenuPageContent() {
     };
 
     void loadMenu();
-  }, [qrToken]);
+  }, [qrToken, router]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="w-12 h-12 animate-spin text-orange-500 mx-auto mb-4" />
+          <Loader className="mx-auto mb-4 h-12 w-12 animate-spin text-orange-500" />
           <p className="text-stone-600">Loading menu...</p>
         </div>
       </div>
@@ -75,12 +74,12 @@ export function MenuPageContent() {
   if (error) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md">
-          <h1 className="text-2xl font-bold text-stone-900 mb-2">
+        <div className="max-w-md rounded-lg bg-white p-8 text-center shadow-lg">
+          <h1 className="mb-2 text-2xl font-bold text-stone-900">
             Unable to Load Menu
           </h1>
 
-          <p className="text-stone-600 mb-6">{error}</p>
+          <p className="mb-6 text-stone-600">{error}</p>
 
           <Button
             onClick={() => router.push("/")}
@@ -99,7 +98,6 @@ export function MenuPageContent() {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Header */}
       <header className="sticky top-0 z-10 border-b border-stone-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex items-center justify-between">
@@ -125,7 +123,6 @@ export function MenuPageContent() {
       </header>
 
       <div className="flex h-[calc(100vh-73px)]">
-        {/* Main Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="mx-auto max-w-5xl">
             <MenuContent
@@ -135,8 +132,7 @@ export function MenuPageContent() {
           </div>
         </div>
 
-        {/* Desktop Cart */}
-        <aside className="hidden lg:flex lg:w-80 border-l border-stone-200 flex-col">
+        <aside className="hidden border-l border-stone-200 lg:flex lg:w-80 lg:flex-col">
           <CartSidebar
             onCheckout={() => {
               // TODO: Implement checkout flow
@@ -145,7 +141,6 @@ export function MenuPageContent() {
         </aside>
       </div>
 
-      {/* Mobile Cart Button */}
       <div className="fixed bottom-4 right-4 lg:hidden">
         <Button
           onClick={() => {

@@ -3,7 +3,6 @@
 import { Trash2, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart-store";
-import { cn } from "@/lib/utils";
 
 interface CartSidebarProps {
   onCheckout?: () => void;

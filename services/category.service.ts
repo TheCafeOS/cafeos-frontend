@@ -15,7 +15,6 @@ export async function createCategory(name: string): Promise<Category> {
   const category = response.data;
 
   if (!category?.id || !category?.name) {
-    console.error("Unexpected create-category response:", category);
     throw new Error("Server did not return a valid category.");
   }
 
@@ -33,7 +32,6 @@ export async function updateCategory(
   const category = response.data;
 
   if (!category?.id || !category?.name) {
-    console.error("Unexpected update-category response:", category);
     throw new Error("Server did not return a valid category.");
   }
 

@@ -16,12 +16,12 @@ export function useOwnerOrderSocket({
     const socket = getSocket();
 
     const handleOrderCreated = () => {
-      console.log("ORDER_CREATED received");
+      
       onOrderCreated();
     };
 
     const handleOrderUpdated = () => {
-      console.log("ORDER_UPDATED received");
+     
       onOrderUpdated();
     };
 
