@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import ImageUpload from "@/components/dashboard/image-upload";
+import { uploadMenuItemImage } from "@/services/image.service";
 
 import {
   createCategory,
@@ -63,7 +65,7 @@ export default function MenuPage() {
   const [newMenuItem, setNewMenuItem] =
     useState<CreateMenuItemPayload>(emptyMenuItem);
   const [isMenuItemSubmitting, setIsMenuItemSubmitting] = useState(false);
-
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [editingMenuItemId, setEditingMenuItemId] = useState<string | null>(
     null,
   );
@@ -252,10 +254,14 @@ export default function MenuPage() {
       if (!createdItem?.id) {
         throw new Error("Server did not return a valid menu item.");
       }
-
+        if (selectedImage) {
+  await uploadMenuItemImage(createdItem.id, selectedImage);
+}
       setMenuItems((current) => [...current, createdItem]);
-      setNewMenuItem(emptyMenuItem);
-      toast.success("Menu item created successfully.");
+setNewMenuItem(emptyMenuItem);
+setSelectedImage(null);
+
+toast.success("Menu item created successfully.");
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to create menu item"));
     } finally {
@@ -637,18 +643,19 @@ export default function MenuPage() {
             >
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-stone-700">
-                    Item Name *
-                  </label>
+                 <label className="text-sm font-medium text-stone-700">
+  Item Name *
+</label>
 
-                  <input
-                    value={activeMenuItem.name}
-                    onChange={(event) =>
-                      updateActiveMenuItem("name", event.target.value)
-                    }
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
-                    placeholder="e.g., Espresso"
-                  />
+<input
+  type="text"
+  value={activeMenuItem.name}
+  onChange={(event) =>
+    updateActiveMenuItem("name", event.target.value)
+  }
+  className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
+  placeholder="e.g. Espresso"
+/>
                 </div>
 
                 <div>
@@ -683,44 +690,63 @@ export default function MenuPage() {
                 rows={2}
               />
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <select
-                  value={activeMenuItem.categoryId || ""}
-                  onChange={(event) =>
-                    updateActiveMenuItem("categoryId", event.target.value)
-                  }
-                  className="rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
-                >
-                  <option value="">No category</option>
+              <div className="grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
 
-                  {categories.filter(Boolean).map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+  <div className="space-y-5">
 
-                <input
-                  type="url"
-                  value={activeMenuItem.imageUrl || ""}
-                  onChange={(event) =>
-                    updateActiveMenuItem("imageUrl", event.target.value)
-                  }
-                  className="rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
-                  placeholder="Image URL (optional)"
-                />
-              </div>
+  <div>
+    <label className="mb-2 block text-sm font-medium text-stone-700">
+      Category
+    </label>
 
-              <label className="flex items-center gap-2 text-sm text-stone-700">
-                <input
-                  type="checkbox"
-                  checked={activeMenuItem.isAvailable ?? true}
-                  onChange={(event) =>
-                    updateActiveMenuItem("isAvailable", event.target.checked)
-                  }
-                />
-                Available
-              </label>
+    <select
+      value={activeMenuItem.categoryId || ""}
+      onChange={(event) =>
+        updateActiveMenuItem("categoryId", event.target.value)
+      }
+      className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
+    >
+      <option value="">Select category</option>
+
+      {categories.map((category) => (
+        <option key={category.id} value={category.id}>
+          {category.name}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <label className="flex items-center gap-3 rounded-lg border border-stone-200 bg-stone-50 px-4 py-3">
+    <input
+      type="checkbox"
+      checked={activeMenuItem.isAvailable ?? true}
+      onChange={(event) =>
+        updateActiveMenuItem("isAvailable", event.target.checked)
+      }
+    />
+
+    <div>
+      <p className="font-medium text-stone-900">
+        Available
+      </p>
+
+      <p className="text-xs text-stone-500">
+        Customers can order this item
+      </p>
+    </div>
+  </label>
+
+</div>
+                
+
+      <ImageUpload
+  imageUrl={activeMenuItem.imageUrl || ""}
+  onUrlChange={(url) =>
+    updateActiveMenuItem("imageUrl", url)
+  }
+  onFileSelect={setSelectedImage}
+/>
+    </div>
 
               <div className="flex gap-3">
                 <Button
@@ -760,22 +786,7 @@ export default function MenuPage() {
                 className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
               />
 
-              <select
-                value={selectedMenuCategoryId}
-                onChange={(event) =>
-                  setSelectedMenuCategoryId(event.target.value)
-                }
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
-              >
-                <option value="ALL">All categories</option>
-                <option value="">Uncategorized</option>
-
-                {categories.filter(Boolean).map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+    
 
               <select
                 value={availabilityFilter}
