@@ -19,6 +19,7 @@ export function QRScanner({ onSuccess }: QRScannerProps) {
     if (!scanning) return;
 
     let animationId: number;
+    const video = videoRef.current;
 
     const startCamera = async () => {
       try {
@@ -37,7 +38,7 @@ export function QRScanner({ onSuccess }: QRScannerProps) {
             scanQRCode();
           };
         }
-      } catch  {
+      } catch {
         setError(
           "Unable to access camera. Please check permissions and try again."
         );
@@ -75,20 +76,22 @@ export function QRScanner({ onSuccess }: QRScannerProps) {
 
           if (code) {
             const qrValue = code.data;
-            // Extract QR token from URL or direct token
             let token = qrValue;
 
+            // Extract QR token from URL or direct token
             if (qrValue.includes("/qr/")) {
               token = qrValue.split("/qr/")[1];
             }
 
             if (token) {
               setScanning(false);
+
               if (onSuccess) {
                 onSuccess(token);
               } else {
                 router.push(`/menu?qr=${token}`);
               }
+
               return;
             }
           }
@@ -107,10 +110,11 @@ export function QRScanner({ onSuccess }: QRScannerProps) {
     startCamera();
 
     return () => {
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+      if (video?.srcObject) {
+        const stream = video.srcObject as MediaStream;
         stream.getTracks().forEach((track) => track.stop());
       }
+
       cancelAnimationFrame(animationId);
     };
   }, [scanning, router, onSuccess]);
@@ -127,14 +131,14 @@ export function QRScanner({ onSuccess }: QRScannerProps) {
 
       {/* Scanning Frame */}
       <div className="relative w-64 h-64 border-4 border-orange-500 rounded-lg z-10">
-        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-orange-500"></div>
-        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-orange-500"></div>
-        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-orange-500"></div>
-        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-orange-500"></div>
+        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-orange-500" />
+        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-orange-500" />
+        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-orange-500" />
+        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-orange-500" />
 
         {scanning && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-1 h-20 bg-orange-500 animate-pulse"></div>
+            <div className="w-1 h-20 bg-orange-500 animate-pulse" />
           </div>
         )}
       </div>
@@ -155,7 +159,9 @@ export function QRScanner({ onSuccess }: QRScannerProps) {
             <h2 className="text-lg font-bold text-red-600 mb-2">
               Camera Error
             </h2>
+
             <p className="text-stone-600 mb-4">{error}</p>
+
             <Button
               onClick={() => {
                 setError(null);

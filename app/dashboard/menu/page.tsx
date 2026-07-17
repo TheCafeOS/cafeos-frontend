@@ -73,7 +73,7 @@ export default function MenuPage() {
     useState<CreateMenuItemPayload>(emptyMenuItem);
 
   const [menuSearch, setMenuSearch] = useState("");
-  const [selectedMenuCategoryId, setSelectedMenuCategoryId] = useState("ALL");
+const [selectedMenuCategoryId] = useState("");
   const [availabilityFilter, setAvailabilityFilter] = useState<
     "ALL" | "AVAILABLE" | "UNAVAILABLE"
   >("ALL");

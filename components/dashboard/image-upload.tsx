@@ -115,11 +115,12 @@ export default function ImageUpload({
 
           <div className="relative">
 
-            <img
-              src={imageUrl}
-              alt="Preview"
-              className="h-48 w-full object-cover"
-            />
+         {/* eslint-disable-next-line @next/next/no-img-element */}
+<img
+  src={imageUrl}
+  alt="Preview"
+  className="h-48 w-full object-cover"
+/>
 
             <button
               type="button"

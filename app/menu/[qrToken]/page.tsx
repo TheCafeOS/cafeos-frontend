@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, MapPin, ShoppingBag } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";import { Loader2, MapPin, ShoppingBag } from "lucide-react";
 import { io } from "socket.io-client";
 
 import MenuCard, { type MenuItem } from "./components/MenuCard";
@@ -53,9 +52,11 @@ type OrderUpdatedPayload = {
   status: CurrentOrder["status"];
   timestamp: string;
 };
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+if (!API_BASE_URL) {
+  throw new Error("NEXT_PUBLIC_API_URL is not configured.");
+}
 
 function unwrapApiResponse<T>(body: ApiResponse<T> | T): T {
   if (

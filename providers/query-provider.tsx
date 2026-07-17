@@ -12,11 +12,12 @@ export default function QueryProvider({
     () =>
       new QueryClient({
         defaultOptions: {
-          queries: {
-            retry: 1,
-            staleTime: 60000,
-            refetchOnWindowFocus: false,
-          },
+         queries: {
+  retry: 1,
+  staleTime: 60 * 1000,
+  gcTime: 5 * 60 * 1000,
+  refetchOnWindowFocus: false,
+},
         },
       })
   );
