@@ -3,13 +3,16 @@ export function getToken(): string | null {
     return null;
   }
 
-  return localStorage.getItem("token");
+  return localStorage.getItem("accessToken");
 }
 
 export function clearAuth() {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("token");
+  if (typeof window === "undefined") {
+    return;
   }
+
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
 }
 
 export function isAuthenticated() {

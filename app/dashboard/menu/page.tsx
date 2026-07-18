@@ -73,7 +73,7 @@ export default function MenuPage() {
     useState<CreateMenuItemPayload>(emptyMenuItem);
 
   const [menuSearch, setMenuSearch] = useState("");
-const [selectedMenuCategoryId] = useState("");
+const [selectedMenuCategoryId] = useState("ALL");
   const [availabilityFilter, setAvailabilityFilter] = useState<
     "ALL" | "AVAILABLE" | "UNAVAILABLE"
   >("ALL");
@@ -403,7 +403,7 @@ toast.success("Menu item created successfully.");
     };
   }, [menuItems]);
 
-  const filteredMenuItems = useMemo(() => {
+  const filteredMenuItems = useMemo(() => {  
     const normalizedSearch = menuSearch.trim().toLowerCase();
 
     return menuItems.filter((item) => {
@@ -415,8 +415,9 @@ toast.success("Menu item created successfully.");
         item.description?.toLowerCase().includes(normalizedSearch);
 
       const matchesCategory =
-        selectedMenuCategoryId === "ALL" ||
-        item.categoryId === selectedMenuCategoryId;
+  !selectedMenuCategoryId ||
+  selectedMenuCategoryId === "ALL" ||
+  item.categoryId === selectedMenuCategoryId;
 
       const matchesAvailability =
         availabilityFilter === "ALL" ||

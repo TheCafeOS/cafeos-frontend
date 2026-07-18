@@ -21,7 +21,7 @@ export function connectSocket() {
 
   const token =
     typeof window !== "undefined"
-      ? localStorage.getItem("token")
+      ? localStorage.getItem("accessToken")
       : null;
 
   socket.auth = {

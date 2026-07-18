@@ -14,9 +14,8 @@ export default function DashboardLayout({
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
