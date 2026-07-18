@@ -1,6 +1,7 @@
 import api from "@/services/api";
 
 import type { ApiSuccessResponse } from "@/types/auth.types";
+
 import type {
   SettingsResponse,
   UpdateSettingsRequest,
@@ -22,6 +23,48 @@ export async function updateSettings(
     await api.patch<ApiSuccessResponse<SettingsResponse>>(
       "/api/v1/settings",
       data,
+    );
+
+  return response.data.data;
+}
+
+export async function uploadRestaurantLogo(
+  file: File,
+): Promise<SettingsResponse> {
+  const formData = new FormData();
+
+  formData.append("image", file);
+
+  const response =
+    await api.patch<ApiSuccessResponse<SettingsResponse>>(
+      "/api/v1/settings/logo",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+  return response.data.data;
+}
+
+export async function uploadRestaurantCover(
+  file: File,
+): Promise<SettingsResponse> {
+  const formData = new FormData();
+
+  formData.append("image", file);
+
+  const response =
+    await api.patch<ApiSuccessResponse<SettingsResponse>>(
+      "/api/v1/settings/cover",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
     );
 
   return response.data.data;
