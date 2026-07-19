@@ -53,13 +53,16 @@ export function RestaurantRegistrationForm() {
         password: values.password,
       });
 
-      if (!response.token) {
-        throw new Error("Registration succeeded but no login token was returned.");
-      }
+     if (!response.accessToken || !response.refreshToken) {
+  throw new Error(
+    "Registration succeeded but authentication tokens were not returned."
+  );
+}
 
-      localStorage.setItem("token", response.token);
-      setIsSuccess(true);
+localStorage.setItem("accessToken", response.accessToken);
+localStorage.setItem("refreshToken", response.refreshToken);
 
+setIsSuccess(true);
       toast.success("Restaurant registered successfully. Opening dashboard...");
 
       window.setTimeout(() => {

@@ -26,6 +26,14 @@ export interface RestaurantResponse {
   id: string;
   name: string;
   slug: string;
+
+  logoUrl: string | null;
+  coverImageUrl: string | null;
+
+  tagline: string | null;
+  cuisineType: string | null;
+
+  themeColor: string | null;
 }
 
 export interface PublicMenuResponse {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";import { Loader2, MapPin, ShoppingBag } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, MapPin, ShoppingBag } from "lucide-react";
 import { io } from "socket.io-client";
 
 import MenuCard, { type MenuItem } from "./components/MenuCard";
@@ -125,7 +126,8 @@ const [searchQuery, setSearchQuery] = useState("");
     currentOrderIdRef.current = currentOrder?.id ?? null;
   }, [currentOrder?.id]);
 
-  async function fetchCurrentOrder(orderId: string, showLoading = true) {
+  const fetchCurrentOrder = useCallback(
+  async (orderId: string, showLoading = true) => {
     if (!qrToken) {
       return;
     }
@@ -166,7 +168,9 @@ const [searchQuery, setSearchQuery] = useState("");
         setIsRefreshingOrder(false);
       }
     }
-  }
+  },
+  [qrToken],
+);
 
   useEffect(() => {
     const loadMenu = async () => {
@@ -306,7 +310,7 @@ const [searchQuery, setSearchQuery] = useState("");
     return () => {
       socket.disconnect();
     };
-  }, [qrToken]);
+  }, [qrToken, fetchCurrentOrder]);
 
   const formatPrice = (price: string | number) => {
     const numericPrice = Number(price);

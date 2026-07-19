@@ -9,20 +9,23 @@ export type RestaurantRegistrationPayload = {
 };
 
 export type RestaurantRegistrationData = {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
+
   employee: {
     id: string;
     restaurantId: string;
     email: string;
     role: string;
   };
+
   restaurant: {
     id: string;
     name: string;
     slug: string;
     restaurantEmail: string;
     phone: string | null;
-    address: string | null;
+    address: string |null;
   };
 };
 
@@ -34,6 +37,7 @@ export type LoginRequest = {
 export type LoginResponse = {
   accessToken: string;
   refreshToken: string;
+
   employee: {
     id: string;
     restaurantId: string;
@@ -47,6 +51,7 @@ export type ApiSuccessResponse<T> = {
   message: string;
   data: T;
 };
+
 export type ChangePasswordRequest = {
   currentPassword: string;
   newPassword: string;

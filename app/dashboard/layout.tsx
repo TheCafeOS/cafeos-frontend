@@ -2,8 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-
-import { connectSocket } from "@/lib/socket";
+import { RestaurantBrandingProvider } from "@/providers/restaurant-branding-provider";import { connectSocket } from "@/lib/socket";
 import OwnerSocketListener from "@/components/socket/owner-socket-listener";
 export default function DashboardLayout({
   children,
@@ -14,9 +13,8 @@ export default function DashboardLayout({
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
@@ -25,9 +23,11 @@ export default function DashboardLayout({
   }, [pathname, router]);
 
   return (
-    <div suppressHydrationWarning>
-      <OwnerSocketListener />
-      {children}
-    </div>
+  <div suppressHydrationWarning>
+  <RestaurantBrandingProvider>
+    <OwnerSocketListener />
+    {children}
+  </RestaurantBrandingProvider>
+</div>
   );
 }

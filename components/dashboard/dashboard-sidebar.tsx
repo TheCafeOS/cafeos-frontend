@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { DashboardNavItem } from "@/components/dashboard/dashboard-nav-item";
+import { useRestaurantBranding } from "@/providers/restaurant-branding-provider";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -32,6 +34,7 @@ export function DashboardSidebar({
   mobile = false,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const { restaurant } = useRestaurantBranding();
 
   return (
     <aside
@@ -42,15 +45,30 @@ export function DashboardSidebar({
     >
       <div className="p-6">
         <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-600 text-white">
-            <Coffee className="h-5 w-5" />
+          <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-white shadow-sm">
+            {restaurant?.logoUrl ? (
+              <Image
+                src={restaurant.logoUrl}
+                alt={restaurant.name}
+                fill
+                sizes="44px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-amber-600 text-white">
+                <Coffee className="h-5 w-5" />
+              </div>
+            )}
           </div>
 
-          <div>
-            <p className="text-lg font-semibold tracking-tight text-stone-900">
-              CafeOS
+          <div className="min-w-0">
+            <p className="truncate text-lg font-semibold tracking-tight text-stone-900">
+              {restaurant?.name || "CafeOS"}
             </p>
-            <p className="text-sm text-stone-500">Operations</p>
+
+            <p className="truncate text-sm text-stone-500">
+              {restaurant?.tagline || "Restaurant Management"}
+            </p>
           </div>
         </div>
 

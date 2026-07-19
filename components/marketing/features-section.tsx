@@ -1,21 +1,24 @@
-import { Layers3, PackageCheck, Send } from "lucide-react";
+import { ClipboardList, PackageCheck, QrCode } from "lucide-react";
 import { Section } from "@/components/shared/section";
 
 const features = [
   {
-    title: "Unified order flow",
-    description: "Coordinate dine-in, pickup, and delivery requests from a single, real-time workspace.",
-    icon: Send,
+    title: "QR Ordering",
+    description:
+      "Customers scan a QR code, browse your digital menu, and place orders without downloading an app.",
+    icon: QrCode,
   },
   {
-    title: "Inventory awareness",
-    description: "Track ingredients, recipes, and stock movement so teams can act before shortages impact service.",
+    title: "Order Management",
+    description:
+      "Track every order in real time, from placement to completion, so your kitchen and staff stay in sync.",
+    icon: ClipboardList,
+  },
+  {
+    title: "Tables & Stock",
+    description:
+      "Manage tables, menus, and stock from one dashboard to keep service running smoothly throughout the day.",
     icon: PackageCheck,
-  },
-  {
-    title: "Clear operational views",
-    description: "Surface each shift’s priorities with simple tools that support day-to-day management.",
-    icon: Layers3,
   },
 ];
 
@@ -24,20 +27,30 @@ export function FeaturesSection() {
     <Section
       id="features"
       eyebrow="Features"
-      title="Everything needed to run a sharper service"
-      description="From ticket flow to stock visibility, CafeOS keeps the important details in view so teams stay aligned."
+      title="Everything your restaurant needs to stay in sync"
+      description="CafeOS brings together the tools your team uses every day, helping you serve customers faster without switching between multiple systems."
       className="bg-stone-100/70"
     >
       <div className="grid gap-6 lg:grid-cols-3">
         {features.map((feature) => {
           const Icon = feature.icon;
+
           return (
-            <article key={feature.title} className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+            <article
+              key={feature.title}
+              className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            >
               <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-stone-900 text-white">
                 <Icon className="h-5 w-5" />
               </div>
-              <h3 className="text-xl font-semibold text-stone-900">{feature.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-stone-600">{feature.description}</p>
+
+              <h3 className="text-xl font-semibold text-stone-900">
+                {feature.title}
+              </h3>
+
+              <p className="mt-3 text-sm leading-7 text-stone-600">
+                {feature.description}
+              </p>
             </article>
           );
         })}

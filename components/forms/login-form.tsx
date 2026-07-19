@@ -40,8 +40,8 @@ export function LoginForm() {
         email: values.email,
         password: values.password,
       });
-
-localStorage.setItem("token", response.accessToken);
+localStorage.setItem("accessToken", response.accessToken);
+localStorage.setItem("refreshToken", response.refreshToken);
 
 connectSocket();
       const redirectTo = searchParams.get("redirect");
