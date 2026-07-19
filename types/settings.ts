@@ -14,7 +14,7 @@ export interface RestaurantSettings {
   cuisineType: string | null;
 
   website: string | null;
-  instagram: string |null;
+  instagram: string | null;
   facebook: string | null;
   customLink: string | null;
 
@@ -46,6 +46,4 @@ export interface UpdateSettingsRequest {
   instagram: string | null;
   facebook: string | null;
   customLink: string | null;
-
-  themeColor: string | null;
 }
