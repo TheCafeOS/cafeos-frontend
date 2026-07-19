@@ -1,9 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, MapPin, ShoppingBag } from "lucide-react";
+import {
+  Building2,
+  Loader2,
+  MapPin,
+  Search,
+  ShoppingBag,
+} from "lucide-react";
 import { io } from "socket.io-client";
-
+import Image from "next/image";
 import MenuCard, { type MenuItem } from "./components/MenuCard";
 import CartBar from "./components/CartBar";
 import CartDrawer, { type CartItem } from "./components/CartDrawer";
@@ -23,11 +29,19 @@ type PublicMenuResponse = {
     name: string;
     status: string;
   };
-  restaurant: {
-    id: string;
-    name: string;
-    slug: string;
-  };
+ restaurant: {
+  id: string;
+  name: string;
+  slug: string;
+
+  logoUrl: string | null;
+  coverImageUrl: string | null;
+
+  tagline: string | null;
+  cuisineType: string | null;
+
+  themeColor: string | null;
+}
   categories: Category[];
   menuItems: MenuItem[];
 };
@@ -507,81 +521,155 @@ const uncategorizedItems = filteredMenuItems.filter(
   (item) => !item.categoryId
 );
 
-const greeting = (() => {
-  const hour = new Date().getHours();
 
-  if (hour < 12) return "Good Morning ☀️";
-  if (hour < 17) return "Good Afternoon 🌤️";
-  return "Good Evening 🌙";
-})();
   return (
     <main className="min-h-screen bg-stone-50 pb-32">
-      <header className="sticky top-0 z-20 border-b border-orange-100 bg-gradient-to-b from-white via-orange-50/40 to-white backdrop-blur">
-  <div className="mx-auto max-w-5xl px-5 py-6 sm:px-8">
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex-1">
-        <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700">
-          🍽 CafeOS
-        </span>
+   <header className="sticky top-0 z-20 bg-white shadow-sm">
 
-        <p className="mt-4 text-sm font-medium text-stone-500">
-          {greeting}
-        </p>
+  <div className="relative">
 
-        <h1 className="mt-1 text-3xl font-bold tracking-tight text-stone-900">
-          {menu.restaurant.name}
-        </h1>
+    {/* Cover */}
 
-        <p className="mt-2 text-sm text-stone-600">
-          Freshly prepared food made with care.
-        </p>
+    <div className="relative h-44 overflow-hidden bg-gradient-to-br from-orange-100 via-amber-50 to-white sm:h-60">
 
-        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white px-4 py-2 shadow-sm">
-          <MapPin className="h-4 w-4 text-orange-600" />
+      {menu.restaurant.coverImageUrl ? (
 
-          <span className="text-sm font-medium text-stone-700">
-            {menu.table.name}
-          </span>
-        </div>
-      </div>
+        <>
+          <Image
+  src={menu.restaurant.coverImageUrl}
+  alt={menu.restaurant.name}
+  fill
+  className="object-cover"
+  sizes="100vw"
+  priority
+/>
 
-      <div className="flex items-center gap-3">
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-black/20" />
+        </>
+
+      ) : (
+
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-100 via-amber-50 to-white" />
+
+      )}
+
+      <div className="absolute right-5 top-5 flex gap-3">
+
         {currentOrder && (
+
           <CurrentOrderButton
             status={currentOrder.status}
             onClick={() => setIsOrderDrawerOpen(true)}
           />
+
         )}
 
         <button
           type="button"
           onClick={() => setIsCartOpen(true)}
-          aria-label="Open Cart"
-          className="relative rounded-2xl bg-orange-100 p-3 text-orange-700 shadow-sm transition-all duration-300 hover:scale-105 hover:bg-orange-200 hover:shadow-md"
+          className="relative rounded-2xl bg-white/90 p-3 shadow-lg backdrop-blur"
         >
-          <ShoppingBag className="h-6 w-6" />
+
+          <ShoppingBag className="h-6 w-6 text-orange-700" />
 
           {cartItemCount > 0 && (
-            <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-600 px-1 text-xs font-bold text-white shadow">
-              {cartItemCount}
-            </span>
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-</header>
 
+            <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-600 px-1 text-xs font-bold text-white">
+
+              {cartItemCount}
+
+            </span>
+
+          )}
+
+        </button>
+
+      </div>
+
+    </div>
+
+    {/* Logo */}
+
+    <div className="relative mx-auto -mt-14 flex max-w-5xl flex-col items-center px-5 pb-6 text-center">
+
+      <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl sm:h-28 sm:w-28">
+
+        {menu.restaurant.logoUrl ? (
+<Image
+  src={menu.restaurant.logoUrl}
+  alt={menu.restaurant.name}
+  fill
+  className="object-cover"
+  sizes="112px"
+/>
+
+        ) : (
+
+          <Building2 className="h-10 w-10 text-orange-600" />
+
+        )}
+
+      </div>
+
+      <h1 className="mt-5 text-2xl font-bold text-stone-900 sm:text-3xl">
+
+        {menu.restaurant.name}
+
+      </h1>
+
+      {menu.restaurant.tagline && (
+
+        <p className="mt-2 max-w-xl text-sm text-stone-600 sm:text-base">
+
+          {menu.restaurant.tagline}
+
+        </p>
+
+      )}
+
+      <div className="mt-5 flex flex-wrap justify-center gap-3">
+
+        {menu.restaurant.cuisineType && (
+
+          <span className="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-medium text-orange-700">
+
+            {menu.restaurant.cuisineType}
+
+          </span>
+
+        )}
+
+        <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm">
+
+          <MapPin className="h-4 w-4 text-orange-600" />
+
+          {menu.table.name}
+
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</header>
  <div className="sticky top-[120px] z-10 border-b border-stone-200 bg-stone-50/90 backdrop-blur">
   <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
 
-    <input
-      type="text"
-      placeholder="🔍 Search dishes..."
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      className="w-full rounded-2xl border border-stone-200 bg-white px-5 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
-    />
+    <div className="relative">
+
+  <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400" />
+
+  <input
+    type="text"
+    placeholder="Search dishes..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="w-full rounded-2xl border border-stone-200 bg-white py-3 pl-14 pr-5 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+  />
+
+</div>
 <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
   <button
     type="button"

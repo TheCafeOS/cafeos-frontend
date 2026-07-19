@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ImageOff, Loader2, Trash2, X } from "lucide-react";
+import {
+  Check,
+  ImageOff,
+  Loader2,
+  Trash2,
+  X,
+} from "lucide-react";
+
 import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -243,21 +250,26 @@ const [selectedMenuCategoryId] = useState("ALL");
 
     try {
       const createdItem = await createMenuItem({
-        name: newMenuItem.name.trim(),
-        description: newMenuItem.description?.trim() || undefined,
-        price: Number(newMenuItem.price),
-        categoryId: newMenuItem.categoryId || undefined,
-        imageUrl: newMenuItem.imageUrl?.trim() || undefined,
-        isAvailable: newMenuItem.isAvailable,
-      });
-
-      if (!createdItem?.id) {
-        throw new Error("Server did not return a valid menu item.");
-      }
-        if (selectedImage) {
-  await uploadMenuItemImage(createdItem.id, selectedImage);
+  name: newMenuItem.name.trim(),
+  description: newMenuItem.description?.trim() || undefined,
+  price: Number(newMenuItem.price),
+  categoryId: newMenuItem.categoryId || undefined,
+  isAvailable: newMenuItem.isAvailable,
+});if (!createdItem?.id) {
+  throw new Error("Server did not return a valid menu item.");
 }
-      setMenuItems((current) => [...current, createdItem]);
+
+let finalItem = createdItem;
+
+if (selectedImage) {
+  finalItem = await uploadMenuItemImage(
+    createdItem.id,
+    selectedImage,
+  );
+}
+
+setMenuItems((current) => [...current, finalItem]);
+
 setNewMenuItem(emptyMenuItem);
 setSelectedImage(null);
 
@@ -313,7 +325,6 @@ toast.success("Menu item created successfully.");
         description: editingMenuItem.description?.trim() || undefined,
         price: Number(editingMenuItem.price),
         categoryId: editingMenuItem.categoryId || undefined,
-        imageUrl: editingMenuItem.imageUrl?.trim() || undefined,
         isAvailable: editingMenuItem.isAvailable,
       });
 
@@ -862,14 +873,14 @@ toast.success("Menu item created successfully.");
                     className="overflow-hidden rounded-lg border border-stone-200 bg-white"
                   >
                     {item.imageUrl ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="h-40 w-full object-cover"
-                      />
+                   <img
+  src={item.imageUrl}
+  alt={item.name}
+  className="h-40 w-full object-cover"
+/>
                     ) : (
                       <div className="flex h-40 items-center justify-center bg-stone-100">
-                        <ImageOff className="h-8 w-8 text-stone-400" />
+                      <ImageOff className="h-8 w-8 text-stone-400" />
                       </div>
                     )}
 
