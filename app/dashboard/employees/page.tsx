@@ -209,7 +209,8 @@ onDelete={(employee) => {
   onOpenChange={setDialogOpen}
   onSuccess={fetchEmployees}
 />
-<EmployeeStatusDialog
+<EmployeeStatusDialog 
+
   open={statusDialogOpen}
   employeeName={statusEmployee?.name ?? ""}
   isActive={statusEmployee?.isActive ?? false}
