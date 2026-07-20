@@ -8,6 +8,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+import { EmployeeDialog } from "@/components/employees/employee-dialog";
 import { EmployeeEmptyState } from "@/components/employees/empty-state";
 import { EmployeeLoadingSkeleton } from "@/components/employees/loading-skeleton";
 import { EmployeeTable } from "@/components/employees/employee-table";
@@ -28,6 +29,15 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [search, setSearch] = useState("");
 
+const [dialogOpen, setDialogOpen] = useState(false);
+
+const [dialogMode, setDialogMode] = useState<"create" | "edit">(
+  "create"
+);
+
+const [selectedEmployee, setSelectedEmployee] =
+  useState<Employee | undefined>(undefined);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +52,7 @@ export default function EmployeesPage() {
     } catch (error) {
       const message = getErrorMessage(
         error,
-        "Failed to load employees.",
+        "Failed to load employees."
       );
 
       setError(message);
@@ -52,14 +62,14 @@ export default function EmployeesPage() {
       setIsLoading(false);
     }
   }
-useEffect(() => {
+
+ useEffect(() => {
   const timer = window.setTimeout(() => {
     void fetchEmployees();
   }, 0);
 
   return () => window.clearTimeout(timer);
 }, []);
-
   const filteredEmployees = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
@@ -88,23 +98,26 @@ useEffect(() => {
             <Input
               placeholder="Search employees..."
               value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
+              onChange={(event) => setSearch(event.target.value)}
               className="pl-10"
             />
           </div>
 
-          <Button disabled>
+          <Button
+  onClick={() => {
+    setDialogMode("create");
+    setSelectedEmployee(undefined);
+    setDialogOpen(true);
+  }}
+>
             <Plus className="mr-2 h-4 w-4" />
             Add Manager
           </Button>
         </div>
-                {isLoading ? (
-          <EmployeeLoadingSkeleton />
-        ) : null}
 
-        {!isLoading && error ? (
+        {isLoading && <EmployeeLoadingSkeleton />}
+
+        {!isLoading && error && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-6">
             <p className="text-sm font-medium text-red-700">
               {error}
@@ -118,38 +131,46 @@ useEffect(() => {
               Try Again
             </Button>
           </div>
-        ) : null}
+        )}
 
         {!isLoading &&
-        !error &&
-        filteredEmployees.length === 0 ? (
-          <EmployeeEmptyState />
-        ) : null}
+          !error &&
+          filteredEmployees.length === 0 && (
+            <EmployeeEmptyState />
+          )}
 
         {!isLoading &&
-        !error &&
-        filteredEmployees.length > 0 ? (
-          <EmployeeTable
-            employees={filteredEmployees}
-            onEdit={(employee) => {
-              toast.info(
-                `Edit ${employee.name} will be available in Phase 3.`,
-              );
-            }}
-            onToggleStatus={(employee) => {
-              toast.info(
-                employee.isActive
-                  ? `Deactivate ${employee.name} will be available in Phase 4.`
-                  : `Activate ${employee.name} will be available in Phase 4.`,
-              );
-            }}
-            onDelete={(employee) => {
-              toast.info(
-                `Delete ${employee.name} will be available in Phase 5.`,
-              );
-            }}
-          />
-        ) : null}
+          !error &&
+          filteredEmployees.length > 0 && (
+            <EmployeeTable
+              employees={filteredEmployees}
+              onEdit={(employee) => {
+  setSelectedEmployee(employee);
+  setDialogMode("edit");
+  setDialogOpen(true);
+}}
+              onToggleStatus={(employee) => {
+                toast.info(
+                  employee.isActive
+                    ? `Deactivate ${employee.name} will be available in Phase 4.`
+                    : `Activate ${employee.name} will be available in Phase 4.`
+                );
+              }}
+              onDelete={(employee) => {
+                toast.info(
+                  `Delete ${employee.name} will be available in Phase 5.`
+                );
+              }}
+            />
+          )}
+
+       <EmployeeDialog
+  open={dialogOpen}
+  mode={dialogMode}
+  employee={selectedEmployee}
+  onOpenChange={setDialogOpen}
+  onSuccess={fetchEmployees}
+/>
       </div>
     </DashboardShell>
   );
