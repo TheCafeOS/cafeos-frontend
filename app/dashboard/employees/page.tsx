@@ -9,11 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { EmployeeDialog } from "@/components/employees/employee-dialog";
+import { EmployeeStatusDialog } from "@/components/employees/employee-status-dialog";
 import { EmployeeEmptyState } from "@/components/employees/empty-state";
 import { EmployeeLoadingSkeleton } from "@/components/employees/loading-skeleton";
 import { EmployeeTable } from "@/components/employees/employee-table";
 
-import { getEmployees } from "@/services/employee.service";
+import {
+  getEmployees,
+  updateEmployeeStatus,
+} from "@/services/employee.service";
 
 import type { Employee } from "@/types/employee";
 
@@ -37,7 +41,12 @@ const [dialogMode, setDialogMode] = useState<"create" | "edit">(
 
 const [selectedEmployee, setSelectedEmployee] =
   useState<Employee | undefined>(undefined);
+const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
+const [statusLoading, setStatusLoading] = useState(false);
+
+const [statusEmployee, setStatusEmployee] =
+  useState<Employee | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +71,39 @@ const [selectedEmployee, setSelectedEmployee] =
       setIsLoading(false);
     }
   }
+async function handleStatusConfirm() {
+  if (!statusEmployee) {
+    return;
+  }
 
+  try {
+    setStatusLoading(true);
+
+    await updateEmployeeStatus(statusEmployee.id, {
+      isActive: !statusEmployee.isActive,
+    });
+
+    toast.success(
+      statusEmployee.isActive
+        ? "Employee deactivated successfully."
+        : "Employee activated successfully."
+    );
+
+    await fetchEmployees();
+
+    setStatusDialogOpen(false);
+    setStatusEmployee(undefined);
+  } catch (error) {
+    toast.error(
+      getErrorMessage(
+        error,
+        "Failed to update employee status."
+      )
+    );
+  } finally {
+    setStatusLoading(false);
+  }
+}
  useEffect(() => {
   const timer = window.setTimeout(() => {
     void fetchEmployees();
@@ -144,19 +185,16 @@ const [selectedEmployee, setSelectedEmployee] =
           filteredEmployees.length > 0 && (
             <EmployeeTable
               employees={filteredEmployees}
-              onEdit={(employee) => {
+            onEdit={(employee) => {
   setSelectedEmployee(employee);
   setDialogMode("edit");
   setDialogOpen(true);
 }}
-              onToggleStatus={(employee) => {
-                toast.info(
-                  employee.isActive
-                    ? `Deactivate ${employee.name} will be available in Phase 4.`
-                    : `Activate ${employee.name} will be available in Phase 4.`
-                );
-              }}
-              onDelete={(employee) => {
+onToggleStatus={(employee) => {
+  setStatusEmployee(employee);
+  setStatusDialogOpen(true);
+}}
+onDelete={(employee) => {
                 toast.info(
                   `Delete ${employee.name} will be available in Phase 5.`
                 );
@@ -170,6 +208,20 @@ const [selectedEmployee, setSelectedEmployee] =
   employee={selectedEmployee}
   onOpenChange={setDialogOpen}
   onSuccess={fetchEmployees}
+/>
+<EmployeeStatusDialog
+  open={statusDialogOpen}
+  employeeName={statusEmployee?.name ?? ""}
+  isActive={statusEmployee?.isActive ?? false}
+  loading={statusLoading}
+  onOpenChange={(open) => {
+    setStatusDialogOpen(open);
+
+    if (!open) {
+      setStatusEmployee(undefined);
+    }
+  }}
+  onConfirm={handleStatusConfirm}
 />
       </div>
     </DashboardShell>
