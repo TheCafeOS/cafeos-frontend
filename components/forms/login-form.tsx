@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
 import { loginOwner } from "@/services/auth.service";
-
+import { saveAuth } from "@/utils/auth";
 import { connectSocket } from "@/lib/socket";
 
 export function LoginForm() {
@@ -40,10 +40,14 @@ export function LoginForm() {
         email: values.email,
         password: values.password,
       });
-localStorage.setItem("accessToken", response.accessToken);
-localStorage.setItem("refreshToken", response.refreshToken);
+saveAuth({
+  accessToken: response.accessToken,
+  refreshToken: response.refreshToken,
+  employee: response.employee,
+});
 
 connectSocket();
+
       const redirectTo = searchParams.get("redirect");
 
       toast.success("Login successful. Redirecting to dashboard...");

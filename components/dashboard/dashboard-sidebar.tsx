@@ -10,21 +10,13 @@ import {
   Settings,
   ShoppingBag,
   Table2,
+  Users,
 } from "lucide-react";
 
 import { DashboardNavItem } from "@/components/dashboard/dashboard-nav-item";
 import { useRestaurantBranding } from "@/providers/restaurant-branding-provider";
+import { getEmployee } from "@/utils/auth";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { href: "/dashboard", label: "Overview", icon: LayoutGrid },
-  { href: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
-  { href: "/dashboard/menu", label: "Menu", icon: Coffee },
-  { href: "/dashboard/tables", label: "Tables", icon: Table2 },
-  { href: "/dashboard/inventory", label: "Inventory", icon: Package2 },
-  { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
-];
 
 type DashboardSidebarProps = {
   mobile?: boolean;
@@ -35,6 +27,26 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const { restaurant } = useRestaurantBranding();
+
+  const employee = getEmployee();
+
+  const navItems = [
+    { href: "/dashboard", label: "Overview", icon: LayoutGrid },
+    { href: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
+    { href: "/dashboard/menu", label: "Menu", icon: Coffee },
+    { href: "/dashboard/tables", label: "Tables", icon: Table2 },
+    { href: "/dashboard/inventory", label: "Inventory", icon: Package2 },
+    { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
+    { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  ];
+
+  if (employee?.role === "OWNER") {
+    navItems.push({
+      href: "/dashboard/employees",
+      label: "Employees",
+      icon: Users,
+    });
+  }
 
   return (
     <aside
@@ -95,6 +107,7 @@ export function DashboardSidebar({
         <p className="font-medium text-stone-700">
           Shift status
         </p>
+
         <p className="mt-1">
           All systems operational
         </p>

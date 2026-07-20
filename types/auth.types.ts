@@ -1,3 +1,5 @@
+export type EmployeeRole = "OWNER" | "MANAGER" | "STAFF";
+
 export type RestaurantRegistrationPayload = {
   restaurantName: string;
   restaurantEmail: string;
@@ -8,16 +10,18 @@ export type RestaurantRegistrationPayload = {
   password: string;
 };
 
+export type AuthEmployee = {
+  id: string;
+  restaurantId: string;
+  email: string;
+  role: EmployeeRole;
+};
+
 export type RestaurantRegistrationData = {
   accessToken: string;
   refreshToken: string;
 
-  employee: {
-    id: string;
-    restaurantId: string;
-    email: string;
-    role: string;
-  };
+  employee: AuthEmployee;
 
   restaurant: {
     id: string;
@@ -25,7 +29,7 @@ export type RestaurantRegistrationData = {
     slug: string;
     restaurantEmail: string;
     phone: string | null;
-    address: string |null;
+    address: string | null;
   };
 };
 
@@ -38,12 +42,7 @@ export type LoginResponse = {
   accessToken: string;
   refreshToken: string;
 
-  employee: {
-    id: string;
-    restaurantId: string;
-    email: string;
-    role: string;
-  };
+  employee: AuthEmployee;
 };
 
 export type ApiSuccessResponse<T> = {

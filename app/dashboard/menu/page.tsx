@@ -302,48 +302,59 @@ toast.success("Menu item created successfully.");
   }
 
   function handleCancelEditMenuItem() {
-    setEditingMenuItemId(null);
-    setEditingMenuItem(emptyMenuItem);
+  setEditingMenuItemId(null);
+  setEditingMenuItem(emptyMenuItem);
+  setSelectedImage(null);
+}
+  
+async function handleSaveEditMenuItem(itemId: string) {
+  if (!editingMenuItem.name.trim()) {
+    toast.error("Item name is required.");
+    return;
   }
 
-  async function handleSaveEditMenuItem(itemId: string) {
-    if (!editingMenuItem.name.trim()) {
-      toast.error("Item name is required.");
-      return;
-    }
-
-    if (!editingMenuItem.price || Number(editingMenuItem.price) <= 0) {
-      toast.error("Enter a valid price.");
-      return;
-    }
-
-    setIsMenuItemSubmitting(true);
-
-    try {
-      const updatedItem = await updateMenuItem(itemId, {
-        name: editingMenuItem.name.trim(),
-        description: editingMenuItem.description?.trim() || undefined,
-        price: Number(editingMenuItem.price),
-        categoryId: editingMenuItem.categoryId || undefined,
-        isAvailable: editingMenuItem.isAvailable,
-      });
-
-      if (!updatedItem?.id) {
-        throw new Error("Server did not return a valid menu item.");
-      }
-
-      setMenuItems((current) =>
-        current.map((item) => (item.id === itemId ? updatedItem : item)),
-      );
-
-      handleCancelEditMenuItem();
-      toast.success("Menu item updated successfully.");
-    } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to update menu item"));
-    } finally {
-      setIsMenuItemSubmitting(false);
-    }
+  if (!editingMenuItem.price || Number(editingMenuItem.price) <= 0) {
+    toast.error("Enter a valid price.");
+    return;
   }
+
+  setIsMenuItemSubmitting(true);
+
+  try {
+    const updatedItem = await updateMenuItem(itemId, {
+      name: editingMenuItem.name.trim(),
+      description: editingMenuItem.description?.trim() || undefined,
+      price: Number(editingMenuItem.price),
+      categoryId: editingMenuItem.categoryId || undefined,
+      isAvailable: editingMenuItem.isAvailable,
+    });
+
+    if (!updatedItem?.id) {
+      throw new Error("Server did not return a valid menu item.");
+    }
+
+    let finalItem = updatedItem;
+
+    if (selectedImage) {
+      finalItem = await uploadMenuItemImage(updatedItem.id, selectedImage);
+    }
+
+    setMenuItems((current) =>
+      current.map((item) =>
+        item.id === itemId ? finalItem : item
+      )
+    );
+
+    setSelectedImage(null);
+    handleCancelEditMenuItem();
+
+    toast.success("Menu item updated successfully.");
+  } catch (error) {
+    toast.error(getErrorMessage(error, "Failed to update menu item"));
+  } finally {
+    setIsMenuItemSubmitting(false);
+  }
+}
 
   async function handleDeleteMenuItem(item: MenuItem) {
     const confirmed = window.confirm(`Delete "${item.name}" menu item?`);
