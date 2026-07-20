@@ -14,7 +14,9 @@ import { EmployeeEmptyState } from "@/components/employees/empty-state";
 import { EmployeeLoadingSkeleton } from "@/components/employees/loading-skeleton";
 import { EmployeeTable } from "@/components/employees/employee-table";
 
+import { EmployeeDeleteDialog } from "@/components/employees/employee-delete-dialog";
 import {
+  deleteEmployee,
   getEmployees,
   updateEmployeeStatus,
 } from "@/services/employee.service";
@@ -46,6 +48,12 @@ const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 const [statusLoading, setStatusLoading] = useState(false);
 
 const [statusEmployee, setStatusEmployee] =
+  useState<Employee | undefined>(undefined);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+const [deleteLoading, setDeleteLoading] = useState(false);
+
+const [deleteEmployeeData, setDeleteEmployeeData] =
   useState<Employee | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +110,33 @@ async function handleStatusConfirm() {
     );
   } finally {
     setStatusLoading(false);
+  }
+}
+  async function handleDeleteConfirm() {
+  if (!deleteEmployeeData) {
+    return;
+  }
+
+  try {
+    setDeleteLoading(true);
+
+    await deleteEmployee(deleteEmployeeData.id);
+
+    toast.success("Employee deleted successfully.");
+
+    await fetchEmployees();
+
+    setDeleteDialogOpen(false);
+    setDeleteEmployeeData(undefined);
+  } catch (error) {
+    toast.error(
+      getErrorMessage(
+        error,
+        "Failed to delete employee."
+      )
+    );
+  } finally {
+    setDeleteLoading(false);
   }
 }
  useEffect(() => {
@@ -195,10 +230,9 @@ onToggleStatus={(employee) => {
   setStatusDialogOpen(true);
 }}
 onDelete={(employee) => {
-                toast.info(
-                  `Delete ${employee.name} will be available in Phase 5.`
-                );
-              }}
+  setDeleteEmployeeData(employee);
+  setDeleteDialogOpen(true);
+}}
             />
           )}
 
@@ -223,6 +257,19 @@ onDelete={(employee) => {
     }
   }}
   onConfirm={handleStatusConfirm}
+/>
+<EmployeeDeleteDialog
+  open={deleteDialogOpen}
+  employeeName={deleteEmployeeData?.name ?? ""}
+  loading={deleteLoading}
+  onOpenChange={(open) => {
+    setDeleteDialogOpen(open);
+
+    if (!open) {
+      setDeleteEmployeeData(undefined);
+    }
+  }}
+  onConfirm={handleDeleteConfirm}
 />
       </div>
     </DashboardShell>
