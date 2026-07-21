@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import ImageUpload from "@/components/dashboard/image-upload";
 import { uploadMenuItemImage } from "@/services/image.service";
+import axios from "axios";
 
 import {
   createCategory,
@@ -44,6 +45,14 @@ const emptyMenuItem: CreateMenuItemPayload = {
 };
 
 function getErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    return (
+      error.response?.data?.message ??
+      error.message ??
+      fallback
+    );
+  }
+
   if (error instanceof Error) {
     return error.message;
   }
