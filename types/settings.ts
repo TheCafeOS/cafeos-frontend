@@ -21,7 +21,7 @@ export interface RestaurantSettings {
   themeColor: string | null;
 }
 
-export interface OwnerSettings {
+export interface AccountSettings {
   name: string;
   email: string;
   role: string;
@@ -29,7 +29,7 @@ export interface OwnerSettings {
 
 export interface SettingsResponse {
   restaurant: RestaurantSettings;
-  owner: OwnerSettings | null;
+  account: AccountSettings | null;
 }
 
 export interface UpdateSettingsRequest {
@@ -43,7 +43,7 @@ export interface UpdateSettingsRequest {
   cuisineType: string | null;
 
   website: string | null;
-  instagram: string | null;
+  instagram: string |null;
   facebook: string | null;
   customLink: string | null;
 }

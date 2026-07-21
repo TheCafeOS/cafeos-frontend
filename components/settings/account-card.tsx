@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Lock, UserCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,15 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { changePassword } from "@/services/auth.service";
-
-import type { OwnerSettings } from "@/types/settings";
+import type { AccountSettings } from "@/types/settings";
 
 type AccountCardProps = {
-  owner: OwnerSettings | null;
+  account: AccountSettings | null;
 };
-
 export function AccountCard({
-  owner,
+  account,
 }: AccountCardProps) {
   const [currentPassword, setCurrentPassword] =
     useState("");
@@ -37,13 +36,13 @@ export function AccountCard({
 
   async function handleChangePassword() {
     if (newPassword !== confirmPassword) {
-      alert("New passwords do not match.");
+      toast.error("New passwords do not match.");
       return;
     }
 
     if (currentPassword === newPassword) {
-      alert(
-        "New password must be different from current password.",
+      toast.error(
+        "New password must be different from your current password.",
       );
       return;
     }
@@ -60,10 +59,10 @@ export function AccountCard({
       setNewPassword("");
       setConfirmPassword("");
 
-      alert("Password changed successfully.");
+      toast.success("Password changed successfully.");
     } catch (error) {
       console.error(error);
-      alert("Failed to change password.");
+      toast.error("Failed to change password.");
     } finally {
       setLoading(false);
     }
@@ -82,26 +81,26 @@ export function AccountCard({
           </h2>
 
           <p className="text-sm text-stone-500">
-            Manage your owner account and security.
+            Manage your account and security.
           </p>
         </div>
       </div>
 
       <div className="space-y-4">
         <div>
-          <Label>Owner Name</Label>
+          <Label> Name</Label>
 
           <Input
-            value={owner?.name ?? ""}
+            value={account?.name ?? ""}
             disabled
           />
         </div>
 
         <div>
-          <Label>Owner Email</Label>
+          <Label> Email</Label>
 
           <Input
-            value={owner?.email ?? ""}
+            value={account?.email ?? ""}
             disabled
           />
         </div>
@@ -110,7 +109,7 @@ export function AccountCard({
           <Label>Role</Label>
 
           <Input
-            value={owner?.role ?? ""}
+            value={account?.role ?? ""}
             disabled
           />
         </div>

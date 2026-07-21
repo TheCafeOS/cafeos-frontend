@@ -72,7 +72,7 @@ export function SettingsContent() {
          onUpdated={handleRestaurantUpdated}
 />
 
-        <AccountCard owner={settings.owner} />
+        <AccountCard account={settings.account} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
