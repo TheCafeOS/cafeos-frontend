@@ -20,7 +20,7 @@ type RestaurantBrandingContextValue = {
   setBranding: (settings: SettingsResponse) => void;
 
   restaurant: SettingsResponse["restaurant"] | null;
-  owner: SettingsResponse["owner"] | null;
+  account: SettingsResponse["account"] | null;
 };
 
 const RestaurantBrandingContext =
@@ -57,7 +57,7 @@ export function RestaurantBrandingProvider({
       refreshBranding,
       setBranding: setSettings,
       restaurant: settings?.restaurant ?? null,
-      owner: settings?.owner ?? null,
+      account: settings?.account ?? null,
     }),
     [settings, loading, refreshBranding],
   );

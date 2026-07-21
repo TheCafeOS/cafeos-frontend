@@ -229,12 +229,13 @@ export function RestaurantInformationCard({
     <div className="relative overflow-hidden rounded-3xl border border-stone-200 bg-stone-100">
       {coverUrl ? (
         <Image
-          src={coverUrl}
-          alt="Restaurant Cover"
-          width={1200}
-          height={400}
-          className="h-56 w-full object-cover"
-        />
+  src={coverUrl}
+  alt="Restaurant Cover"
+  width={1600}
+  height={900}
+  priority
+className="h-80 w-full object-cover object-[center_35%]"
+/>
       ) : (
         <div className="flex h-56 w-full flex-col items-center justify-center gap-3 text-stone-400">
           <ImageIcon className="h-10 w-10" />
@@ -278,12 +279,11 @@ export function RestaurantInformationCard({
     <div>
       {logoUrl ? (
         <Image
-          src={logoUrl}
-          alt="Restaurant Logo"
-          width={120}
-          height={120}
-          className="h-28 w-28 rounded-3xl border object-cover shadow"
-        />
+  src={logoUrl}
+  alt="Restaurant Logo"
+  width={220}
+  height={120}
+className="h-32 w-52 rounded-2xl border border-stone-200 bg-white object-contain p-4 shadow-sm"/>
       ) : (
         <div className="flex h-28 w-28 items-center justify-center rounded-3xl border bg-white">
           <Building2 className="h-10 w-10 text-stone-400" />
@@ -322,7 +322,7 @@ export function RestaurantInformationCard({
           <Camera className="mr-2 h-4 w-4" />
           {uploadingLogo
             ? "Uploading..."
-            : "Upload Logo"}
+            : "Change Logo"}
         </Button>
       </>
     </div>

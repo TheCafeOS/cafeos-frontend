@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Plus, CheckCircle2, XCircle } from "lucide-react";
 
 export type MenuItem = {
@@ -27,11 +28,15 @@ export default function MenuCard({
     <article className="group overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       <div className="relative overflow-hidden">
         {item.imageUrl ? (
-          <img
-            src={item.imageUrl}
-            alt={item.name}
-            className="h-52 w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+          <div className="relative h-52 w-full">
+            <Image
+              src={item.imageUrl}
+              alt={item.name}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
         ) : (
           <div className="flex h-52 items-center justify-center bg-gradient-to-br from-orange-50 to-amber-100 text-6xl">
             🍽️
@@ -76,7 +81,6 @@ export default function MenuCard({
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-600 px-4 py-3 font-semibold text-white transition-all duration-300 hover:bg-orange-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-stone-300"
           >
             <Plus className="h-5 w-5" />
-
             {isUnavailable ? "Unavailable" : "Add to Cart"}
           </button>
         </div>

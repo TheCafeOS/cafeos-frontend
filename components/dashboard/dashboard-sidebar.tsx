@@ -51,30 +51,30 @@ export function DashboardSidebar({
   return (
     <aside
       className={cn(
-        "w-72 shrink-0 border-r border-stone-200 bg-stone-50/80 flex flex-col justify-between",
-        !mobile && "hidden lg:flex"
+        "flex w-72 shrink-0 flex-col justify-between border-r border-stone-200 bg-stone-50/80",
+        !mobile && "hidden lg:flex",
       )}
     >
       <div className="p-6">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-white shadow-sm">
+        <div className="mb-8 flex items-center gap-4">
+          <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
             {restaurant?.logoUrl ? (
               <Image
                 src={restaurant.logoUrl}
                 alt={restaurant.name}
                 fill
-                sizes="44px"
-                className="object-cover"
+                sizes="56px"
+                className="object-contain p-1"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-amber-600 text-white">
-                <Coffee className="h-5 w-5" />
+                <Coffee className="h-6 w-6" />
               </div>
             )}
           </div>
 
-          <div className="min-w-0">
-            <p className="truncate text-lg font-semibold tracking-tight text-stone-900">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xl font-bold tracking-tight text-stone-900">
               {restaurant?.name || "CafeOS"}
             </p>
 

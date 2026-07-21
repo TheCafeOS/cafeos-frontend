@@ -530,8 +530,7 @@ const uncategorizedItems = filteredMenuItems.filter(
 
     {/* Cover */}
 
-    <div className="relative h-44 overflow-hidden bg-gradient-to-br from-orange-100 via-amber-50 to-white sm:h-60">
-
+<div className="relative h-56 overflow-hidden bg-gradient-to-br from-orange-100 via-amber-50 to-white sm:h-80 lg:h-80">
       {menu.restaurant.coverImageUrl ? (
 
         <>
@@ -539,13 +538,14 @@ const uncategorizedItems = filteredMenuItems.filter(
   src={menu.restaurant.coverImageUrl}
   alt={menu.restaurant.name}
   fill
-  className="object-cover"
-  sizes="100vw"
   priority
-/>
+  quality={100}
+  sizes="100vw"
+  className="object-cover object-center"
+ />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-black/20" />
-        </>
+<div className="absolute inset-0 bg-gradient-to-t from-white/10 transparent to-transparent" />     
+   </>
 
       ) : (
 
@@ -567,7 +567,7 @@ const uncategorizedItems = filteredMenuItems.filter(
         <button
           type="button"
           onClick={() => setIsCartOpen(true)}
-          className="relative rounded-2xl bg-white/90 p-3 shadow-lg backdrop-blur"
+          className="relative rounded-3xl bg-white/90 p-3 shadow-lg backdrop-blur"
         >
 
           <ShoppingBag className="h-6 w-6 text-orange-700" />
@@ -590,17 +590,17 @@ const uncategorizedItems = filteredMenuItems.filter(
 
     {/* Logo */}
 
-    <div className="relative mx-auto -mt-14 flex max-w-5xl flex-col items-center px-5 pb-6 text-center">
+    <div className="relative mx-auto -mt-16 flex max-w-5xl flex-col items-center px-5 pb-4 text-center">
 
-      <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl sm:h-28 sm:w-28">
+      <div className="relative flex h-35 w-35 md:h-32 md:w-32 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-2xl ring-1 ring-black/5">
 
         {menu.restaurant.logoUrl ? (
 <Image
   src={menu.restaurant.logoUrl}
   alt={menu.restaurant.name}
   fill
-  className="object-cover"
-  sizes="112px"
+  className="object-contain p-2"
+  sizes="128px"
 />
 
         ) : (
@@ -611,7 +611,7 @@ const uncategorizedItems = filteredMenuItems.filter(
 
       </div>
 
-      <h1 className="mt-5 text-2xl font-bold text-stone-900 sm:text-3xl">
+      <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-stone-900 sm:text-4xl">
 
         {menu.restaurant.name}
 
@@ -627,7 +627,7 @@ const uncategorizedItems = filteredMenuItems.filter(
 
       )}
 
-      <div className="mt-5 flex flex-wrap justify-center gap-3">
+      <div className="mt-4 flex flex-wrap justify-center gap-3">
 
         {menu.restaurant.cuisineType && (
 
@@ -670,7 +670,7 @@ const uncategorizedItems = filteredMenuItems.filter(
   />
 
 </div>
-<div className="mt-5 flex gap-2 overflow-x-auto pb-2">
+<div className="mt-8 flex gap-2 overflow-x-auto pb-2">
   <button
     type="button"
     onClick={() =>
