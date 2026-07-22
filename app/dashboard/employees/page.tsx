@@ -22,7 +22,7 @@ import {
 } from "@/services/employee.service";
 
 import type { Employee } from "@/types/employee";
-
+import { RefreshCw } from "lucide-react";
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) {
     return error.message;
@@ -189,6 +189,26 @@ async function handleStatusConfirm() {
       description="Manage restaurant managers and staff."
     >
       <div className="space-y-6">
+        <div className="flex items-center justify-between">
+  <div>
+    <h2 className="text-xl font-semibold text-stone-900">
+      Employees
+    </h2>
+
+    <p className="mt-1 text-sm text-stone-600">
+      Showing {employees.length} of {pagination.totalItems} employee
+      {pagination.totalItems === 1 ? "" : "s"}.
+    </p>
+  </div>
+
+ <Button
+  variant="outline"
+  onClick={() => void fetchEmployees()}
+>
+  <RefreshCw className="mr-2 h-4 w-4" />
+  Refresh
+</Button>
+</div>
         <div className="flex flex-col gap-4 rounded-xl border border-stone-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
          <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
   <div className="flex flex-1 flex-wrap items-center gap-3">
@@ -285,10 +305,37 @@ async function handleStatusConfirm() {
           </div>
         )}
 
-       {!isLoading &&
-  !error &&
- employees.length === 0 && (
-    <EmployeeEmptyState />
+    {!isLoading &&
+ !error &&
+ employees.length === 0 &&
+ (search || role || status) && (
+  <div className="rounded-xl border border-stone-200 bg-stone-50 py-12 text-center">
+    <p className="font-medium text-stone-900">
+      No matching employees found.
+    </p>
+
+    <Button
+      variant="outline"
+      className="mt-4"
+      onClick={() => {
+        setSearch("");
+        setRole("");
+        setStatus("");
+        setPage(1);
+      }}
+    >
+      Clear Filters
+    </Button>
+  </div>
+)}
+
+{!isLoading &&
+ !error &&
+ employees.length === 0 &&
+ !search &&
+ !role &&
+ !status && (
+  <EmployeeEmptyState />
 )}
 
   {!isLoading &&
