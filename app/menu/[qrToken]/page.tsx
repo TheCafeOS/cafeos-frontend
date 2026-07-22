@@ -125,6 +125,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [error, setError] = useState("");
 const [searchQuery, setSearchQuery] = useState("");
 const [activeCategory, setActiveCategory] = useState("all");
+const [collapsedHeader, setCollapsedHeader] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
@@ -358,7 +359,17 @@ const menuItems = menu?.menuItems ?? [];
 
   return () => observer.disconnect();
 }, [categories]);
+useEffect(() => {
+  const handleScroll = () => {
+    setCollapsedHeader(window.scrollY > 180);
+  };
 
+  window.addEventListener("scroll", handleScroll);
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+  };
+}, []);
   const formatPrice = (price: string | number) => {
     const numericPrice = Number(price);
 
@@ -556,14 +567,27 @@ const featuredItems = filteredMenuItems
 
   return (
     <main className="min-h-screen bg-stone-50 pb-32">
-   <header className="sticky top-0 z-20 bg-white shadow-sm">
-
-  <div className="relative">
+<header
+  className={`sticky top-0 z-30 bg-white transition-all duration-500 ${
+    collapsedHeader ? "shadow-lg" : "shadow-sm"
+  }`}
+>
+ <div
+  className={`relative overflow-hidden transition-all duration-500 ${
+    collapsedHeader ? "h-20" : ""
+  }`}
+>
 
     {/* Cover */}
 
-<div className="relative h-56 overflow-hidden bg-gradient-to-br from-orange-100 via-amber-50 to-white sm:h-80 lg:h-80">
-      {menu.restaurant.coverImageUrl ? (
+<div
+  className={`relative overflow-hidden transition-all duration-500
+  ${
+    collapsedHeader
+      ? "h-0 opacity-0"
+      : "h-56 sm:h-80 lg:h-80 opacity-100"
+  }`}
+>      {menu.restaurant.coverImageUrl ? (
 
         <>
           <Image
@@ -622,10 +646,22 @@ const featuredItems = filteredMenuItems
 
     {/* Logo */}
 
-    <div className="relative mx-auto -mt-16 flex max-w-5xl flex-col items-center px-5 pb-4 text-center">
-
-      <div className="relative flex h-35 w-35 md:h-32 md:w-32 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-2xl ring-1 ring-black/5">
-
+<div
+  className={`relative mx-auto flex max-w-5xl transition-all duration-500
+  ${
+    collapsedHeader
+      ? "items-center justify-between px-5 py-3"
+      : "-mt-16 flex-col items-center px-5 pb-4 text-center"
+  }`}
+>
+<div
+  className={`relative flex items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl transition-all duration-500
+  ${
+    collapsedHeader
+      ? "h-12 w-12 border-2"
+      : "h-32 w-32"
+  }`}
+>
         {menu.restaurant.logoUrl ? (
 <Image
   src={menu.restaurant.logoUrl}
@@ -643,51 +679,50 @@ const featuredItems = filteredMenuItems
 
       </div>
 
-      <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-stone-900 sm:text-4xl">
-
+<h1
+  className={`font-bold text-stone-900 transition-all duration-500 ${
+  collapsedHeader
+  ? "ml-4 flex-1 text-left text-lg"
+  : "mt-4 text-3xl sm:text-4xl"
+  }`}
+>
         {menu.restaurant.name}
 
       </h1>
 
-      {menu.restaurant.tagline && (
+      {!collapsedHeader && (
+  <>
+    {menu.restaurant.tagline && (
+      <p className="mt-2 max-w-xl text-sm text-stone-600 sm:text-base">
+        {menu.restaurant.tagline}
+      </p>
+    )}
 
-        <p className="mt-2 max-w-xl text-sm text-stone-600 sm:text-base">
-
-          {menu.restaurant.tagline}
-
-        </p>
-
+    <div className="mt-4 flex flex-wrap justify-center gap-3">
+      {menu.restaurant.cuisineType && (
+        <span className="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-medium text-orange-700">
+          {menu.restaurant.cuisineType}
+        </span>
       )}
 
-      <div className="mt-4 flex flex-wrap justify-center gap-3">
-
-        {menu.restaurant.cuisineType && (
-
-          <span className="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-medium text-orange-700">
-
-            {menu.restaurant.cuisineType}
-
-          </span>
-
-        )}
-
-        <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm">
-
-          <MapPin className="h-4 w-4 text-orange-600" />
-
-          {menu.table.name}
-
-        </span>
-
-      </div>
+      <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm">
+        <MapPin className="h-4 w-4 text-orange-600" />
+        {menu.table.name}
+      </span>
+    </div>
+  </>
+)}
 
     </div>
 
   </div>
 
 </header>
- <div className="sticky top-[120px] z-10 border-b border-stone-200 bg-stone-50/90 backdrop-blur">
-  <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
+<div
+  className={`sticky z-20 border-b border-stone-200 bg-stone-50/90 backdrop-blur transition-all duration-500 ${
+    collapsedHeader ? "top-20" : "top-[120px]"
+  }`}
+>  <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
 
     <div className="relative">
 
@@ -765,7 +800,7 @@ ${
       ) : null}
 
       <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
-{featuredItems.length > 0 && (
+{featuredItems.length > 0 && !searchQuery.trim() && (
   <section className="mb-12">
     <div className="mb-5 flex items-end justify-between">
       <div>
