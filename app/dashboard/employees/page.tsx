@@ -33,7 +33,16 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export default function EmployeesPage() {
  const [employees, setEmployees] = useState<Employee[]>([]);
+
 const [search, setSearch] = useState("");
+
+const [role, setRole] = useState<"" | "MANAGER" | "STAFF">("");
+const [status, setStatus] = useState<"" | "true" | "false">("");
+const [sort, setSort] = useState<
+  "name" | "createdAt" | "lastLoginAt"
+>("createdAt");
+
+const [order, setOrder] = useState<"asc" | "desc">("desc");
 
 const [page, setPage] = useState(1);
 const limit = 10;
@@ -75,10 +84,20 @@ const [deleteEmployeeData, setDeleteEmployeeData] =
     setError(null);
 
     try {
-      const response = await getEmployees({
+    const response = await getEmployees({
   page,
   limit,
   search,
+
+  role: role || undefined,
+
+  isActive:
+    status === ""
+      ? undefined
+      : status === "true",
+
+  sort,
+  order,
 });
 
 setEmployees(response.data);
@@ -95,7 +114,7 @@ setPagination(response.pagination);
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit,  search]);
+ }, [page, limit, search, role, status, sort, order]);
 async function handleStatusConfirm() {
   if (!statusEmployee) {
     return;
@@ -165,27 +184,78 @@ async function handleStatusConfirm() {
 }, [fetchEmployees]);
 
   return (
-    <DashboardShell
-      title="seEffect(() => {Employees"
+   <DashboardShell
+  title="Employees"
       description="Manage restaurant managers and staff."
     >
       <div className="space-y-6">
         <div className="flex flex-col gap-4 rounded-xl border border-stone-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative w-full lg:max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+         <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+  <div className="flex flex-1 flex-wrap items-center gap-3">
+  <div className="relative min-w-[260px] flex-1">
+    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
 
-            <Input
-              placeholder="Search by name or email..."
-              value={search}
-              onChange={(event) => {
-  setPage(1);
-  setSearch(event.target.value);
-}}
-              className="pl-10"
-            />
-          </div>
+    <Input
+      placeholder="Search by name or email..."
+      value={search}
+      onChange={(event) => {
+        setPage(1);
+        setSearch(event.target.value);
+      }}
+      className="pl-10"
+    />
+  </div>
 
-          <Button
+  <select
+    value={role}
+    onChange={(e) => {
+      setPage(1);
+      setRole(e.target.value as "" | "MANAGER" | "STAFF");
+    }}
+    className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm"
+  >
+    <option value="">All Roles</option>
+    <option value="MANAGER">Manager</option>
+    <option value="STAFF">Staff</option>
+  </select>
+
+  <select
+    value={status}
+    onChange={(e) => {
+      setPage(1);
+      setStatus(e.target.value as "" | "true" | "false");
+    }}
+    className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm"
+  >
+    <option value="">All Status</option>
+    <option value="true">Active</option>
+    <option value="false">Inactive</option>
+  </select>
+
+  <select
+    value={`${sort}-${order}`}
+    onChange={(e) => {
+      setPage(1);
+
+      const [newSort, newOrder] = e.target.value.split("-");
+
+      setSort(newSort as "name" | "createdAt" | "lastLoginAt");
+      setOrder(newOrder as "asc" | "desc");
+    }}
+    className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm"
+  >
+    <option value="createdAt-desc">Newest</option>
+    <option value="createdAt-asc">Oldest</option>
+    <option value="name-asc">Name (A–Z)</option>
+    <option value="name-desc">Name (Z–A)</option>
+    <option value="lastLoginAt-desc">Last Login</option>
+  </select>
+</div>
+
+
+</div>
+
+<Button
   onClick={() => {
     setDialogMode("create");
     setSelectedEmployee(undefined);

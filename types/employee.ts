@@ -49,4 +49,7 @@ export interface EmployeeQueryParams {
 
   role?: EmployeeRole;
   isActive?: boolean;
+
+  sort?: "name" | "createdAt" | "lastLoginAt";
+  order?: "asc" | "desc";
 }

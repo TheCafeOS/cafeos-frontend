@@ -25,3 +25,36 @@ export type CreateMenuItemPayload = {
 };
 
 export type UpdateMenuItemPayload = CreateMenuItemPayload;
+
+/* ---------- Pagination ---------- */
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface MenuListResponse {
+  data: MenuItem[];
+  pagination: Pagination;
+}
+
+/* ---------- Query Params ---------- */
+
+export interface MenuQueryParams {
+  page?: number;
+  limit?: number;
+
+  search?: string;
+
+  categoryId?: string;
+
+  isAvailable?: boolean;
+
+  sort?: "name" | "price" | "createdAt";
+
+  order?: "asc" | "desc";
+}

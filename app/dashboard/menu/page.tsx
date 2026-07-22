@@ -95,12 +95,33 @@ const canManageMenu =
 
 const canDeleteMenu =
   employee?.role === "OWNER";
-  const [menuSearch, setMenuSearch] = useState("");
-const [selectedMenuCategoryId] = useState("ALL");
-  const [availabilityFilter, setAvailabilityFilter] = useState<
-    "ALL" | "AVAILABLE" | "UNAVAILABLE"
-  >("ALL");
+ const [menuSearch, setMenuSearch] = useState("");
 
+const [selectedMenuCategoryId, setSelectedMenuCategoryId] =
+  useState("");
+
+const [availabilityFilter, setAvailabilityFilter] = useState<
+  "" | "true" | "false"
+>("");
+
+const [page, setPage] = useState(1);
+
+const limit = 10;
+
+const [sort, setSort] = useState<
+  "createdAt" | "name" | "price"
+>("createdAt");
+
+const [order, setOrder] = useState<"asc" | "desc">("desc");
+
+const [pagination, setPagination] = useState({
+  page: 1,
+  limit: 10,
+  totalItems: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+});
   const menuItemFormRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -113,10 +134,22 @@ const [selectedMenuCategoryId] = useState("ALL");
         setCategoryError(null);
         setMenuItemError(null);
 
-        const [categoriesResult, menuItemsResult] = await Promise.allSettled([
-          getCategories(),
-          getMenuItems(),
-        ]);
+        const [categoriesResult, menuItemsResult] =
+  await Promise.allSettled([
+    getCategories(),
+    getMenuItems({
+      page,
+      limit,
+      search: menuSearch,
+      categoryId: selectedMenuCategoryId || undefined,
+      isAvailable:
+        availabilityFilter === ""
+          ? undefined
+          : availabilityFilter === "true",
+      sort,
+      order,
+    }),
+  ]);
 
         if (!isMounted) return;
 
@@ -136,11 +169,8 @@ const [selectedMenuCategoryId] = useState("ALL");
         }
 
         if (menuItemsResult.status === "fulfilled") {
-          setMenuItems(
-            Array.isArray(menuItemsResult.value)
-              ? menuItemsResult.value.filter(Boolean)
-              : [],
-          );
+          setMenuItems(menuItemsResult.value.data);
+setPagination(menuItemsResult.value.pagination);
         } else {
           const message = getErrorMessage(
             menuItemsResult.reason,
@@ -162,7 +192,14 @@ const [selectedMenuCategoryId] = useState("ALL");
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [
+  page,
+  menuSearch,
+  selectedMenuCategoryId,
+  availabilityFilter,
+  sort,
+  order,
+]);
 
   async function handleAddCategory(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -442,36 +479,8 @@ async function handleSaveEditMenuItem(itemId: string) {
     };
   }, [menuItems]);
 
-  const filteredMenuItems = useMemo(() => {  
-    const normalizedSearch = menuSearch.trim().toLowerCase();
-
-    return menuItems.filter((item) => {
-      if (!item) return false;
-
-      const matchesSearch =
-        !normalizedSearch ||
-        item.name.toLowerCase().includes(normalizedSearch) ||
-        item.description?.toLowerCase().includes(normalizedSearch);
-
-      const matchesCategory =
-  !selectedMenuCategoryId ||
-  selectedMenuCategoryId === "ALL" ||
-  item.categoryId === selectedMenuCategoryId;
-
-      const matchesAvailability =
-        availabilityFilter === "ALL" ||
-        (availabilityFilter === "AVAILABLE" && item.isAvailable !== false) ||
-        (availabilityFilter === "UNAVAILABLE" && item.isAvailable === false);
-
-      return matchesSearch && matchesCategory && matchesAvailability;
-    });
-  }, [
-    menuItems,
-    menuSearch,
-    selectedMenuCategoryId,
-    availabilityFilter,
-  ]);
-
+ 
+  
   return (
     <DashboardShell
       title="Menu"
@@ -495,7 +504,9 @@ async function handleSaveEditMenuItem(itemId: string) {
                   type="text"
                   placeholder="Enter category name (e.g., Beverages, Desserts)"
                   value={newCategoryName}
-                  onChange={(event) => setNewCategoryName(event.target.value)}
+                 onChange={(event) => {
+  setNewCategoryName(event.target.value);
+}}
                   disabled={isCategorySubmitting}
                   className="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm outline-none"
                 />
@@ -822,34 +833,70 @@ async function handleSaveEditMenuItem(itemId: string) {
             </form>
           </div>
           )}
+         
           <div className="mt-6 rounded-lg border border-stone-200 bg-white p-4">
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
+              
               <input
                 type="search"
                 value={menuSearch}
-                onChange={(event) => setMenuSearch(event.target.value)}
-                placeholder="Search by item name or description..."
+onChange={(event) => {
+  setPage(1);
+  setMenuSearch(event.target.value);
+}}                placeholder="Search by item name or description..."
                 className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
               />
+ <select
+  value={selectedMenuCategoryId}
+  onChange={(event) => {
+    setPage(1);
+    setSelectedMenuCategoryId(event.target.value);
+  }}
+  className="rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
+>
+  <option value="">All Categories</option>
 
+  {categories.map((category) => (
+    <option key={category.id} value={category.id}>
+      {category.name}
+    </option>
+  ))}
+</select>
     
 
               <select
-                value={availabilityFilter}
-                onChange={(event) =>
-                  setAvailabilityFilter(
-                    event.target.value as
-                      | "ALL"
-                      | "AVAILABLE"
-                      | "UNAVAILABLE",
-                  )
-                }
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
-              >
-                <option value="ALL">All availability</option>
-                <option value="AVAILABLE">Available</option>
-                <option value="UNAVAILABLE">Unavailable</option>
-              </select>
+  value={availabilityFilter}
+  onChange={(event) => {
+    setPage(1);
+    setAvailabilityFilter(
+      event.target.value as "" | "true" | "false"
+    );
+  }}
+  className="rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
+>
+  <option value="">All Availability</option>
+  <option value="true">Available</option>
+  <option value="false">Unavailable</option>
+</select>
+            <select
+  value={`${sort}-${order}`}
+  onChange={(event) => {
+    setPage(1);
+
+    const [newSort, newOrder] = event.target.value.split("-");
+
+    setSort(newSort as "createdAt" | "name" | "price");
+    setOrder(newOrder as "asc" | "desc");
+  }}
+  className="rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
+>
+  <option value="createdAt-desc">Newest</option>
+  <option value="createdAt-asc">Oldest</option>
+  <option value="name-asc">Name (A–Z)</option>
+  <option value="name-desc">Name (Z–A)</option>
+  <option value="price-asc">Price (Low → High)</option>
+  <option value="price-desc">Price (High → Low)</option>
+</select>
             </div>
           </div>
 
@@ -860,126 +907,143 @@ async function handleSaveEditMenuItem(itemId: string) {
               </div>
             ) : null}
 
-            {menuItemError && !isLoadingMenuItems ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-                <p className="text-sm text-red-700">{menuItemError}</p>
+           {menuItemError && !isLoadingMenuItems ? (
+  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+    <p className="text-sm text-red-700">
+      {menuItemError}
+    </p>
 
+    <Button
+      type="button"
+      variant="outline"
+      className="mt-3"
+      onClick={() => window.location.reload()}
+    >
+      Try Again
+    </Button>
+  </div>
+) : null}
+{!isLoadingMenuItems &&
+!menuItemError &&
+menuItems.length === 0 ? (
+  <div className="rounded-lg border border-stone-200 bg-stone-50 py-12 text-center">
+    <p className="font-medium text-stone-900">
+      No matching menu items.
+    </p>
+
+    <p className="mt-1 text-sm text-stone-600">
+      Change the search or filters to see more items.
+    </p>
+  </div>
+) : null}
+
+{!isLoadingMenuItems &&
+!menuItemError &&
+menuItems.length > 0 ? (
+  <>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {menuItems.map((item) => (
+        <div
+          key={item.id}
+          className="overflow-hidden rounded-lg border border-stone-200 bg-white"
+        >
+          {item.imageUrl ? (
+            <img
+              src={item.imageUrl}
+              alt={item.name}
+              className="h-40 w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-40 items-center justify-center bg-stone-100">
+              <ImageOff className="h-8 w-8 text-stone-400" />
+            </div>
+          )}
+
+          <div className="space-y-2 p-4">
+            <p className="font-semibold text-stone-900">
+              {item.name}
+            </p>
+
+            <p className="text-sm text-stone-600">
+              {getCategoryName(item.categoryId)}
+            </p>
+
+            {item.description?.trim() ? (
+              <p className="text-sm leading-6 text-stone-600">
+                {item.description}
+              </p>
+            ) : null}
+
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-semibold text-amber-600">
+                {formatPrice(item.price)}
+              </p>
+
+              <span
+                className={
+                  item.isAvailable
+                    ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+                    : "rounded-full bg-stone-200 px-2.5 py-1 text-xs font-semibold text-stone-700"
+                }
+              >
+                {item.isAvailable ? "Available" : "Unavailable"}
+              </span>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              {canManageMenu && (
                 <Button
                   type="button"
+                  size="sm"
                   variant="outline"
-                  className="mt-3"
-                  onClick={() => window.location.reload()}
+                  className="flex-1"
+                  onClick={() => handleStartEditMenuItem(item)}
                 >
-                  Try Again
+                  Edit
                 </Button>
-              </div>
-            ) : null}
+              )}
 
-            {!isLoadingMenuItems &&
-            !menuItemError &&
-            menuItems.length === 0 ? (
-              <div className="rounded-lg border border-stone-200 bg-stone-50 py-12 text-center text-stone-600">
-                No menu items yet. Create your first one above.
-              </div>
-            ) : null}
+              {canDeleteMenu && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => void handleDeleteMenuItem(item)}
+                >
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
 
-            {!isLoadingMenuItems &&
-            !menuItemError &&
-            menuItems.length > 0 &&
-            filteredMenuItems.length === 0 ? (
-              <div className="rounded-lg border border-stone-200 bg-stone-50 py-12 text-center">
-                <p className="font-medium text-stone-900">
-                  No matching menu items.
-                </p>
-                <p className="mt-1 text-sm text-stone-600">
-                  Change the search or filters to see more items.
-                </p>
-              </div>
-            ) : null}
+    {pagination.totalPages > 1 && (
+      <div className="mt-6 flex items-center justify-between rounded-lg border border-stone-200 bg-white p-4">
+        <Button
+          variant="outline"
+          disabled={!pagination.hasPreviousPage}
+          onClick={() => setPage((prev) => prev - 1)}
+        >
+          Previous
+        </Button>
 
-            {!isLoadingMenuItems &&
-            !menuItemError &&
-            filteredMenuItems.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredMenuItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="overflow-hidden rounded-lg border border-stone-200 bg-white"
-                  >
-                    {item.imageUrl ? (
-                   <img
-  src={item.imageUrl}
-  alt={item.name}
-  className="h-40 w-full object-cover"
-/>
-                    ) : (
-                      <div className="flex h-40 items-center justify-center bg-stone-100">
-                      <ImageOff className="h-8 w-8 text-stone-400" />
-                      </div>
-                    )}
+        <p className="text-sm text-stone-600">
+          Page {pagination.page} of {pagination.totalPages}
+        </p>
 
-                    <div className="space-y-2 p-4">
-                      <p className="font-semibold text-stone-900">
-                        {item.name}
-                      </p>
-
-                      <p className="text-sm text-stone-600">
-                        {getCategoryName(item.categoryId)}
-                      </p>
-
-                      {item.description?.trim() ? (
-                        <p className="text-sm leading-6 text-stone-600">
-                          {item.description}
-                        </p>
-                      ) : null}
-
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold text-amber-600">
-                          {formatPrice(item.price)}
-                        </p>
-
-                        <span
-                          className={
-                            item.isAvailable !== false
-                              ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"
-                              : "rounded-full bg-stone-200 px-2.5 py-1 text-xs font-semibold text-stone-700"
-                          }
-                        >
-                          {item.isAvailable !== false
-                            ? "Available"
-                            : "Unavailable"}
-                        </span>
-                      </div>
-
-                      <div className="flex gap-2 pt-2">
-                       {canManageMenu && (
-<Button
-  type="button"
-  size="sm"
-  variant="outline"
-  className="flex-1"
-  onClick={() => handleStartEditMenuItem(item)}
->
-  Edit
-</Button>
-)}
-
-                       {canDeleteMenu && (
-<Button
-  type="button"
-  size="icon"
-  variant="ghost"
-  onClick={() => void handleDeleteMenuItem(item)}
->
-  <Trash2 className="h-4 w-4 text-red-600" />
-</Button>
-)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+        <Button
+          variant="outline"
+          disabled={!pagination.hasNextPage}
+          onClick={() => setPage((prev) => prev + 1)}
+        >
+          Next
+        </Button>
+      </div>
+    )}
+  </>
+) : null}
           </div>
         </section>
       </div>

@@ -1,7 +1,10 @@
 import api from "@/services/api";
+
 import type {
-  MenuItem,
   CreateMenuItemPayload,
+  MenuItem,
+  MenuListResponse,
+  MenuQueryParams,
   UpdateMenuItemPayload,
 } from "@/types/menu-item";
 
@@ -11,18 +14,41 @@ type ApiResponse<T> = {
   data: T;
 };
 
-export async function getMenuItems(): Promise<MenuItem[]> {
-  const response = await api.get<ApiResponse<MenuItem[]>>("/api/v1/menu");
+export async function getMenuItems(
+  params: MenuQueryParams = {},
+): Promise<MenuListResponse> {
+  const response = await api.get<
+    ApiResponse<MenuItem[]> & {
+      pagination: MenuListResponse["pagination"];
+    }
+  >("/api/v1/menu", {
+    params: {
+      page: params.page ?? 1,
+      limit: params.limit ?? 10,
 
-  return Array.isArray(response.data.data) ? response.data.data : [];
+      search: params.search?.trim() || undefined,
+
+      categoryId: params.categoryId || undefined,
+
+      isAvailable: params.isAvailable,
+
+      sort: params.sort,
+      order: params.order,
+    },
+  });
+
+  return {
+    data: response.data.data,
+    pagination: response.data.pagination,
+  };
 }
 
 export async function createMenuItem(
-  payload: CreateMenuItemPayload
+  payload: CreateMenuItemPayload,
 ): Promise<MenuItem> {
   const response = await api.post<ApiResponse<MenuItem>>(
     "/api/v1/menu",
-    payload
+    payload,
   );
 
   return response.data.data;
@@ -30,16 +56,18 @@ export async function createMenuItem(
 
 export async function updateMenuItem(
   id: string,
-  payload: UpdateMenuItemPayload
+  payload: UpdateMenuItemPayload,
 ): Promise<MenuItem> {
   const response = await api.patch<ApiResponse<MenuItem>>(
     `/api/v1/menu/${id}`,
-    payload
+    payload,
   );
 
   return response.data.data;
 }
 
-export async function deleteMenuItem(id: string): Promise<void> {
+export async function deleteMenuItem(
+  id: string,
+): Promise<void> {
   await api.delete(`/api/v1/menu/${id}`);
 }

@@ -23,12 +23,16 @@ export async function getEmployees(
       pagination: EmployeeListResponse["pagination"];
     }
   >("/api/v1/employees", {
-    params: {
+   params: {
   page: params.page ?? 1,
   limit: params.limit ?? 10,
   search: params.search?.trim() || undefined,
+
   role: params.role || undefined,
   isActive: params.isActive,
+
+  sort: params.sort,
+  order: params.order,
 },
   });
 
