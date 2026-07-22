@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,7 +13,7 @@ import { EmployeeStatusDialog } from "@/components/employees/employee-status-dia
 import { EmployeeEmptyState } from "@/components/employees/empty-state";
 import { EmployeeLoadingSkeleton } from "@/components/employees/loading-skeleton";
 import { EmployeeTable } from "@/components/employees/employee-table";
-
+import type { Pagination } from "@/types/employee";
 import { EmployeeDeleteDialog } from "@/components/employees/employee-delete-dialog";
 import {
   deleteEmployee,
@@ -32,8 +32,20 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [search, setSearch] = useState("");
+ const [employees, setEmployees] = useState<Employee[]>([]);
+const [search, setSearch] = useState("");
+
+const [page, setPage] = useState(1);
+const limit = 10;
+
+const [pagination, setPagination] = useState<Pagination>({
+  page: 1,
+  limit: 10,
+  totalItems: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+});
 
 const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -58,14 +70,19 @@ const [deleteEmployeeData, setDeleteEmployeeData] =
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function fetchEmployees() {
+ const fetchEmployees = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const data = await getEmployees();
+      const response = await getEmployees({
+  page,
+  limit,
+  search,
+});
 
-      setEmployees(Array.isArray(data) ? data : []);
+setEmployees(response.data);
+setPagination(response.pagination);
     } catch (error) {
       const message = getErrorMessage(
         error,
@@ -78,7 +95,7 @@ const [deleteEmployeeData, setDeleteEmployeeData] =
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [page, limit,  search]);
 async function handleStatusConfirm() {
   if (!statusEmployee) {
     return;
@@ -140,30 +157,16 @@ async function handleStatusConfirm() {
   }
 }
  useEffect(() => {
-  const timer = window.setTimeout(() => {
+  const timer = setTimeout(() => {
     void fetchEmployees();
-  }, 0);
+  }, 400);
 
-  return () => window.clearTimeout(timer);
-}, []);
-  const filteredEmployees = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-
-    if (!keyword) {
-      return employees;
-    }
-
-    return employees.filter((employee) => {
-      return (
-        employee.name.toLowerCase().includes(keyword) ||
-        employee.email.toLowerCase().includes(keyword)
-      );
-    });
-  }, [employees, search]);
+  return () => clearTimeout(timer);
+}, [fetchEmployees]);
 
   return (
     <DashboardShell
-      title="Employees"
+      title="seEffect(() => {Employees"
       description="Manage restaurant managers and staff."
     >
       <div className="space-y-6">
@@ -174,7 +177,10 @@ async function handleStatusConfirm() {
             <Input
               placeholder="Search by name or email..."
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+  setPage(1);
+  setSearch(event.target.value);
+}}
               className="pl-10"
             />
           </div>
@@ -211,30 +217,57 @@ async function handleStatusConfirm() {
 
        {!isLoading &&
   !error &&
-  filteredEmployees.length === 0 && (
+ employees.length === 0 && (
     <EmployeeEmptyState />
 )}
 
-        {!isLoading &&
-          !error &&
-          filteredEmployees.length > 0 && (
-            <EmployeeTable
-              employees={filteredEmployees}
-            onEdit={(employee) => {
-  setSelectedEmployee(employee);
-  setDialogMode("edit");
-  setDialogOpen(true);
-}}
-onToggleStatus={(employee) => {
-  setStatusEmployee(employee);
-  setStatusDialogOpen(true);
-}}
-onDelete={(employee) => {
-  setDeleteEmployeeData(employee);
-  setDeleteDialogOpen(true);
-}}
-            />
-          )}
+  {!isLoading &&
+  !error &&
+  employees.length > 0 && (
+    <>
+      <EmployeeTable
+        employees={employees}
+        onEdit={(employee) => {
+          setSelectedEmployee(employee);
+          setDialogMode("edit");
+          setDialogOpen(true);
+        }}
+        onToggleStatus={(employee) => {
+          setStatusEmployee(employee);
+          setStatusDialogOpen(true);
+        }}
+        onDelete={(employee) => {
+          setDeleteEmployeeData(employee);
+          setDeleteDialogOpen(true);
+        }}
+      />
+
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-6 py-4">
+          <Button
+            variant="outline"
+            disabled={!pagination.hasPreviousPage}
+            onClick={() => setPage((prev) => prev - 1)}
+          >
+            Previous
+          </Button>
+
+          <p className="text-sm text-stone-600">
+            Page {pagination.page} of {pagination.totalPages}
+          </p>
+
+          <Button
+            variant="outline"
+            disabled={!pagination.hasNextPage}
+            onClick={() => setPage((prev) => prev + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+    </>
+)} 
+      
 
        <EmployeeDialog
   open={dialogOpen}
@@ -243,6 +276,8 @@ onDelete={(employee) => {
   onOpenChange={setDialogOpen}
   onSuccess={fetchEmployees}
 />
+
+
 <EmployeeStatusDialog 
 
   open={statusDialogOpen}

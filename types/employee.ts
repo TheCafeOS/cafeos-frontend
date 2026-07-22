@@ -26,3 +26,25 @@ export interface UpdateEmployeePayload {
 export interface UpdateEmployeeStatusPayload {
   isActive: boolean;
 }
+
+/* ---------- Pagination ---------- */
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface EmployeeListResponse {
+  data: Employee[];
+  pagination: Pagination;
+}
+
+export interface EmployeeQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}

@@ -3,6 +3,8 @@ import api from "@/services/api";
 import type {
   CreateEmployeePayload,
   Employee,
+  EmployeeListResponse,
+  EmployeeQueryParams,
   UpdateEmployeePayload,
   UpdateEmployeeStatusPayload,
 } from "@/types/employee";
@@ -13,15 +15,30 @@ type ApiResponse<T> = {
   data: T;
 };
 
-export async function getEmployees(): Promise<Employee[]> {
-  const response = await api.get<ApiResponse<Employee[]>>(
-    "/api/v1/employees",
-  );
+export async function getEmployees(
+  params: EmployeeQueryParams = {},
+): Promise<EmployeeListResponse> {
+  const response = await api.get<
+    ApiResponse<Employee[]> & {
+      pagination: EmployeeListResponse["pagination"];
+    }
+  >("/api/v1/employees", {
+    params: {
+      page: params.page ?? 1,
+      limit: params.limit ?? 10,
+      search: params.search?.trim() || undefined,
+    },
+  });
 
-  return response.data.data;
+  return {
+    data: response.data.data,
+    pagination: response.data.pagination,
+  };
 }
 
-export async function getEmployee(id: string): Promise<Employee> {
+export async function getEmployee(
+  id: string,
+): Promise<Employee> {
   const response = await api.get<ApiResponse<Employee>>(
     `/api/v1/employees/${id}`,
   );
