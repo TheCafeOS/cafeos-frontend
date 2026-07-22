@@ -42,9 +42,11 @@ export interface EmployeeListResponse {
   data: Employee[];
   pagination: Pagination;
 }
-
 export interface EmployeeQueryParams {
   page?: number;
   limit?: number;
   search?: string;
+
+  role?: EmployeeRole;
+  isActive?: boolean;
 }
