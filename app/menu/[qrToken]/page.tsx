@@ -2,20 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Building2,
   Loader2,
-  MapPin,
-  Search,
-  ShoppingBag,
 } from "lucide-react";
+import RestaurantHeader from "./components/RestaurantHeader";
 import { io } from "socket.io-client";
-import Image from "next/image";
+
+
 import { UtensilsCrossed } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import MenuCard, { type MenuItem } from "./components/MenuCard";
 import CartBar from "./components/CartBar";
 import CartDrawer, { type CartItem } from "./components/CartDrawer";
-import CurrentOrderButton from "./components/CurrentOrderButton";
 import CurrentOrderDrawer, {
   type CurrentOrder,
 } from "./components/CurrentOrderDrawer";
@@ -126,6 +122,18 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 const [searchQuery, setSearchQuery] = useState("");
 const [activeCategory, setActiveCategory] = useState("all");
 const [collapsedHeader, setCollapsedHeader] = useState(false);
+
+// New scroll-progress architecture (Phase 2). Runs alongside the
+// collapsedHeader boolean above rather than replacing it, because
+// RestaurantHeader.tsx still requires that boolean prop and hasn't
+// been updated to read --collapse-progress yet (that's Phase 3).
+const HEADER_EXPANDED_HEIGHT = 320;
+const HEADER_COLLAPSED_HEIGHT = 80;
+const COLLAPSE_DISTANCE =
+  HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT;
+const stickyRootRef = useRef<HTMLDivElement>(null);
+const collapseProgressRef = useRef(0);
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
@@ -370,6 +378,50 @@ useEffect(() => {
     window.removeEventListener("scroll", handleScroll);
   };
 }, []);
+
+// Phase 2: continuous collapse progress, written straight to the DOM
+// via ref — no React state, no re-renders on scroll. Nothing reads
+// --collapse-progress yet; RestaurantHeader still runs off the
+// collapsedHeader boolean above until Phase 3.
+useEffect(() => {
+  let ticking = false;
+  let previous = -1;
+
+  const updateProgress = () => {
+    const progress = Math.min(
+      1,
+      Math.max(0, window.scrollY / COLLAPSE_DISTANCE),
+    );
+
+    collapseProgressRef.current = progress;
+
+    if (progress !== previous) {
+      previous = progress;
+
+      stickyRootRef.current?.style.setProperty(
+        "--collapse-progress",
+        progress.toString(),
+      );
+    }
+
+    ticking = false;
+  };
+
+  updateProgress();
+
+  const onScroll = () => {
+    if (ticking) return;
+
+    ticking = true;
+    requestAnimationFrame(updateProgress);
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  return () => {
+    window.removeEventListener("scroll", onScroll);
+  };
+}, []);
   const formatPrice = (price: string | number) => {
     const numericPrice = Number(price);
 
@@ -567,222 +619,88 @@ const featuredItems = filteredMenuItems
 
   return (
     <main className="min-h-screen bg-stone-50 pb-32">
-<header
-  className={`sticky top-0 z-30 bg-white transition-all duration-500 ${
-    collapsedHeader ? "shadow-lg" : "shadow-sm"
-  }`}
->
- <div
-  className={`relative overflow-hidden transition-all duration-500 ${
-    collapsedHeader ? "h-20" : ""
-  }`}
->
+      {/*
+        PHASE 1: single sticky root.
+        RestaurantHeader, Search, and Categories now live inside ONE
+        sticky container instead of three independently-sticky elements.
+        NOTE: RestaurantHeader.tsx still has its own internal
+        `sticky top-0 z-20` on its <header> — that's redundant now that
+        this wrapper is already pinned, but harmless. It gets removed
+        when we simplify RestaurantHeader.tsx in Phase 3.
+      */}
+      <div ref={stickyRootRef} className="sticky top-0 z-20">
+        <RestaurantHeader
+          restaurant={menu.restaurant}
+          tableName={menu.table.name}
+          collapsedHeader={collapsedHeader}
+          cartItemCount={cartItemCount}
+          currentOrder={currentOrder}
+          onOpenCart={() => setIsCartOpen(true)}
+          onOpenOrder={() => setIsOrderDrawerOpen(true)}
+        />
 
-    {/* Cover */}
+        <div className="border-b border-stone-200 bg-stone-50/90 backdrop-blur">
+          <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search dishes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-2xl border border-stone-200 bg-white px-5 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+              />
+            </div>
 
-<div
-  className={`relative overflow-hidden transition-all duration-500
-  ${
-    collapsedHeader
-      ? "h-0 opacity-0"
-      : "h-56 sm:h-80 lg:h-80 opacity-100"
-  }`}
->      {menu.restaurant.coverImageUrl ? (
+            <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveCategory("all");
 
-        <>
-          <Image
-  src={menu.restaurant.coverImageUrl}
-  alt={menu.restaurant.name}
-  fill
-  priority
-  quality={100}
-  sizes="100vw"
-  className="object-cover object-center"
- />
+                  window.scrollTo({
+                    top: 0,
+                    behavior: "smooth",
+                  });
+                }}
+                className={`rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition
+                ${
+                  activeCategory === "all"
+                    ? "bg-orange-600 text-white"
+                    : "border border-stone-200 bg-white text-stone-700 hover:bg-orange-50"
+                }`}
+              >
+                All
+              </button>
 
-<div className="absolute inset-0 bg-gradient-to-t from-white/10 transparent to-transparent" />     
-   </>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(category.id);
 
-      ) : (
-
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-100 via-amber-50 to-white" />
-
-      )}
-
-      <div className="absolute right-5 top-5 flex gap-3">
-
-        {currentOrder && (
-
-          <CurrentOrderButton
-            status={currentOrder.status}
-            onClick={() => setIsOrderDrawerOpen(true)}
-          />
-
-        )}
-
-        <button
-          type="button"
-          onClick={() => setIsCartOpen(true)}
-          className="relative rounded-3xl bg-white/90 p-3 shadow-lg backdrop-blur"
-        >
-
-          <ShoppingBag className="h-6 w-6 text-orange-700" />
-
-          {cartItemCount > 0 && (
-
-            <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-600 px-1 text-xs font-bold text-white">
-
-              {cartItemCount}
-
-            </span>
-
-          )}
-
-        </button>
-
+                    document
+                      .getElementById(`category-${category.id}`)
+                      ?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                  }}
+                  className={`rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap transition
+                  ${
+                    activeCategory === category.id
+                      ? "bg-orange-600 text-white"
+                      : "border border-stone-200 bg-white text-stone-700 hover:bg-orange-50 hover:border-orange-300"
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-    </div>
-
-    {/* Logo */}
-
-<div
-  className={`relative mx-auto flex max-w-5xl transition-all duration-500
-  ${
-    collapsedHeader
-      ? "items-center justify-between px-5 py-3"
-      : "-mt-16 flex-col items-center px-5 pb-4 text-center"
-  }`}
->
-<div
-  className={`relative flex items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl transition-all duration-500
-  ${
-    collapsedHeader
-      ? "h-12 w-12 border-2"
-      : "h-32 w-32"
-  }`}
->
-        {menu.restaurant.logoUrl ? (
-<Image
-  src={menu.restaurant.logoUrl}
-  alt={menu.restaurant.name}
-  fill
-  className="object-contain p-2"
-  sizes="128px"
-/>
-
-        ) : (
-
-          <Building2 className="h-10 w-10 text-orange-600" />
-
-        )}
-
-      </div>
-
-<h1
-  className={`font-bold text-stone-900 transition-all duration-500 ${
-  collapsedHeader
-  ? "ml-4 flex-1 text-left text-lg"
-  : "mt-4 text-3xl sm:text-4xl"
-  }`}
->
-        {menu.restaurant.name}
-
-      </h1>
-
-      {!collapsedHeader && (
-  <>
-    {menu.restaurant.tagline && (
-      <p className="mt-2 max-w-xl text-sm text-stone-600 sm:text-base">
-        {menu.restaurant.tagline}
-      </p>
-    )}
-
-    <div className="mt-4 flex flex-wrap justify-center gap-3">
-      {menu.restaurant.cuisineType && (
-        <span className="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-medium text-orange-700">
-          {menu.restaurant.cuisineType}
-        </span>
-      )}
-
-      <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm">
-        <MapPin className="h-4 w-4 text-orange-600" />
-        {menu.table.name}
-      </span>
-    </div>
-  </>
-)}
-
-    </div>
-
-  </div>
-
-</header>
-<div
-  className={`sticky z-20 border-b border-stone-200 bg-stone-50/90 backdrop-blur transition-all duration-500 ${
-    collapsedHeader ? "top-20" : "top-[120px]"
-  }`}
->  <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
-
-    <div className="relative">
-
-  <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400" />
-
-  <input
-    type="text"
-    placeholder="Search dishes..."
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    className="w-full rounded-2xl border border-stone-200 bg-white py-3 pl-14 pr-5 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
-  />
-
-</div>
-<div className="mt-8 flex gap-2 overflow-x-auto pb-2">
-  <button
-    type="button"
-  onClick={() => {
-  setActiveCategory("all");
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-}}
-className={`rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition
-${
-  activeCategory === "all"
-    ? "bg-orange-600 text-white"
-    : "border border-stone-200 bg-white text-stone-700 hover:bg-orange-50"
-}`}  >
-    All
-  </button>
-
-  {categories.map((category) => (
-    <button
-      key={category.id}
-      type="button"
-    onClick={() => {
-  setActiveCategory(category.id);
-
-  document
-    .getElementById(`category-${category.id}`)
-    ?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-}}
-className={`rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition
-${
-  activeCategory === category.id
-    ? "bg-orange-600 text-white"
-    : "border border-stone-200 bg-white text-stone-700 hover:bg-orange-50 hover:border-orange-300"
-}`}    >
-      {category.name}
-    </button>
-  ))}
-</div>
-  </div>
-</div>
       {orderMessage ? (
         <div className="mx-auto mt-5 max-w-5xl px-5 sm:px-8">
           <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
@@ -799,8 +717,10 @@ ${
         </div>
       ) : null}
 
-      <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
-{featuredItems.length > 0 && !searchQuery.trim() && (
+<div className="mx-auto max-w-5xl px-5 pt-10 pb-8 sm:px-8">
+  {
+ featuredItems.length >= 3 && !searchQuery.trim()
+  && (
   <section className="mb-12">
     <div className="mb-5 flex items-end justify-between">
       <div>
@@ -808,7 +728,7 @@ ${
           Featured Menu
         </p>
 
-        <h2 className="mt-1 text-3xl font-bold text-stone-900">
+        <h2 className="mt-1 text-2xl font-bold text-stone-900">
          Chef&apos;s Selection
         </h2>
 
@@ -818,51 +738,30 @@ ${
       </div>
     </div>
 
-    <div className="grid gap-5 md:grid-cols-3">
-      {featuredItems.map((item) => (
-        <div
-          key={`featured-${item.id}`}
-className="group overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"        >
-          {item.imageUrl && (
-            <Image
-              src={item.imageUrl}
-              alt={item.name}
-              width={600}
-              height={400}
-         className="h-52 w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          )}
+<div className="grid gap-6 md:grid-cols-3">
+  {featuredItems.map((item) => (
+    <MenuCard
+      key={`featured-${item.id}`}
+      item={item}
+      formatPrice={formatPrice}
+      isFeatured
+      quantity={
+        cart.find((cartItem) => cartItem.id === item.id)?.quantity ?? 0
+      }
+      onAddToCart={() => addToCart(item)}
+      onIncrease={() => addToCart(item)}
+      onDecrease={() => {
+        const current = cart.find(
+          (cartItem) => cartItem.id === item.id,
+        );
 
-          <div className="space-y-3 p-5">
-            <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
-              Chef&apos;s Pick
-            </span>
-
-            <h3 className="text-xl font-bold text-stone-900">
-              {item.name}
-            </h3>
-
-            <p className="line-clamp-2 text-sm text-stone-600">
-              {item.description || "Freshly prepared with premium ingredients."}
-            </p>
-
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-lg font-bold text-orange-600">
-                {formatPrice(item.price)}
-              </span>
-
-             <Button
-  className="rounded-xl bg-orange-600 hover:bg-orange-700"
-  onClick={() => addToCart(item)}
-  disabled={!item.isAvailable}
->
-  Add to Cart
-</Button>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+        if (current) {
+          updateQuantity(item.id, current.quantity - 1);
+        }
+      }}
+    />
+  ))}
+</div>
   </section>
 )}
 
@@ -887,7 +786,7 @@ className="group overflow-hidden rounded-3xl border border-stone-200 bg-white sh
                 {category.name}
               </h2>
 
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {categoryItems.map((item) => (
                   <MenuCard
   key={item.id}
@@ -919,7 +818,7 @@ className="group overflow-hidden rounded-3xl border border-stone-200 bg-white sh
               More items
             </h2>
 
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {uncategorizedItems.map((item) => (
                 <MenuCard
   key={item.id}
@@ -955,7 +854,7 @@ className="group overflow-hidden rounded-3xl border border-stone-200 bg-white sh
   </h3>
 
   <p className="mt-2 text-stone-600">
-    Try searching with another keyword.
+  No dishes matched your search.
   </p>
 </div>
         ) : null}

@@ -22,6 +22,8 @@ type MenuCardProps = {
 
   quantity: number;
 
+  isFeatured?: boolean;
+
   onAddToCart: () => void;
   onIncrease: () => void;
   onDecrease: () => void;
@@ -31,6 +33,7 @@ export default function MenuCard({
   item,
   formatPrice,
   quantity,
+  isFeatured = false,
   onAddToCart,
   onIncrease,
   onDecrease,
@@ -71,7 +74,7 @@ export default function MenuCard({
         </div>
       </div>
 
-      <div className="flex h-[220px] flex-col p-5">
+      <div className="flex min-h-[220px] flex-col p-5">
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-lg font-bold text-stone-900">
             {item.name}
