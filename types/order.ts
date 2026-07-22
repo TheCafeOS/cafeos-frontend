@@ -63,10 +63,8 @@ export interface GetOrdersParams {
 export interface GetOrdersResponse {
   success: boolean;
   message: string;
-  data: {
-    orders: RestaurantOrder[];
-    pagination: OrdersPagination;
-  };
+  data: RestaurantOrder[];
+  pagination: OrdersPagination;
 }
 
 export interface UpdateOrderStatusPayload {

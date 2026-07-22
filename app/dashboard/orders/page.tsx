@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";import { Loader2, RefreshCw, Search, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Loader2, RefreshCw, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -79,28 +80,71 @@ export default function OrdersPage() {
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+const limit = 10;
+
+const [pagination, setPagination] = useState({
+  page: 1,
+  limit: 10,
+  totalItems: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+});
+
+const [tableFilter, setTableFilter] = useState("");
+const [fromDate, setFromDate] = useState("");
+const [toDate, setToDate] = useState("");
+const [sort, setSort] = useState<
+  "createdAt" | "status" | "total"
+>("createdAt");
+
+const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [selectedOrder, setSelectedOrder] =
   useState<RestaurantOrder | null>(null);
 
 const [dialogOpen, setDialogOpen] =
   useState(false);
+const loadOrders = useCallback(async () => {
+  try {
+    setIsLoading(true);
+    setError("");
 
-  async function loadOrders() {
-    try {
-      setIsLoading(true);
-      setError("");
+    const response = await getOrders({
+      page,
+      limit,
+      search: searchQuery || undefined,
+      status:
+        statusFilter === "ALL"
+          ? undefined
+          : statusFilter,
+      tableId: tableFilter || undefined,
+      from: fromDate || undefined,
+      to: toDate || undefined,
+      sort,
+      order,
+    });
 
-      const data = await getOrders();
-      setOrders(data.orders);
-    } catch (caughtError) {
-      const message = getErrorMessage(caughtError);
-      setError(message);
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
+    setOrders(response.orders);
+    setPagination(response.pagination);
+  } catch (caughtError) {
+    const message = getErrorMessage(caughtError);
+    setError(message);
+    toast.error(message);
+  } finally {
+    setIsLoading(false);
   }
-
+}, [
+  page,
+  limit,
+  searchQuery,
+  statusFilter,
+  tableFilter,
+  fromDate,
+  toDate,
+  sort,
+  order,
+]);
   async function handleStatusUpdate(
     orderId: string,
     nextStatus: OrderStatus,
@@ -129,24 +173,23 @@ if (selectedOrder?.id === updatedOrder.id) {
       setUpdatingOrderId(null);
     }
   }
-
 useEffect(() => {
   const timer = window.setTimeout(() => {
     void loadOrders();
-  }, 0);
+  }, 400);
 
   return () => {
     window.clearTimeout(timer);
   };
-}, []);
+}, [loadOrders]);
 
 const handleOrderCreated = useCallback(() => {
   void loadOrders();
-}, []);
+}, [loadOrders]);
 
 const handleOrderUpdated = useCallback(() => {
   void loadOrders();
-}, []);
+}, [loadOrders]);
 
 useOwnerOrderSocket({
   onOrderCreated: handleOrderCreated,
@@ -184,34 +227,7 @@ useEffect(() => {
     );
   };
 }, [orders]);
-  const filteredOrders = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
 
-    return orders.filter((order) => {
-      const matchesStatus =
-        statusFilter === "ALL" || order.status === statusFilter;
-
-      if (!matchesStatus) {
-        return false;
-      }
-
-      if (!query) {
-        return true;
-      }
-
-      const searchableText = [
-        order.id,
-        formatOrderReference(order.id),
-        order.table.name,
-        order.customerPhone ?? "",
-        ...order.items.map((item) => item.menuItem.name),
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return searchableText.includes(query);
-    });
-  }, [orders, searchQuery, statusFilter]);
 
   return (
     <DashboardShell
@@ -225,9 +241,9 @@ useEffect(() => {
               Recent orders
             </h2>
             <p className="mt-1 text-sm text-stone-600">
-              {filteredOrders.length} of {orders.length} order
-              {orders.length === 1 ? "" : "s"} shown.
-            </p>
+  {orders.length} of {pagination.totalItems} order
+  {pagination.totalItems === 1 ? "" : "s"} shown.
+</p>
           </div>
 
           <Button
@@ -250,14 +266,19 @@ useEffect(() => {
               <input
                 type="search"
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search by order ID, table, phone, or item..."
+onChange={(event) => {
+  setPage(1);
+  setSearchQuery(event.target.value);
+}}                placeholder="Search by order ID, table, phone, or item..."
                 className="w-full rounded-lg border border-stone-200 py-2 pl-10 pr-10 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
               />
               {searchQuery ? (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => {
+  setPage(1);
+  setSearchQuery("");
+}}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
                   aria-label="Clear search"
                 >
@@ -280,12 +301,15 @@ useEffect(() => {
                       ? "bg-amber-600 hover:bg-amber-700"
                       : "shrink-0"
                   }
-                  onClick={() => setStatusFilter(filter.value)}
-                >
+onClick={() => {
+  setPage(1);
+  setStatusFilter(filter.value);
+}}                >
                   {filter.label}
                 </Button>
               ))}
             </div>
+        
           </div>
         ) : null}
 
@@ -315,25 +339,11 @@ useEffect(() => {
           </div>
         ) : null}
 
-        {!isLoading && !error && orders.length > 0 && filteredOrders.length === 0 ? (
-          <div className="rounded-lg border border-stone-200 bg-stone-50 py-12 text-center">
-            <p className="font-medium text-stone-800">No matching orders found.</p>
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery("");
-                setStatusFilter("ALL");
-              }}
-              className="mt-2 text-sm font-medium text-amber-700 hover:text-amber-800"
-            >
-              Clear filters
-            </button>
-          </div>
-        ) : null}
+       
 
-        {!isLoading && !error && filteredOrders.length > 0 ? (
+       {!isLoading && !error && orders.length > 0 ? (
           <div className="space-y-4">
-            {filteredOrders.map((order) => {
+            {orders.map((order) => {
               const nextStatus = NEXT_STATUS[order.status];
               const isUpdating = updatingOrderId === order.id;
 
@@ -423,6 +433,29 @@ useEffect(() => {
             })}
           </div>
         ) : null}
+        {pagination.totalPages > 1 && (
+  <div className="mt-6 flex items-center justify-between rounded-xl border border-stone-200 bg-white p-4">
+    <Button
+      variant="outline"
+      disabled={!pagination.hasPreviousPage}
+      onClick={() => setPage((prev) => prev - 1)}
+    >
+      Previous
+    </Button>
+
+    <p className="text-sm text-stone-600">
+      Page {pagination.page} of {pagination.totalPages}
+    </p>
+
+    <Button
+      variant="outline"
+      disabled={!pagination.hasNextPage}
+      onClick={() => setPage((prev) => prev + 1)}
+    >
+      Next
+    </Button>
+  </div>
+)}
       </div>
       <OrderDetailsDialog
   open={dialogOpen}

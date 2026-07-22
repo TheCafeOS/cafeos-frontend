@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ImageUpload from "@/components/dashboard/image-upload";
 import { uploadMenuItemImage } from "@/services/image.service";
 import axios from "axios";
-
+import Image from "next/image";
 import {
   createCategory,
   deleteCategory,
@@ -948,12 +948,15 @@ menuItems.length > 0 ? (
           className="overflow-hidden rounded-lg border border-stone-200 bg-white"
         >
           {item.imageUrl ? (
-            <img
-              src={item.imageUrl}
-              alt={item.name}
-              className="h-40 w-full object-cover"
-            />
-          ) : (
+  <div className="relative h-40 w-full">
+    <Image
+      src={item.imageUrl}
+      alt={item.name}
+      fill
+      className="object-cover"
+    />
+  </div>
+) : (
             <div className="flex h-40 items-center justify-center bg-stone-100">
               <ImageOff className="h-8 w-8 text-stone-400" />
             </div>
