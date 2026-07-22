@@ -121,16 +121,20 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [error, setError] = useState("");
 const [searchQuery, setSearchQuery] = useState("");
 const [activeCategory, setActiveCategory] = useState("all");
-const [collapsedHeader, setCollapsedHeader] = useState(false);
 
-// New scroll-progress architecture (Phase 2). Runs alongside the
-// collapsedHeader boolean above rather than replacing it, because
-// RestaurantHeader.tsx still requires that boolean prop and hasn't
-// been updated to read --collapse-progress yet (that's Phase 3).
-const HEADER_EXPANDED_HEIGHT = 320;
-const HEADER_COLLAPSED_HEIGHT = 80;
-const COLLAPSE_DISTANCE =
-  HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT;
+// Phase 3 complete: RestaurantHeader now reads --collapse-progress
+// directly and no longer takes a collapsedHeader prop, so the boolean
+// state + its scroll listener are gone. This ref/CSS-var effect is
+// the only scroll-driven mechanism left — no React state, no re-renders.
+const COLLAPSE_DISTANCE = 180;
+
+// Ease-out cubic: fast at the start of the collapse, settling in
+// toward the end. Applied to the scroll ratio itself — there's no
+// CSS transition to ease here (scroll position *is* the animation),
+// so this is the correct place for a non-linear feel.
+function easeOutCubic(t: number) {
+  return 1 - Math.pow(1 - t, 3);
+}
 const stickyRootRef = useRef<HTMLDivElement>(null);
 const collapseProgressRef = useRef(0);
 
@@ -367,31 +371,16 @@ const menuItems = menu?.menuItems ?? [];
 
   return () => observer.disconnect();
 }, [categories]);
-useEffect(() => {
-  const handleScroll = () => {
-    setCollapsedHeader(window.scrollY > 180);
-  };
-
-  window.addEventListener("scroll", handleScroll);
-
-  return () => {
-    window.removeEventListener("scroll", handleScroll);
-  };
-}, []);
-
-// Phase 2: continuous collapse progress, written straight to the DOM
-// via ref — no React state, no re-renders on scroll. Nothing reads
-// --collapse-progress yet; RestaurantHeader still runs off the
-// collapsedHeader boolean above until Phase 3.
+// Continuous collapse progress, written straight to the DOM via ref —
+// no React state, no re-renders on scroll. RestaurantHeader reads
+// --collapse-progress directly from this.
 useEffect(() => {
   let ticking = false;
   let previous = -1;
 
   const updateProgress = () => {
-    const progress = Math.min(
-      1,
-      Math.max(0, window.scrollY / COLLAPSE_DISTANCE),
-    );
+    const raw = Math.min(1, Math.max(0, window.scrollY / COLLAPSE_DISTANCE));
+    const progress = easeOutCubic(raw);
 
     collapseProgressRef.current = progress;
 
@@ -632,7 +621,6 @@ const featuredItems = filteredMenuItems
         <RestaurantHeader
           restaurant={menu.restaurant}
           tableName={menu.table.name}
-          collapsedHeader={collapsedHeader}
           cartItemCount={cartItemCount}
           currentOrder={currentOrder}
           onOpenCart={() => setIsCartOpen(true)}
