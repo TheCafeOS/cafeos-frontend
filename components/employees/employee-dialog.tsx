@@ -12,7 +12,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { EmployeeForm, type EmployeeFormValues } from "./employee-form";
+import {
+  EmployeeForm,
+  type EmployeeFormValues,
+} from "./employee-form";
 
 import {
   createEmployee,
@@ -63,16 +66,16 @@ export function EmployeeDialog({
           name: values.name,
           email: values.email,
           password: values.password!,
-          role: "MANAGER",
+          role: values.role,
         };
 
         await createEmployee(payload);
 
-        toast.success("Manager created successfully.");
+        toast.success("Employee created successfully.");
       } else if (employee) {
         const payload: UpdateEmployeePayload = {
           name: values.name,
-          role: "MANAGER",
+          role: values.role,
         };
 
         await updateEmployee(employee.id, payload);
@@ -101,12 +104,14 @@ export function EmployeeDialog({
   }
 
   const title =
-    mode === "create" ? "Add Manager" : "Edit Manager";
+    mode === "create"
+      ? "Add Employee"
+      : "Edit Employee";
 
   const description =
     mode === "create"
-      ? "Invite a manager to help operate your restaurant."
-      : "Update employee information.";
+      ? "Invite a manager or staff member to help operate your restaurant."
+      : "Update employee information and role.";
 
   return (
     <Dialog
@@ -121,7 +126,9 @@ export function EmployeeDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
 
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription>
+            {description}
+          </DialogDescription>
         </DialogHeader>
 
         <EmployeeForm

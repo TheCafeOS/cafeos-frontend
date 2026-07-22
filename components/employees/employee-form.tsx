@@ -26,7 +26,7 @@ const employeeSchema = z.object({
 
   password: z.string().optional(),
 
-  role: z.enum(["MANAGER"]),
+  role: z.enum(["MANAGER", "STAFF"]),
 });
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>;
@@ -69,6 +69,12 @@ export function EmployeeForm({
     defaultValue: "",
   });
 
+  const role = useWatch({
+    control,
+    name: "role",
+    defaultValue: "MANAGER",
+  });
+
   useEffect(() => {
     if (!employee) {
       reset({
@@ -85,7 +91,7 @@ export function EmployeeForm({
       name: employee.name,
       email: employee.email,
       password: "",
-      role: "MANAGER",
+      role: employee.role === "STAFF" ? "STAFF" : "MANAGER",
     });
   }, [employee, reset]);
 
@@ -138,7 +144,8 @@ export function EmployeeForm({
           </p>
         )}
       </div>
-            {mode === "create" && (
+
+      {mode === "create" && (
         <div className="space-y-2">
           <Label>Password</Label>
 
@@ -163,17 +170,34 @@ export function EmployeeForm({
       )}
 
       <div className="space-y-2">
-        <Label>Role</Label>
+        <Label htmlFor="role">Role</Label>
 
-        <Input
-          value="Manager"
-          disabled
-        />
+        <select
+          id="role"
+          value={role}
+          disabled={loading}
+          onChange={(event) =>
+            setValue(
+              "role",
+              event.target.value as "MANAGER" | "STAFF",
+              {
+                shouldDirty: true,
+                shouldTouch: true,
+                shouldValidate: true,
+              }
+            )
+          }
+          className="flex h-10 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value="MANAGER">Manager</option>
+          <option value="STAFF">Staff</option>
+        </select>
 
-        <input
-          type="hidden"
-          {...register("role")}
-        />
+        {errors.role && (
+          <p className="text-sm text-red-600">
+            {errors.role.message}
+          </p>
+        )}
       </div>
 
       <div className="flex justify-end gap-3 pt-2">
@@ -193,7 +217,7 @@ export function EmployeeForm({
           {loading
             ? "Saving..."
             : mode === "create"
-              ? "Create Manager"
+              ? "Create Employee"
               : "Save Changes"}
         </Button>
       </div>

@@ -172,7 +172,7 @@ async function handleStatusConfirm() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
 
             <Input
-              placeholder="Search employees..."
+              placeholder="Search by name or email..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="pl-10"
@@ -186,9 +186,9 @@ async function handleStatusConfirm() {
     setDialogOpen(true);
   }}
 >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Manager
-          </Button>
+  <Plus className="mr-2 h-4 w-4" />
+  Add Employee
+</Button>
         </div>
 
         {isLoading && <EmployeeLoadingSkeleton />}
@@ -209,11 +209,11 @@ async function handleStatusConfirm() {
           </div>
         )}
 
-        {!isLoading &&
-          !error &&
-          filteredEmployees.length === 0 && (
-            <EmployeeEmptyState />
-          )}
+       {!isLoading &&
+  !error &&
+  filteredEmployees.length === 0 && (
+    <EmployeeEmptyState />
+)}
 
         {!isLoading &&
           !error &&

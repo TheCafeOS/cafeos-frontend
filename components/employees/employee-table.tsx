@@ -104,6 +104,7 @@ export function EmployeeTable({
                     <Button
                       variant="ghost"
                       size="icon"
+                      disabled={employee.role === "OWNER"}
                       onClick={() => onEdit?.(employee)}
                     >
                       <Edit3 className="h-4 w-4" />
@@ -112,6 +113,7 @@ export function EmployeeTable({
                     <Button
                       variant="ghost"
                       size="icon"
+                      disabled={employee.role === "OWNER"}
                       onClick={() =>
                         onToggleStatus?.(employee)
                       }
@@ -122,7 +124,8 @@ export function EmployeeTable({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      disabled={employee.role === "OWNER"}
+                      className="text-red-600 hover:bg-red-50 hover:text-red-700 disabled:text-stone-400 disabled:hover:bg-transparent"
                       onClick={() => onDelete?.(employee)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -134,7 +137,8 @@ export function EmployeeTable({
           </tbody>
         </table>
       </div>
-            {/* Mobile */}
+
+      {/* Mobile */}
       <div className="space-y-4 lg:hidden">
         {employees.map((employee) => (
           <article
@@ -161,6 +165,7 @@ export function EmployeeTable({
               <Button
                 variant="ghost"
                 size="icon"
+                disabled
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
@@ -204,6 +209,7 @@ export function EmployeeTable({
               <Button
                 variant="outline"
                 className="flex-1"
+                disabled={employee.role === "OWNER"}
                 onClick={() => onEdit?.(employee)}
               >
                 <Edit3 className="mr-2 h-4 w-4" />
@@ -213,6 +219,7 @@ export function EmployeeTable({
               <Button
                 variant="outline"
                 className="flex-1"
+                disabled={employee.role === "OWNER"}
                 onClick={() => onToggleStatus?.(employee)}
               >
                 <UserX className="mr-2 h-4 w-4" />
@@ -221,7 +228,8 @@ export function EmployeeTable({
 
               <Button
                 variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                disabled={employee.role === "OWNER"}
+                className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 disabled:border-stone-200 disabled:text-stone-400 disabled:hover:bg-transparent"
                 onClick={() => onDelete?.(employee)}
               >
                 <Trash2 className="h-4 w-4" />

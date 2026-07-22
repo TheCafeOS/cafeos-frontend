@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 import { toast } from "sonner";
-
+import { getEmployee } from "@/utils/auth";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -87,7 +87,14 @@ export default function MenuPage() {
   );
   const [editingMenuItem, setEditingMenuItem] =
     useState<CreateMenuItemPayload>(emptyMenuItem);
+const employee = getEmployee();
 
+const canManageMenu =
+  employee?.role === "OWNER" ||
+  employee?.role === "MANAGER";
+
+const canDeleteMenu =
+  employee?.role === "OWNER";
   const [menuSearch, setMenuSearch] = useState("");
 const [selectedMenuCategoryId] = useState("ALL");
   const [availabilityFilter, setAvailabilityFilter] = useState<
@@ -186,7 +193,8 @@ const [selectedMenuCategoryId] = useState("ALL");
     }
   }
 
-  function handleStartEditCategory(category: Category) {
+function handleStartEditCategory(category: Category) {
+  if (!canManageMenu) return;
     setEditingCategoryId(category.id);
     setEditingCategoryName(category.name);
   }
@@ -289,8 +297,8 @@ toast.success("Menu item created successfully.");
       setIsMenuItemSubmitting(false);
     }
   }
-
-  function handleStartEditMenuItem(item: MenuItem) {
+function handleStartEditMenuItem(item: MenuItem) {
+  if (!canManageMenu) return;
     setEditingMenuItemId(item.id);
 
     setEditingMenuItem({
@@ -476,7 +484,8 @@ async function handleSaveEditMenuItem(itemId: string) {
           </h2>
 
           <div className="space-y-6">
-            <div className="rounded-lg border border-stone-200 bg-white p-6">
+            {canManageMenu && (
+<div className="rounded-lg border border-stone-200 bg-white p-6">
               <h3 className="mb-4 text-lg font-semibold text-stone-900">
                 Add New Category
               </h3>
@@ -507,7 +516,7 @@ async function handleSaveEditMenuItem(itemId: string) {
                 </Button>
               </form>
             </div>
-
+            )}
            {isLoadingMenuItems ? (
   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     {Array.from({ length: 6 }).map((_, index) => (
@@ -597,23 +606,27 @@ async function handleSaveEditMenuItem(itemId: string) {
                         </p>
 
                         <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleStartEditCategory(category)}
-                          >
-                            Edit
-                          </Button>
+                          {canManageMenu && (
+<Button
+  type="button"
+  size="sm"
+  variant="outline"
+  onClick={() => handleStartEditCategory(category)}
+>
+  Edit
+</Button>
+)}
 
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => void handleDeleteCategory(category)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </Button>
+                          {canDeleteMenu && (
+<Button
+  type="button"
+  size="icon"
+  variant="ghost"
+  onClick={() => void handleDeleteCategory(category)}
+>
+  <Trash2 className="h-4 w-4 text-red-600" />
+</Button>
+)}
                         </div>
                       </>
                     )}
@@ -652,10 +665,11 @@ async function handleSaveEditMenuItem(itemId: string) {
             </div>
           </div>
 
-          <div
-            ref={menuItemFormRef}
-            className="rounded-lg border border-stone-200 bg-white p-6"
-          >
+          {canManageMenu && (
+<div
+  ref={menuItemFormRef}
+  className="rounded-lg border border-stone-200 bg-white p-6"
+>
             <h3 className="mb-4 text-lg font-semibold text-stone-900">
               {isEditingMenuItem ? "Edit Menu Item" : "Add New Item"}
             </h3>
@@ -807,7 +821,7 @@ async function handleSaveEditMenuItem(itemId: string) {
               </div>
             </form>
           </div>
-
+          )}
           <div className="mt-6 rounded-lg border border-stone-200 bg-white p-4">
             <div className="grid gap-3 md:grid-cols-3">
               <input
@@ -938,24 +952,28 @@ async function handleSaveEditMenuItem(itemId: string) {
                       </div>
 
                       <div className="flex gap-2 pt-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => handleStartEditMenuItem(item)}
-                        >
-                          Edit
-                        </Button>
+                       {canManageMenu && (
+<Button
+  type="button"
+  size="sm"
+  variant="outline"
+  className="flex-1"
+  onClick={() => handleStartEditMenuItem(item)}
+>
+  Edit
+</Button>
+)}
 
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => void handleDeleteMenuItem(item)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
+                       {canDeleteMenu && (
+<Button
+  type="button"
+  size="icon"
+  variant="ghost"
+  onClick={() => void handleDeleteMenuItem(item)}
+>
+  <Trash2 className="h-4 w-4 text-red-600" />
+</Button>
+)}
                       </div>
                     </div>
                   </div>

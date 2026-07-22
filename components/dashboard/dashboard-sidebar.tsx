@@ -30,23 +30,100 @@ export function DashboardSidebar({
 
   const employee = getEmployee();
 
-  const navItems = [
-    { href: "/dashboard", label: "Overview", icon: LayoutGrid },
-    { href: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
-    { href: "/dashboard/menu", label: "Menu", icon: Coffee },
-    { href: "/dashboard/tables", label: "Tables", icon: Table2 },
-    { href: "/dashboard/inventory", label: "Inventory", icon: Package2 },
-    { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
-  ];
-
-  if (employee?.role === "OWNER") {
-    navItems.push({
-      href: "/dashboard/employees",
-      label: "Employees",
-      icon: Users,
-    });
-  }
+  const navItems =
+    employee?.role === "OWNER"
+      ? [
+          {
+            href: "/dashboard",
+            label: "Overview",
+            icon: LayoutGrid,
+          },
+          {
+            href: "/dashboard/orders",
+            label: "Orders",
+            icon: ShoppingBag,
+          },
+          {
+            href: "/dashboard/menu",
+            label: "Menu",
+            icon: Coffee,
+          },
+          {
+            href: "/dashboard/tables",
+            label: "Tables",
+            icon: Table2,
+          },
+          {
+            href: "/dashboard/inventory",
+            label: "Inventory",
+            icon: Package2,
+          },
+          {
+            href: "/dashboard/reports",
+            label: "Reports",
+            icon: BarChart3,
+          },
+          {
+            href: "/dashboard/employees",
+            label: "Employees",
+            icon: Users,
+          },
+          {
+            href: "/dashboard/settings",
+            label: "Settings",
+            icon: Settings,
+          },
+        ]
+      : employee?.role === "MANAGER"
+        ? [
+            {
+              href: "/dashboard",
+              label: "Overview",
+              icon: LayoutGrid,
+            },
+            {
+              href: "/dashboard/orders",
+              label: "Orders",
+              icon: ShoppingBag,
+            },
+            {
+              href: "/dashboard/menu",
+              label: "Menu",
+              icon: Coffee,
+            },
+            {
+              href: "/dashboard/tables",
+              label: "Tables",
+              icon: Table2,
+            },
+            {
+              href: "/dashboard/inventory",
+              label: "Inventory",
+              icon: Package2,
+            },
+            {
+              href: "/dashboard/reports",
+              label: "Reports",
+              icon: BarChart3,
+            },
+          ]
+        : [
+            {
+              href: "/dashboard/orders",
+              label: "Orders",
+              icon: ShoppingBag,
+            },
+            {
+              href: "/dashboard/menu",
+              label: "Menu",
+              icon: Coffee,
+            },
+            {
+              href: "/dashboard/tables",
+              label: "Tables",
+              icon: Table2,
+            },
+          ];
 
   return (
     <aside

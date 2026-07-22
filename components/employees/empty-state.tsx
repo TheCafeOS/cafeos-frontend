@@ -1,11 +1,11 @@
 import { Users } from "lucide-react";
 
 type EmployeeEmptyStateProps = {
-  onAddManager?: () => void;
+  onAddEmployee?: () => void;
 };
 
 export function EmployeeEmptyState({
-  onAddManager,
+  onAddEmployee,
 }: EmployeeEmptyStateProps) {
   return (
     <div className="rounded-xl border border-dashed border-stone-300 bg-white px-6 py-20 text-center">
@@ -18,17 +18,17 @@ export function EmployeeEmptyState({
       </h3>
 
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-stone-600">
-        Invite managers to help operate your restaurant. They can manage
-        orders, menu items, tables, and daily operations based on their
-        assigned permissions.
+        Invite managers and staff members to help operate your restaurant.
+        Employees can assist with daily operations based on their assigned role
+        and permissions.
       </p>
 
-      {onAddManager ? (
+      {onAddEmployee ? (
         <button
-          onClick={onAddManager}
+          onClick={onAddEmployee}
           className="mt-8 rounded-lg bg-stone-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-stone-800"
         >
-          Add your first manager
+          Add your first employee
         </button>
       ) : null}
     </div>
