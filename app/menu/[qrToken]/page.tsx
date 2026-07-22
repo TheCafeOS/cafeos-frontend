@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { io } from "socket.io-client";
 import Image from "next/image";
+import { UtensilsCrossed } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import MenuCard, { type MenuItem } from "./components/MenuCard";
 import CartBar from "./components/CartBar";
 import CartDrawer, { type CartItem } from "./components/CartDrawer";
@@ -122,6 +124,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 const [searchQuery, setSearchQuery] = useState("");
+const [activeCategory, setActiveCategory] = useState("all");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
@@ -133,7 +136,8 @@ const [searchQuery, setSearchQuery] = useState("");
   const [isOrderDrawerOpen, setIsOrderDrawerOpen] = useState(false);
   const [isRefreshingOrder, setIsRefreshingOrder] = useState(false);
   const [currentOrderError, setCurrentOrderError] = useState("");
-
+const categories = menu?.categories ?? [];
+const menuItems = menu?.menuItems ?? [];
   const currentOrderIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -325,6 +329,35 @@ const [searchQuery, setSearchQuery] = useState("");
       socket.disconnect();
     };
   }, [qrToken, fetchCurrentOrder]);
+  useEffect(() => {
+  if (categories.length === 0) return;
+
+  const sections = categories
+    .map((category) =>
+      document.getElementById(`category-${category.id}`)
+    )
+    .filter(Boolean) as HTMLElement[];
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveCategory(
+            entry.target.id.replace("category-", "")
+          );
+        }
+      });
+    },
+    {
+      threshold: 0.3,
+      rootMargin: "-120px 0px -60% 0px",
+    }
+  );
+
+  sections.forEach((section) => observer.observe(section));
+
+  return () => observer.disconnect();
+}, [categories]);
 
   const formatPrice = (price: string | number) => {
     const numericPrice = Number(price);
@@ -498,9 +531,6 @@ setIsOrderDrawerOpen(true);
     );
   }
 
-  const categories = menu.categories ?? [];
-const menuItems = menu.menuItems ?? [];
-
 
 const filteredMenuItems = menuItems.filter((item) => {
   const query = searchQuery.trim().toLowerCase();
@@ -520,7 +550,9 @@ const filteredMenuItems = menuItems.filter((item) => {
 const uncategorizedItems = filteredMenuItems.filter(
   (item) => !item.categoryId
 );
-
+const featuredItems = filteredMenuItems
+  .filter((item) => item.isAvailable)
+  .slice(0, 3);
 
   return (
     <main className="min-h-screen bg-stone-50 pb-32">
@@ -673,14 +705,20 @@ const uncategorizedItems = filteredMenuItems.filter(
 <div className="mt-8 flex gap-2 overflow-x-auto pb-2">
   <button
     type="button"
-    onClick={() =>
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      })
-    }
-    className="rounded-full bg-orange-600 px-4 py-2 text-sm font-semibold text-white whitespace-nowrap"
-  >
+  onClick={() => {
+  setActiveCategory("all");
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}}
+className={`rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition
+${
+  activeCategory === "all"
+    ? "bg-orange-600 text-white"
+    : "border border-stone-200 bg-white text-stone-700 hover:bg-orange-50"
+}`}  >
     All
   </button>
 
@@ -688,16 +726,22 @@ const uncategorizedItems = filteredMenuItems.filter(
     <button
       key={category.id}
       type="button"
-      onClick={() =>
-        document
-          .getElementById(`category-${category.id}`)
-          ?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          })
-      }
-      className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 whitespace-nowrap hover:bg-orange-50 hover:border-orange-300 transition"
-    >
+    onClick={() => {
+  setActiveCategory(category.id);
+
+  document
+    .getElementById(`category-${category.id}`)
+    ?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+}}
+className={`rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition
+${
+  activeCategory === category.id
+    ? "bg-orange-600 text-white"
+    : "border border-stone-200 bg-white text-stone-700 hover:bg-orange-50 hover:border-orange-300"
+}`}    >
       {category.name}
     </button>
   ))}
@@ -721,9 +765,77 @@ const uncategorizedItems = filteredMenuItems.filter(
       ) : null}
 
       <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
+{featuredItems.length > 0 && (
+  <section className="mb-12">
+    <div className="mb-5 flex items-end justify-between">
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-orange-600">
+          Featured Menu
+        </p>
+
+        <h2 className="mt-1 text-3xl font-bold text-stone-900">
+         Chef&apos;s Selection
+        </h2>
+
+        <p className="mt-1 text-sm text-stone-500">
+          Chef&apos;s recommended dishes.
+        </p>
+      </div>
+    </div>
+
+    <div className="grid gap-5 md:grid-cols-3">
+      {featuredItems.map((item) => (
+        <div
+          key={`featured-${item.id}`}
+className="group overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"        >
+          {item.imageUrl && (
+            <Image
+              src={item.imageUrl}
+              alt={item.name}
+              width={600}
+              height={400}
+         className="h-52 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          )}
+
+          <div className="space-y-3 p-5">
+            <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+              Chef&apos;s Pick
+            </span>
+
+            <h3 className="text-xl font-bold text-stone-900">
+              {item.name}
+            </h3>
+
+            <p className="line-clamp-2 text-sm text-stone-600">
+              {item.description || "Freshly prepared with premium ingredients."}
+            </p>
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-lg font-bold text-orange-600">
+                {formatPrice(item.price)}
+              </span>
+
+             <Button
+  className="rounded-xl bg-orange-600 hover:bg-orange-700"
+  onClick={() => addToCart(item)}
+  disabled={!item.isAvailable}
+>
+  Add to Cart
+</Button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
+
         {categories.map((category) => {
-       const categoryItems = filteredMenuItems.filter(
-  (item) => item.categoryId === category.id,
+     const categoryItems = filteredMenuItems.filter(
+  (item) =>
+    item.categoryId === category.id &&
+    !featuredItems.some((featured) => featured.id === item.id),
 );
 
           if (categoryItems.length === 0) {
@@ -743,11 +855,23 @@ const uncategorizedItems = filteredMenuItems.filter(
               <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {categoryItems.map((item) => (
                   <MenuCard
-                    key={item.id}
-                    item={item}
-                    formatPrice={formatPrice}
-                    onAddToCart={() => addToCart(item)}
-                  />
+  key={item.id}
+  item={item}
+  formatPrice={formatPrice}
+  quantity={
+    cart.find((cartItem) => cartItem.id === item.id)?.quantity ?? 0
+  }
+  onAddToCart={() => addToCart(item)}
+  onIncrease={() => addToCart(item)}
+  onDecrease={() => {
+    const current =
+      cart.find((cartItem) => cartItem.id === item.id);
+
+    if (current) {
+      updateQuantity(item.id, current.quantity - 1);
+    }
+  }}
+/>
                 ))}
               </div>
             </section>
@@ -763,11 +887,23 @@ const uncategorizedItems = filteredMenuItems.filter(
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {uncategorizedItems.map((item) => (
                 <MenuCard
-                  key={item.id}
-                  item={item}
-                  formatPrice={formatPrice}
-                  onAddToCart={() => addToCart(item)}
-                />
+  key={item.id}
+  item={item}
+  formatPrice={formatPrice}
+  quantity={
+    cart.find((cartItem) => cartItem.id === item.id)?.quantity ?? 0
+  }
+  onAddToCart={() => addToCart(item)}
+  onIncrease={() => addToCart(item)}
+  onDecrease={() => {
+    const current =
+      cart.find((cartItem) => cartItem.id === item.id);
+
+    if (current) {
+      updateQuantity(item.id, current.quantity - 1);
+    }
+  }}
+/>
               ))}
             </div>
           </section>
@@ -775,7 +911,9 @@ const uncategorizedItems = filteredMenuItems.filter(
 
        {filteredMenuItems.length === 0 ? (
          <div className="rounded-3xl border border-dashed border-stone-300 bg-white p-12 text-center">
-  <div className="text-5xl">🍽️</div>
+ <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-100">
+  <UtensilsCrossed className="h-10 w-10 text-orange-600" />
+</div>
 
   <h3 className="mt-4 text-xl font-semibold text-stone-900">
     No dishes found
