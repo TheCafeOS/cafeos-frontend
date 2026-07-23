@@ -408,14 +408,14 @@ export default function TablesPage() {
               }
               placeholder="Enter table name (e.g., Table 1, Window Seat)"
               disabled={isSubmitting}
-              className="w-full rounded-lg border border-stone-300 px-4 py-2 text-sm outline-none placeholder:text-stone-500"
+className="min-w-0 flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm outline-none placeholder:text-stone-500"
             />
 
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-lg bg-amber-600 text-white hover:bg-amber-700 sm:w-auto"
-            >
+className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover:bg-amber-700 sm:w-auto sm:self-auto"
+>
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
