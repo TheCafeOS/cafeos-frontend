@@ -154,12 +154,13 @@ const [pagination, setPagination] = useState({
         if (!isMounted) return;
 
         if (categoriesResult.status === "fulfilled") {
-          setCategories(
-            Array.isArray(categoriesResult.value)
-              ? categoriesResult.value.filter(Boolean)
-              : [],
-          );
-        } else {
+  const loadedCategories = categoriesResult.value.data ?? [];
+
+  console.log("Loaded Categories:", loadedCategories);
+
+  setCategories(loadedCategories);
+}
+        else {
           const message = getErrorMessage(
             categoriesResult.reason,
             "Failed to load categories",
@@ -467,7 +468,7 @@ async function handleSaveEditMenuItem(itemId: string) {
       [field]: value,
     }));
   }
-
+  
   const menuStats = useMemo(() => {
     const safeItems = menuItems.filter(Boolean);
 

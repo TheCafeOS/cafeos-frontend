@@ -145,6 +145,12 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  // Cosmetic only: which chip lights up while the user free-scrolls
+  // through the "All" view. Deliberately separate from activeCategory
+  // so scrolling never filters/hides sections — only a tap does that.
+  const [scrollSpyCategory, setScrollSpyCategory] = useState<string | null>(
+    null,
+  );
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -354,8 +360,14 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
     };
   }, [qrToken, fetchCurrentOrder]);
 
+  // Scroll-spy: only runs while browsing the unfiltered "All" view.
+  // The moment a chip is tapped (activeCategory !== "all"), only that
+  // category's section exists in the DOM anyway, so this effect backs
+  // off entirely rather than fighting the filter.
   useEffect(() => {
-    if (categories.length === 0) return;
+    if (activeCategory !== "all" || categories.length === 0) {
+      return;
+    }
 
     const sections = categories
       .map((category) => document.getElementById(`category-${category.id}`))
@@ -365,7 +377,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setActiveCategory(entry.target.id.replace("category-", ""));
+            setScrollSpyCategory(entry.target.id.replace("category-", ""));
           }
         });
       },
@@ -378,7 +390,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
     sections.forEach((section) => observer.observe(section));
 
     return () => observer.disconnect();
-  }, [categories]);
+  }, [categories, activeCategory]);
 
   const formatPrice = (price: string | number) => {
     const numericPrice = Number(price);
@@ -565,8 +577,25 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
     .filter((item) => item.isAvailable)
     .slice(0, 6);
 
+  // When a specific chip is selected, only that category's section
+  // renders. "all" shows everything, same as before.
+  const filteredCategories =
+    activeCategory === "all"
+      ? categories
+      : categories.filter((category) => category.id === activeCategory);
+
+  const showPopular =
+    activeCategory === "all" && featuredItems.length >= 3 && !searchQuery.trim();
+
   return (
     <main className="min-h-screen bg-[#0F1115] pb-32">
+      <style>{`
+        @keyframes menuFadeIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       {/* Sticky root: header + search + categories. No hero, no
           collapsing — every offset below is a fixed spacing value. */}
       <div className="sticky top-0 z-20">
@@ -579,14 +608,19 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
           onOpenOrder={() => setIsOrderDrawerOpen(true)}
           onNavigateMenu={() => {
             setActiveCategory("all");
+            setSearchQuery("");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          onNavigatePopular={() =>
-            popularSectionRef.current?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            })
-          }
+          onNavigatePopular={() => {
+            setActiveCategory("all");
+            setSearchQuery("");
+            requestAnimationFrame(() => {
+              popularSectionRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            });
+          }}
         />
 
         <div className="border-b border-white/5 bg-[#0F1115]/95 shadow-sm backdrop-blur-xl">
@@ -618,6 +652,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
                 type="button"
                 onClick={() => {
                   setActiveCategory("all");
+                  setSearchQuery("");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap transition active:scale-95 ${
@@ -631,6 +666,13 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 
               {categories.map((category) => {
                 const Icon = getCategoryIcon(category.name);
+                // Selected explicitly by tap, OR — while browsing the
+                // unfiltered All view — currently in view per scroll-spy.
+                // Either way this is display-only; it never affects
+                // filteredCategories.
+                const isActive =
+                  activeCategory === category.id ||
+                  (activeCategory === "all" && scrollSpyCategory === category.id);
 
                 return (
                   <button
@@ -638,12 +680,14 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
                     type="button"
                     onClick={() => {
                       setActiveCategory(category.id);
-                      document
-                        .getElementById(`category-${category.id}`)
-                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      setSearchQuery("");
+                      menuSectionRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
                     }}
                     className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap transition active:scale-95 ${
-                      activeCategory === category.id
+                      isActive
                         ? "bg-orange-500 text-white"
                         : "bg-[#171A20] text-neutral-300 hover:bg-white/10"
                     }`}
@@ -676,8 +720,11 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 
       {/* Categories → Popular: 28px */}
       <div className="mx-auto max-w-5xl px-5 pt-7 pb-8 sm:px-8">
-        {featuredItems.length >= 3 && !searchQuery.trim() && (
-          <section ref={popularSectionRef} className="mb-9 scroll-mt-48">
+        {showPopular && (
+          <section
+            ref={popularSectionRef}
+            className="mb-9 scroll-mt-48 animate-[menuFadeIn_0.25s_ease-out]"
+          >
             <div className="mb-5 flex items-end justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-orange-500">
@@ -734,13 +781,26 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
           </section>
         )}
 
-        <div ref={menuSectionRef} className="scroll-mt-48">
-          {categories.map((category) => {
-            const categoryItems = filteredMenuItems.filter(
-              (item) =>
-                item.categoryId === category.id &&
-                !featuredItems.some((featured) => featured.id === item.id),
-            );
+        <div
+          key={`${activeCategory}-${searchQuery}`}
+          ref={menuSectionRef}
+          className="scroll-mt-48 animate-[menuFadeIn_0.25s_ease-out]"
+        >
+          {filteredCategories.map((category) => {
+            const categoryItems = filteredMenuItems.filter((item) => {
+              if (item.categoryId !== category.id) return false;
+
+              // Only hide items that are already shown in the Popular
+              // Today rail when that rail is actually visible (the
+              // "All" view). When a specific category chip is
+              // selected, Popular Today is hidden, so every matching
+              // item — featured or not — must show up here.
+              if (showPopular) {
+                return !featuredItems.some((featured) => featured.id === item.id);
+              }
+
+              return true;
+            });
 
             if (categoryItems.length === 0) {
               return null;
@@ -789,7 +849,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
             );
           })}
 
-          {uncategorizedItems.length > 0 ? (
+          {activeCategory === "all" && uncategorizedItems.length > 0 ? (
             <section className="mb-9">
               <h2 className="mb-4 text-xl font-bold text-neutral-100">
                 More items
@@ -822,7 +882,9 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
             </section>
           ) : null}
 
-          {filteredMenuItems.length === 0 ? (
+          {filteredMenuItems.filter(
+            (item) => activeCategory === "all" || item.categoryId === activeCategory,
+          ).length === 0 ? (
             <div className="rounded-3xl border border-dashed border-white/10 bg-[#171A20] p-12 text-center">
               <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-500/10">
                 <UtensilsCrossed className="h-10 w-10 text-orange-400" />
@@ -833,7 +895,9 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
               </h3>
 
               <p className="mt-2 text-neutral-400">
-                No dishes matched your search.
+                {searchQuery.trim()
+                  ? "No dishes matched your search."
+                  : "No dishes found in this category."}
               </p>
             </div>
           ) : null}
