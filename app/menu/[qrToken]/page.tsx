@@ -3,12 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2,
+  Search,
+  SlidersHorizontal,
+  Coffee,
+  Pizza,
+  Sandwich,
+  IceCreamCone,
+  CupSoda,
+  Soup,
+  UtensilsCrossed,
 } from "lucide-react";
 import RestaurantHeader from "./components/RestaurantHeader";
 import { io } from "socket.io-client";
 
-
-import { UtensilsCrossed } from "lucide-react";
 import MenuCard, { type MenuItem } from "./components/MenuCard";
 import CartBar from "./components/CartBar";
 import CartDrawer, { type CartItem } from "./components/CartDrawer";
@@ -27,19 +34,18 @@ type PublicMenuResponse = {
     name: string;
     status: string;
   };
- restaurant: {
-  id: string;
-  name: string;
-  slug: string;
 
-  logoUrl: string | null;
-  coverImageUrl: string | null;
+  restaurant: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+    coverImageUrl: string | null;
+    tagline: string | null;
+    cuisineType: string | null;
+    themeColor: string | null;
+  };
 
-  tagline: string | null;
-  cuisineType: string | null;
-
-  themeColor: string | null;
-}
   categories: Category[];
   menuItems: MenuItem[];
 };
@@ -65,10 +71,28 @@ type OrderUpdatedPayload = {
   status: CurrentOrder["status"];
   timestamp: string;
 };
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 if (!API_BASE_URL) {
   throw new Error("NEXT_PUBLIC_API_URL is not configured.");
+}
+
+// Best-effort icon per category name — purely cosmetic, falls back to
+// a generic utensils icon. Doesn't touch the API contract.
+function getCategoryIcon(name: string) {
+  const key = name.toLowerCase();
+
+  if (key.includes("coffee") || key.includes("espresso")) return Coffee;
+  if (key.includes("pizza")) return Pizza;
+  if (key.includes("burger")) return Sandwich;
+  if (key.includes("dessert") || key.includes("cake") || key.includes("ice"))
+    return IceCreamCone;
+  if (key.includes("tea") || key.includes("juice") || key.includes("drink"))
+    return CupSoda;
+  if (key.includes("soup") || key.includes("pasta")) return Soup;
+
+  return UtensilsCrossed;
 }
 
 function unwrapApiResponse<T>(body: ApiResponse<T> | T): T {
@@ -119,24 +143,8 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [qrToken, setQrToken] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-const [searchQuery, setSearchQuery] = useState("");
-const [activeCategory, setActiveCategory] = useState("all");
-
-// Phase 3 complete: RestaurantHeader now reads --collapse-progress
-// directly and no longer takes a collapsedHeader prop, so the boolean
-// state + its scroll listener are gone. This ref/CSS-var effect is
-// the only scroll-driven mechanism left — no React state, no re-renders.
-const COLLAPSE_DISTANCE = 180;
-
-// Ease-out cubic: fast at the start of the collapse, settling in
-// toward the end. Applied to the scroll ratio itself — there's no
-// CSS transition to ease here (scroll position *is* the animation),
-// so this is the correct place for a non-linear feel.
-function easeOutCubic(t: number) {
-  return 1 - Math.pow(1 - t, 3);
-}
-const stickyRootRef = useRef<HTMLDivElement>(null);
-const collapseProgressRef = useRef(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -149,59 +157,62 @@ const collapseProgressRef = useRef(0);
   const [isOrderDrawerOpen, setIsOrderDrawerOpen] = useState(false);
   const [isRefreshingOrder, setIsRefreshingOrder] = useState(false);
   const [currentOrderError, setCurrentOrderError] = useState("");
-const categories = menu?.categories ?? [];
-const menuItems = menu?.menuItems ?? [];
+  const categories = menu?.categories ?? [];
+  const menuItems = menu?.menuItems ?? [];
+
   const currentOrderIdRef = useRef<string | null>(null);
+  const popularSectionRef = useRef<HTMLDivElement | null>(null);
+  const menuSectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     currentOrderIdRef.current = currentOrder?.id ?? null;
   }, [currentOrder?.id]);
 
   const fetchCurrentOrder = useCallback(
-  async (orderId: string, showLoading = true) => {
-    if (!qrToken) {
-      return;
-    }
-
-    if (showLoading) {
-      setIsRefreshingOrder(true);
-    }
-
-    setCurrentOrderError("");
-
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(
-          qrToken,
-        )}/${encodeURIComponent(orderId)}`,
-      );
-
-      const responseBody =
-        await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(
-          response,
-        );
-
-      if (!response.ok || !responseBody) {
-        throw new Error(
-          getApiMessage(responseBody) || "Could not fetch order status.",
-        );
+    async (orderId: string, showLoading = true) => {
+      if (!qrToken) {
+        return;
       }
 
-      setCurrentOrder(unwrapApiResponse<CurrentOrder>(responseBody));
-    } catch (caughtError) {
-      setCurrentOrderError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Could not fetch order status.",
-      );
-    } finally {
       if (showLoading) {
-        setIsRefreshingOrder(false);
+        setIsRefreshingOrder(true);
       }
-    }
-  },
-  [qrToken],
-);
+
+      setCurrentOrderError("");
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(
+            qrToken,
+          )}/${encodeURIComponent(orderId)}`,
+        );
+
+        const responseBody =
+          await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(
+            response,
+          );
+
+        if (!response.ok || !responseBody) {
+          throw new Error(
+            getApiMessage(responseBody) || "Could not fetch order status.",
+          );
+        }
+
+        setCurrentOrder(unwrapApiResponse<CurrentOrder>(responseBody));
+      } catch (caughtError) {
+        setCurrentOrderError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Could not fetch order status.",
+        );
+      } finally {
+        if (showLoading) {
+          setIsRefreshingOrder(false);
+        }
+      }
+    },
+    [qrToken],
+  );
 
   useEffect(() => {
     const loadMenu = async () => {
@@ -342,80 +353,33 @@ const menuItems = menu?.menuItems ?? [];
       socket.disconnect();
     };
   }, [qrToken, fetchCurrentOrder]);
+
   useEffect(() => {
-  if (categories.length === 0) return;
+    if (categories.length === 0) return;
 
-  const sections = categories
-    .map((category) =>
-      document.getElementById(`category-${category.id}`)
-    )
-    .filter(Boolean) as HTMLElement[];
+    const sections = categories
+      .map((category) => document.getElementById(`category-${category.id}`))
+      .filter(Boolean) as HTMLElement[];
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveCategory(
-            entry.target.id.replace("category-", "")
-          );
-        }
-      });
-    },
-    {
-      threshold: 0.3,
-      rootMargin: "-120px 0px -60% 0px",
-    }
-  );
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveCategory(entry.target.id.replace("category-", ""));
+          }
+        });
+      },
+      {
+        threshold: 0.3,
+        rootMargin: "-160px 0px -60% 0px",
+      },
+    );
 
-  sections.forEach((section) => observer.observe(section));
+    sections.forEach((section) => observer.observe(section));
 
-  return () => observer.disconnect();
-}, [categories]);
-// Continuous collapse progress, written straight to the DOM via ref —
-// no React state, no re-renders on scroll. RestaurantHeader reads
-// --collapse-progress directly from this.
-useEffect(() => {
-  let ticking = false;
-  let previous = -1;
+    return () => observer.disconnect();
+  }, [categories]);
 
-  const updateProgress = () => {
-    const raw = Math.min(1, Math.max(0, window.scrollY / COLLAPSE_DISTANCE));
-    const progress = easeOutCubic(raw);
-
-    collapseProgressRef.current = progress;
-
-    if (progress !== previous) {
-      previous = progress;
-
-      stickyRootRef.current?.style.setProperty(
-        "--collapse-progress",
-        progress.toString(),
-      );
-
-      // Discrete switch for the one thing that can't be a continuous
-      // value (line-clamp 2 -> 1 in RestaurantHeader's title). Same
-      // rAF loop, same ref, no extra listener, no React state.
-      stickyRootRef.current?.classList.toggle("header-docked", progress > 0.8);
-    }
-
-    ticking = false;
-  };
-
-  updateProgress();
-
-  const onScroll = () => {
-    if (ticking) return;
-
-    ticking = true;
-    requestAnimationFrame(updateProgress);
-  };
-
-  window.addEventListener("scroll", onScroll, { passive: true });
-
-  return () => {
-    window.removeEventListener("scroll", onScroll);
-  };
-}, []);
   const formatPrice = (price: string | number) => {
     const numericPrice = Number(price);
 
@@ -433,10 +397,7 @@ useEffect(() => {
 
   const cartTotal = useMemo(
     () =>
-      cart.reduce(
-        (total, item) => total + Number(item.price) * item.quantity,
-        0,
-      ),
+      cart.reduce((total, item) => total + Number(item.price) * item.quantity, 0),
     [cart],
   );
 
@@ -479,9 +440,7 @@ useEffect(() => {
   }
 
   function removeFromCart(menuItemId: string) {
-    setCart((currentCart) =>
-      currentCart.filter((item) => item.id !== menuItemId),
-    );
+    setCart((currentCart) => currentCart.filter((item) => item.id !== menuItemId));
   }
 
   async function handlePlaceOrder() {
@@ -512,9 +471,7 @@ useEffect(() => {
       );
 
       const responseBody =
-        await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(
-          response,
-        );
+        await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(response);
 
       if (!response.ok || !responseBody) {
         throw new Error(
@@ -545,7 +502,7 @@ useEffect(() => {
       setIsCartOpen(false);
 
       await fetchCurrentOrder(createdOrder.id, false);
-setIsOrderDrawerOpen(true);
+      setIsOrderDrawerOpen(true);
     } catch (caughtError) {
       setOrderError(
         caughtError instanceof Error
@@ -559,9 +516,9 @@ setIsOrderDrawerOpen(true);
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-stone-50 px-6">
-        <div className="flex flex-col items-center gap-3 text-stone-600">
-          <Loader2 className="h-7 w-7 animate-spin text-amber-600" />
+      <main className="flex min-h-screen items-center justify-center bg-[#0F1115] px-6">
+        <div className="flex flex-col items-center gap-3 text-neutral-400">
+          <Loader2 className="h-7 w-7 animate-spin text-orange-500" />
           <p>Loading menu...</p>
         </div>
       </main>
@@ -570,17 +527,17 @@ setIsOrderDrawerOpen(true);
 
   if (error || !menu) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-stone-50 px-6">
-        <section className="w-full max-w-md rounded-3xl border border-red-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-red-600">
+      <main className="flex min-h-screen items-center justify-center bg-[#0F1115] px-6">
+        <section className="w-full max-w-md rounded-3xl border border-red-500/20 bg-[#171A20] p-8 text-center shadow-sm">
+          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-red-400">
             Menu unavailable
           </p>
 
-          <h1 className="mt-3 text-2xl font-semibold text-stone-900">
+          <h1 className="mt-3 text-2xl font-semibold text-neutral-100">
             We could not open this table menu
           </h1>
 
-          <p className="mt-3 text-sm leading-6 text-stone-600">
+          <p className="mt-3 text-sm leading-6 text-neutral-400">
             {error || "Please ask the café staff for a valid QR code."}
           </p>
         </section>
@@ -588,41 +545,31 @@ setIsOrderDrawerOpen(true);
     );
   }
 
+  const filteredMenuItems = menuItems.filter((item) => {
+    const query = searchQuery.trim().toLowerCase();
 
-const filteredMenuItems = menuItems.filter((item) => {
-  const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
 
-  if (!query) return true;
+    const categoryName =
+      categories.find((category) => category.id === item.categoryId)?.name ?? "";
 
-  const categoryName =
-    categories.find((category) => category.id === item.categoryId)?.name ?? "";
+    return (
+      item.name.toLowerCase().includes(query) ||
+      (item.description ?? "").toLowerCase().includes(query) ||
+      categoryName.toLowerCase().includes(query)
+    );
+  });
 
-  return (
-    item.name.toLowerCase().includes(query) ||
-    (item.description ?? "").toLowerCase().includes(query) ||
-    categoryName.toLowerCase().includes(query)
-  );
-});
-
-const uncategorizedItems = filteredMenuItems.filter(
-  (item) => !item.categoryId
-);
-const featuredItems = filteredMenuItems
-  .filter((item) => item.isAvailable)
-  .slice(0, 3);
+  const uncategorizedItems = filteredMenuItems.filter((item) => !item.categoryId);
+  const featuredItems = filteredMenuItems
+    .filter((item) => item.isAvailable)
+    .slice(0, 6);
 
   return (
-    <main className="min-h-screen bg-stone-50 pb-32">
-      {/*
-        PHASE 1: single sticky root.
-        RestaurantHeader, Search, and Categories now live inside ONE
-        sticky container instead of three independently-sticky elements.
-        NOTE: RestaurantHeader.tsx still has its own internal
-        `sticky top-0 z-20` on its <header> — that's redundant now that
-        this wrapper is already pinned, but harmless. It gets removed
-        when we simplify RestaurantHeader.tsx in Phase 3.
-      */}
-      <div ref={stickyRootRef} className="sticky top-0 z-20">
+    <main className="min-h-screen bg-[#0F1115] pb-32">
+      {/* Sticky root: header + search + categories. No hero, no
+          collapsing — every offset below is a fixed spacing value. */}
+      <div className="sticky top-0 z-20">
         <RestaurantHeader
           restaurant={menu.restaurant}
           tableName={menu.table.name}
@@ -630,71 +577,82 @@ const featuredItems = filteredMenuItems
           currentOrder={currentOrder}
           onOpenCart={() => setIsCartOpen(true)}
           onOpenOrder={() => setIsOrderDrawerOpen(true)}
+          onNavigateMenu={() => {
+            setActiveCategory("all");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onNavigatePopular={() =>
+            popularSectionRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            })
+          }
         />
 
-        <div
-          className="border-b border-stone-200 bg-stone-50/90"
-          style={{
-            backdropFilter: "blur(calc(4px + var(--collapse-progress, 0) * 8px))",
-            boxShadow: "0 4px 20px rgba(0,0,0,calc(var(--collapse-progress, 0) * 0.12))",
-          }}
-        >
-          <div className="mx-auto max-w-5xl px-5 pb-4 pt-6 sm:px-8">
+        <div className="border-b border-white/5 bg-[#0F1115]/95 shadow-sm backdrop-blur-xl">
+          {/* Header → Search: 20px */}
+          <div className="mx-auto max-w-5xl px-5 pb-4 pt-5 sm:px-8">
             <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-neutral-500" />
+
               <input
                 type="text"
                 placeholder="Search dishes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-stone-200 bg-white px-5 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+                className="w-full rounded-2xl border border-white/5 bg-[#171A20] py-3.5 pl-11 pr-11 text-neutral-100 shadow-inner outline-none transition placeholder:text-neutral-500 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
               />
+
+              <button
+                type="button"
+                aria-label="Filters"
+                className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-neutral-200"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </button>
             </div>
 
-            <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+            {/* Search → Categories: 16px */}
+            <div className="mt-4 flex gap-2.5 overflow-x-auto pb-1">
               <button
                 type="button"
                 onClick={() => {
                   setActiveCategory("all");
-
-                  window.scrollTo({
-                    top: 0,
-                    behavior: "smooth",
-                  });
+                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className={`rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition
-                ${
+                className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap transition active:scale-95 ${
                   activeCategory === "all"
-                    ? "bg-orange-600 text-white"
-                    : "border border-stone-200 bg-white text-stone-700 hover:bg-orange-50"
+                    ? "bg-orange-500 text-white"
+                    : "bg-[#171A20] text-neutral-300 hover:bg-white/10"
                 }`}
               >
                 All
               </button>
 
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveCategory(category.id);
+              {categories.map((category) => {
+                const Icon = getCategoryIcon(category.name);
 
-                    document
-                      .getElementById(`category-${category.id}`)
-                      ?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
-                  }}
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap transition
-                  ${
-                    activeCategory === category.id
-                      ? "bg-orange-600 text-white"
-                      : "border border-stone-200 bg-white text-stone-700 hover:bg-orange-50 hover:border-orange-300"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory(category.id);
+                      document
+                        .getElementById(`category-${category.id}`)
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap transition active:scale-95 ${
+                      activeCategory === category.id
+                        ? "bg-orange-500 text-white"
+                        : "bg-[#171A20] text-neutral-300 hover:bg-white/10"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {category.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -702,7 +660,7 @@ const featuredItems = filteredMenuItems
 
       {orderMessage ? (
         <div className="mx-auto mt-5 max-w-5xl px-5 sm:px-8">
-          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          <div className="rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
             {orderMessage}
           </div>
         </div>
@@ -710,153 +668,176 @@ const featuredItems = filteredMenuItems
 
       {orderError ? (
         <div className="mx-auto mt-5 max-w-5xl px-5 sm:px-8">
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {orderError}
           </div>
         </div>
       ) : null}
 
-<div className="mx-auto max-w-5xl px-5 pt-10 pb-8 sm:px-8">
-  {
- featuredItems.length >= 3 && !searchQuery.trim()
-  && (
-  <section className="mb-12">
-    <div className="mb-5 flex items-end justify-between">
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-orange-600">
-          Featured Menu
-        </p>
-
-        <h2 className="mt-1 text-2xl font-bold text-stone-900">
-         Chef&apos;s Selection
-        </h2>
-
-        <p className="mt-1 text-sm text-stone-500">
-          Chef&apos;s recommended dishes.
-        </p>
-      </div>
-    </div>
-
-<div className="grid gap-6 md:grid-cols-3">
-  {featuredItems.map((item) => (
-    <MenuCard
-      key={`featured-${item.id}`}
-      item={item}
-      formatPrice={formatPrice}
-      isFeatured
-      quantity={
-        cart.find((cartItem) => cartItem.id === item.id)?.quantity ?? 0
-      }
-      onAddToCart={() => addToCart(item)}
-      onIncrease={() => addToCart(item)}
-      onDecrease={() => {
-        const current = cart.find(
-          (cartItem) => cartItem.id === item.id,
-        );
-
-        if (current) {
-          updateQuantity(item.id, current.quantity - 1);
-        }
-      }}
-    />
-  ))}
-</div>
-  </section>
-)}
-
-        {categories.map((category) => {
-     const categoryItems = filteredMenuItems.filter(
-  (item) =>
-    item.categoryId === category.id &&
-    !featuredItems.some((featured) => featured.id === item.id),
-);
-
-          if (categoryItems.length === 0) {
-            return null;
-          }
-
-          return (
-           <section
-  key={category.id}
-  id={`category-${category.id}`}
-  className="mb-10 scroll-mt-48"
->
-              <h2 className="text-xl font-semibold text-stone-900">
-                {category.name}
-              </h2>
-
-              <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {categoryItems.map((item) => (
-                  <MenuCard
-  key={item.id}
-  item={item}
-  formatPrice={formatPrice}
-  quantity={
-    cart.find((cartItem) => cartItem.id === item.id)?.quantity ?? 0
-  }
-  onAddToCart={() => addToCart(item)}
-  onIncrease={() => addToCart(item)}
-  onDecrease={() => {
-    const current =
-      cart.find((cartItem) => cartItem.id === item.id);
-
-    if (current) {
-      updateQuantity(item.id, current.quantity - 1);
-    }
-  }}
-/>
-                ))}
+      {/* Categories → Popular: 28px */}
+      <div className="mx-auto max-w-5xl px-5 pt-7 pb-8 sm:px-8">
+        {featuredItems.length >= 3 && !searchQuery.trim() && (
+          <section ref={popularSectionRef} className="mb-9 scroll-mt-48">
+            <div className="mb-5 flex items-end justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-orange-500">
+                  Popular Today
+                </p>
+                <h2 className="mt-1 text-[26px] font-bold leading-tight text-neutral-100">
+                  Most Ordered Today
+                </h2>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Customer favourites
+                </p>
               </div>
-            </section>
-          );
-        })}
 
-        {uncategorizedItems.length > 0 ? (
-          <section className="mb-10">
-            <h2 className="text-xl font-semibold text-stone-900">
-              More items
-            </h2>
+              <button
+                type="button"
+                onClick={() =>
+                  menuSectionRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  })
+                }
+                className="shrink-0 text-sm font-semibold text-orange-400 transition hover:text-orange-300"
+              >
+                View All →
+              </button>
+            </div>
 
-            <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {uncategorizedItems.map((item) => (
-                <MenuCard
-  key={item.id}
-  item={item}
-  formatPrice={formatPrice}
-  quantity={
-    cart.find((cartItem) => cartItem.id === item.id)?.quantity ?? 0
-  }
-  onAddToCart={() => addToCart(item)}
-  onIncrease={() => addToCart(item)}
-  onDecrease={() => {
-    const current =
-      cart.find((cartItem) => cartItem.id === item.id);
+            <div className="-mx-5 flex gap-5 overflow-x-auto px-5 pb-2 sm:-mx-8 sm:px-8">
+              {featuredItems.map((item) => (
+                <div key={`featured-${item.id}`} className="w-[190px] shrink-0">
+                  <MenuCard
+                    item={item}
+                    formatPrice={formatPrice}
+                    isFeatured
+                    quantity={
+                      cart.find((cartItem) => cartItem.id === item.id)?.quantity ??
+                      0
+                    }
+                    onAddToCart={() => addToCart(item)}
+                    onIncrease={() => addToCart(item)}
+                    onDecrease={() => {
+                      const current = cart.find(
+                        (cartItem) => cartItem.id === item.id,
+                      );
 
-    if (current) {
-      updateQuantity(item.id, current.quantity - 1);
-    }
-  }}
-/>
+                      if (current) {
+                        updateQuantity(item.id, current.quantity - 1);
+                      }
+                    }}
+                  />
+                </div>
               ))}
             </div>
           </section>
-        ) : null}
+        )}
 
-       {filteredMenuItems.length === 0 ? (
-         <div className="rounded-3xl border border-dashed border-stone-300 bg-white p-12 text-center">
- <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-100">
-  <UtensilsCrossed className="h-10 w-10 text-orange-600" />
-</div>
+        <div ref={menuSectionRef} className="scroll-mt-48">
+          {categories.map((category) => {
+            const categoryItems = filteredMenuItems.filter(
+              (item) =>
+                item.categoryId === category.id &&
+                !featuredItems.some((featured) => featured.id === item.id),
+            );
 
-  <h3 className="mt-4 text-xl font-semibold text-stone-900">
-    No dishes found
-  </h3>
+            if (categoryItems.length === 0) {
+              return null;
+            }
 
-  <p className="mt-2 text-stone-600">
-  No dishes matched your search.
-  </p>
-</div>
-        ) : null}
+            return (
+              <section
+                key={category.id}
+                id={`category-${category.id}`}
+                className="mb-9 scroll-mt-48"
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-neutral-100">
+                    {category.name}
+                  </h2>
+                  <span className="flex items-center gap-1 text-sm font-medium text-orange-400">
+                    {categoryItems.length} Items →
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {categoryItems.map((item) => (
+                    <MenuCard
+                      key={item.id}
+                      item={item}
+                      formatPrice={formatPrice}
+                      quantity={
+                        cart.find((cartItem) => cartItem.id === item.id)
+                          ?.quantity ?? 0
+                      }
+                      onAddToCart={() => addToCart(item)}
+                      onIncrease={() => addToCart(item)}
+                      onDecrease={() => {
+                        const current = cart.find(
+                          (cartItem) => cartItem.id === item.id,
+                        );
+
+                        if (current) {
+                          updateQuantity(item.id, current.quantity - 1);
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+
+          {uncategorizedItems.length > 0 ? (
+            <section className="mb-9">
+              <h2 className="mb-4 text-xl font-bold text-neutral-100">
+                More items
+              </h2>
+
+              <div className="flex flex-col gap-3">
+                {uncategorizedItems.map((item) => (
+                  <MenuCard
+                    key={item.id}
+                    item={item}
+                    formatPrice={formatPrice}
+                    quantity={
+                      cart.find((cartItem) => cartItem.id === item.id)?.quantity ??
+                      0
+                    }
+                    onAddToCart={() => addToCart(item)}
+                    onIncrease={() => addToCart(item)}
+                    onDecrease={() => {
+                      const current = cart.find(
+                        (cartItem) => cartItem.id === item.id,
+                      );
+
+                      if (current) {
+                        updateQuantity(item.id, current.quantity - 1);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {filteredMenuItems.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-white/10 bg-[#171A20] p-12 text-center">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-500/10">
+                <UtensilsCrossed className="h-10 w-10 text-orange-400" />
+              </div>
+
+              <h3 className="mt-4 text-xl font-semibold text-neutral-100">
+                No dishes found
+              </h3>
+
+              <p className="mt-2 text-neutral-400">
+                No dishes matched your search.
+              </p>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <CartBar

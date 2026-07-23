@@ -1,10 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
-import {
-  Plus,
-  Minus,
-  CheckCircle2,
-  XCircle,
-} from "lucide-react";
+import { Plus, Minus, Star, Heart, XCircle } from "lucide-react";
 
 export type MenuItem = {
   id: string;
@@ -14,6 +12,9 @@ export type MenuItem = {
   imageUrl: string | null;
   categoryId: string | null;
   isAvailable?: boolean;
+  // Optional / decorative — safe to omit, card degrades gracefully.
+  rating?: number;
+  reviewCount?: number;
 };
 
 type MenuCardProps = {
@@ -28,7 +29,59 @@ type MenuCardProps = {
   onIncrease: () => void;
   onDecrease: () => void;
 };
+type QuantityStepperProps = {
+  compact?: boolean;
+  quantity: number;
+  isUnavailable: boolean;
+  onIncrease: () => void;
+  onDecrease: () => void;
+};
 
+function QuantityStepper({
+  compact = false,
+  quantity,
+  isUnavailable,
+  onIncrease,
+  onDecrease,
+}: QuantityStepperProps) {
+  return (
+    <div
+      className={`flex items-center justify-between rounded-xl border border-orange-500/20 bg-orange-500/10 ${
+        compact ? "gap-1 p-1" : "gap-2 p-1.5"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={onDecrease}
+        className={`flex items-center justify-center rounded-lg bg-neutral-800 text-neutral-100 transition hover:bg-neutral-700 active:scale-95 ${
+          compact ? "h-7 w-7" : "h-8 w-8"
+        }`}
+      >
+        <Minus className="h-3.5 w-3.5" />
+      </button>
+
+      <span className="min-w-[1.25rem] text-center text-sm font-bold text-orange-400">
+        {quantity}
+      </span>
+
+      <button
+        type="button"
+        disabled={isUnavailable}
+        onClick={onIncrease}
+        className={`flex items-center justify-center rounded-lg bg-orange-500 text-white transition hover:bg-orange-600 active:scale-95 disabled:bg-neutral-700 ${
+          compact ? "h-7 w-7" : "h-8 w-8"
+        }`}
+      >
+        <Plus className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+// Two layouts sharing one component:
+// - isFeatured (Popular Today rail): vertical card, image on top, plus
+//   button floats bottom-right over the content.
+// - default (full menu list): compact horizontal card — image left,
+//   content right — per spec ("no massive white cards").
 export default function MenuCard({
   item,
   formatPrice,
@@ -39,90 +92,159 @@ export default function MenuCard({
   onDecrease,
 }: MenuCardProps) {
   const isUnavailable = item.isAvailable === false;
+  const [isFavorite, setIsFavorite] = useState(false);
 
-  return (
-    <article className="group overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative overflow-hidden">
-        {item.imageUrl ? (
-          <div className="relative h-52 w-full">
+
+
+  // ---------- Popular Today (vertical) ----------
+  if (isFeatured) {
+    return (
+      <article className="group relative overflow-hidden rounded-3xl bg-[#171A20] shadow-lg shadow-black/20 transition-transform duration-300 hover:-translate-y-1">
+        <div className="relative h-32 w-full">
+          {item.imageUrl ? (
             <Image
               src={item.imageUrl}
               alt={item.name}
               fill
-              sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
+              sizes="220px"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
-          </div>
-        ) : (
-          <div className="flex h-52 items-center justify-center bg-gradient-to-br from-orange-50 to-amber-100 text-6xl">
-            🍽️
-          </div>
-        )}
-
-        <div className="absolute right-3 top-3">
-          {isUnavailable ? (
-            <span className="flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white shadow">
-              <XCircle className="h-3.5 w-3.5" />
-              Unavailable
-            </span>
           ) : (
-            <span className="flex items-center gap-1 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold text-white shadow">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Available
+            <div className="flex h-full w-full items-center justify-center bg-neutral-800 text-4xl">
+              🍽️
+            </div>
+          )}
+
+          <button
+            type="button"
+            aria-label="Toggle favourite"
+            onClick={() => setIsFavorite((v) => !v)}
+            className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition active:scale-90"
+          >
+            <Heart
+              className={`h-4 w-4 ${
+                isFavorite ? "fill-orange-500 text-orange-500" : "text-white"
+              }`}
+            />
+          </button>
+
+          {isUnavailable && (
+            <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 rounded-full bg-red-500 px-2.5 py-1 text-[11px] font-semibold text-white">
+              <XCircle className="h-3 w-3" />
+              Sold out
             </span>
           )}
         </div>
-      </div>
 
-      <div className="flex min-h-[220px] flex-col p-5">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="text-lg font-bold text-stone-900">
+        <div className="p-3.5">
+          <h3 className="truncate text-[15px] font-bold text-neutral-100">
             {item.name}
           </h3>
 
-          <span className="rounded-full bg-orange-50 px-3 py-1 text-sm font-bold text-orange-700">
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-sm font-bold text-orange-400">
+              {formatPrice(item.price)}
+            </span>
+
+            {item.rating != null && (
+              <span className="flex items-center gap-1 text-xs text-neutral-400">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                {item.rating.toFixed(1)}
+                {item.reviewCount != null && ` (${item.reviewCount})`}
+              </span>
+            )}
+          </div>
+
+          <div className="mt-3">
+            {quantity === 0 ? (
+              <button
+                type="button"
+                disabled={isUnavailable}
+                onClick={onAddToCart}
+                aria-label="Add to cart"
+                className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-white shadow-md transition hover:bg-orange-600 active:scale-90 disabled:bg-neutral-700 disabled:text-neutral-500"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            ) : (
+              <QuantityStepper
+  compact
+  quantity={quantity}
+  isUnavailable={isUnavailable}
+  onIncrease={onIncrease}
+  onDecrease={onDecrease}
+/>
+            )}
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  // ---------- Full menu (compact horizontal) ----------
+  return (
+    <article className="flex gap-4 rounded-2xl bg-[#171A20] p-3 transition-colors duration-200 hover:bg-[#1c2028]">
+      <div className="relative h-[100px] w-[100px] shrink-0 overflow-hidden rounded-xl sm:h-[120px] sm:w-[120px]">
+        {item.imageUrl ? (
+          <Image
+            src={item.imageUrl}
+            alt={item.name}
+            fill
+            sizes="120px"
+            className="object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-neutral-800 text-3xl">
+            🍽️
+          </div>
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="truncate text-[15px] font-bold text-neutral-100">
+            {item.name}
+          </h3>
+
+          <span className="shrink-0 text-sm font-bold text-orange-400">
             {formatPrice(item.price)}
           </span>
         </div>
 
-        <p className="mt-3 line-clamp-2 text-sm leading-6 text-stone-600">
+        <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-neutral-400">
           {item.description || "Freshly prepared and served with care."}
         </p>
 
-        <div className="mt-auto pt-5">
+        <div className="mt-auto flex items-center justify-between pt-2">
+          {isUnavailable ? (
+            <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-400">
+              <XCircle className="h-3 w-3" />
+              Unavailable
+            </span>
+          ) : (
+            <span className="rounded-full bg-green-500/15 px-2.5 py-1 text-[11px] font-semibold text-green-400">
+              Available
+            </span>
+          )}
+
           {quantity === 0 ? (
             <button
               type="button"
               disabled={isUnavailable}
               onClick={onAddToCart}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-600 px-4 py-3 font-semibold text-white transition-all duration-300 hover:bg-orange-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-stone-300"
+              aria-label="Add to cart"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-white shadow-md transition hover:bg-orange-600 active:scale-90 disabled:bg-neutral-700 disabled:text-neutral-500"
             >
-              <Plus className="h-5 w-5" />
-              {isUnavailable ? "Unavailable" : "Add to Cart"}
+              <Plus className="h-4 w-4" />
             </button>
           ) : (
-            <div className="flex items-center justify-between rounded-2xl border border-orange-200 bg-orange-50 p-2">
-              <button
-                type="button"
-                onClick={onDecrease}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow transition hover:bg-orange-100"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-
-              <span className="text-lg font-bold text-orange-700">
-                {quantity}
-              </span>
-
-              <button
-                type="button"
-                disabled={isUnavailable}
-                onClick={onIncrease}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-600 text-white shadow transition hover:bg-orange-700"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
+            <QuantityStepper
+  compact
+  quantity={quantity}
+  isUnavailable={isUnavailable}
+  onIncrease={onIncrease}
+  onDecrease={onDecrease}
+/>
           )}
         </div>
       </div>
