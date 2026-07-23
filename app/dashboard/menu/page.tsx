@@ -500,7 +500,10 @@ async function handleSaveEditMenuItem(itemId: string) {
                 Add New Category
               </h3>
 
-              <form onSubmit={handleAddCategory} className="flex gap-3">
+        <form
+  onSubmit={handleAddCategory}
+  className="flex flex-col gap-3 sm:flex-row"
+>  
                 <input
                   type="text"
                   placeholder="Enter category name (e.g., Beverages, Desserts)"
@@ -513,10 +516,10 @@ async function handleSaveEditMenuItem(itemId: string) {
                 />
 
                 <Button
-                  type="submit"
-                  disabled={isCategorySubmitting}
-                  className="rounded-lg bg-amber-600 text-white hover:bg-amber-700"
-                >
+    type="submit"
+    disabled={isCategorySubmitting}
+    className="w-full sm:w-auto rounded-lg bg-amber-600 text-white hover:bg-amber-700"
+  >
                   {isCategorySubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -576,7 +579,7 @@ async function handleSaveEditMenuItem(itemId: string) {
                 {categories.filter(Boolean).map((category) => (
                   <div
                     key={category.id}
-                    className="flex items-center justify-between gap-4 border-b border-stone-200 px-6 py-4 last:border-b-0"
+className="flex items-center justify-between gap-4 border-b border-stone-200 px-6 py-4 last:border-b-0"
                   >
                     {editingCategoryId === category.id ? (
                       <>
@@ -589,7 +592,7 @@ async function handleSaveEditMenuItem(itemId: string) {
                           className="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none"
                         />
 
-                        <div className="flex gap-2">
+                     <div className="flex w-full justify-end gap-2 sm:w-auto">
                           <Button
                             type="button"
                             size="icon"
@@ -806,7 +809,7 @@ async function handleSaveEditMenuItem(itemId: string) {
 />
     </div>
 
-              <div className="flex gap-3">
+             <form className="flex flex-col gap-3 sm:flex-row">
                 <Button
                   type="submit"
                   disabled={isMenuItemSubmitting}
@@ -830,7 +833,7 @@ async function handleSaveEditMenuItem(itemId: string) {
                     Cancel
                   </Button>
                 ) : null}
-              </div>
+              </form>
             </form>
           </div>
           )}
