@@ -134,7 +134,8 @@ export function DashboardSidebar({
     >
       <div className="p-6">
         <div className="mb-8 flex items-center gap-4">
-          <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+          <div
+className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"          >
             {restaurant?.logoUrl ? (
               <Image
                 src={restaurant.logoUrl}
@@ -150,15 +151,15 @@ export function DashboardSidebar({
             )}
           </div>
 
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xl font-bold tracking-tight text-stone-900">
-              {restaurant?.name || "CafeOS"}
-            </p>
+         <div className="min-w-0 flex-1">
+  <p className="line-clamp-2 break-words text-xl font-bold tracking-tight text-stone-900">
+    {restaurant?.name || "CafeOS"}
+  </p>
 
-            <p className="truncate text-sm text-stone-500">
-              {restaurant?.tagline || "Restaurant Management"}
-            </p>
-          </div>
+  <p className="mt-1 line-clamp-2 break-words text-sm leading-5 text-stone-500">
+    {restaurant?.tagline || "Restaurant Management"}
+  </p>
+</div>
         </div>
 
         <nav className="space-y-1">
