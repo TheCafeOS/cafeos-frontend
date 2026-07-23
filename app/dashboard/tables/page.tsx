@@ -396,7 +396,10 @@ export default function TablesPage() {
             Add New Table
           </h2>
 
-          <form onSubmit={handleAddTable} className="flex gap-3">
+          <form
+            onSubmit={handleAddTable}
+            className="flex flex-col gap-3 sm:flex-row"
+          >
             <input
               type="text"
               value={newTableName}
@@ -405,13 +408,13 @@ export default function TablesPage() {
               }
               placeholder="Enter table name (e.g., Table 1, Window Seat)"
               disabled={isSubmitting}
-              className="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm outline-none placeholder:text-stone-500"
+              className="w-full rounded-lg border border-stone-300 px-4 py-2 text-sm outline-none placeholder:text-stone-500"
             />
 
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-amber-600 text-white hover:bg-amber-700"
+              className="w-full rounded-lg bg-amber-600 text-white hover:bg-amber-700 sm:w-auto"
             >
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
@@ -425,34 +428,34 @@ export default function TablesPage() {
           </form>
         </section>
 
-  {isLoading ? (
-  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    {Array.from({ length: 6 }).map((_, index) => (
-      <div
-        key={index}
-        className="rounded-lg border border-stone-200 bg-white p-4"
-      >
-        <Skeleton className="h-6 w-32" />
+        {isLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-lg border border-stone-200 bg-white p-4"
+              >
+                <Skeleton className="h-6 w-32" />
 
-        <Skeleton className="mt-3 h-5 w-24 rounded-full" />
+                <Skeleton className="mt-3 h-5 w-24 rounded-full" />
 
-        <Skeleton className="mt-6 h-4 w-24" />
+                <Skeleton className="mt-6 h-4 w-24" />
 
-        <Skeleton className="mt-2 h-10 w-full" />
+                <Skeleton className="mt-2 h-10 w-full" />
 
-        <div className="mt-5 grid grid-cols-2 gap-2">
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-full" />
-        </div>
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <Skeleton className="h-9 w-full" />
+                  <Skeleton className="h-9 w-full" />
+                </div>
 
-        <div className="mt-4 flex gap-2">
-          <Skeleton className="h-9 flex-1" />
-          <Skeleton className="h-9 w-9" />
-        </div>
-      </div>
-    ))}
-  </div>
-) : null}
+                <div className="mt-4 flex gap-2">
+                  <Skeleton className="h-9 flex-1" />
+                  <Skeleton className="h-9 w-9" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {error && !isLoading ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4">
@@ -532,7 +535,7 @@ export default function TablesPage() {
                         </select>
                       </div>
 
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex flex-col gap-2 pt-2 sm:flex-row">
                         <Button
                           size="sm"
                           disabled={isSubmitting}
@@ -575,12 +578,12 @@ export default function TablesPage() {
                         </p>
 
                         <div className="overflow-hidden rounded-lg border border-stone-300 bg-stone-50 p-2">
-                          <p className="truncate font-mono text-xs text-stone-600">
+                          <p className="break-all font-mono text-xs text-stone-600">
                             {table.qrCode || "Not generated"}
                           </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                           <Button
                             size="sm"
                             variant="outline"
@@ -607,7 +610,7 @@ export default function TablesPage() {
                         </div>
                       </div>
 
-                      <div className="flex gap-2 pt-3">
+                      <div className="flex flex-col gap-2 pt-3 sm:flex-row">
                         <Button
                           size="sm"
                           variant="outline"
