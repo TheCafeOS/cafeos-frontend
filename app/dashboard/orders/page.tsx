@@ -49,7 +49,19 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
   COMPLETED: "bg-stone-200 text-stone-700",
   CANCELLED: "bg-red-100 text-red-800",
 };
+const ACTION_BUTTON_STYLES: Partial<Record<OrderStatus, string>> = {
+  PENDING:
+    "bg-amber-600 hover:bg-amber-700 text-white",
 
+  CONFIRMED:
+    "bg-sky-600 hover:bg-sky-700 text-white",
+
+  PREPARING:
+    "bg-violet-600 hover:bg-violet-700 text-white",
+
+  READY:
+    "bg-emerald-600 hover:bg-emerald-700 text-white",
+};
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Something went wrong.";
 }
@@ -429,7 +441,9 @@ onClick={() => {
                       <Button
                         type="button"
                         disabled={isUpdating}
-                        className="h-11 w-full sm:h-9 sm:w-auto"
+                      className={`h-11 w-full text-white sm:h-9 sm:w-auto ${
+  ACTION_BUTTON_STYLES[order.status] ?? ""
+}`}
                         onClick={() =>
                           void handleStatusUpdate(order.id, nextStatus)
                         }
