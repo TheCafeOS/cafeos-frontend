@@ -391,6 +391,11 @@ useEffect(() => {
         "--collapse-progress",
         progress.toString(),
       );
+
+      // Discrete switch for the one thing that can't be a continuous
+      // value (line-clamp 2 -> 1 in RestaurantHeader's title). Same
+      // rAF loop, same ref, no extra listener, no React state.
+      stickyRootRef.current?.classList.toggle("header-docked", progress > 0.8);
     }
 
     ticking = false;
@@ -627,8 +632,14 @@ const featuredItems = filteredMenuItems
           onOpenOrder={() => setIsOrderDrawerOpen(true)}
         />
 
-        <div className="border-b border-stone-200 bg-stone-50/90 backdrop-blur">
-          <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
+        <div
+          className="border-b border-stone-200 bg-stone-50/90"
+          style={{
+            backdropFilter: "blur(calc(4px + var(--collapse-progress, 0) * 8px))",
+            boxShadow: "0 4px 20px rgba(0,0,0,calc(var(--collapse-progress, 0) * 0.12))",
+          }}
+        >
+          <div className="mx-auto max-w-5xl px-5 pb-4 pt-6 sm:px-8">
             <div className="relative">
               <input
                 type="text"
