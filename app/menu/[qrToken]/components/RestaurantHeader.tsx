@@ -93,10 +93,10 @@ export default function RestaurantHeader({
     <>
       <div className="border-b border-white/5 bg-[#0F1115]/80 shadow-lg shadow-black/20 backdrop-blur-xl rounded-b-2xl">
         {/* Row 1: identity + cart */}
-        <header className="h-[72px]">
-          <div className="mx-auto flex h-full max-w-5xl items-center justify-between gap-3 px-5">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-neutral-800 ring-1 ring-white/10">
+        <header className="h-[64px] sm:h-[72px]">
+          <div className="mx-auto flex h-full max-w-5xl items-center justify-between gap-2 px-2.5 sm:px-5">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <div className="relative flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-neutral-800 ring-1 ring-white/10">
                 {restaurant.logoUrl ? (
                   <Image
                     src={restaurant.logoUrl}
@@ -106,16 +106,16 @@ export default function RestaurantHeader({
                     sizes="48px"
                   />
                 ) : (
-                  <Building2 className="h-6 w-6 text-orange-500" />
+                  <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
                 )}
               </div>
 
               <div className="min-w-0 leading-tight">
-                <p className="truncate text-lg font-bold leading-tight text-neutral-100">
+                <p className="truncate text-base sm:text-lg font-bold leading-tight text-neutral-100">
                   {restaurant.name}
                 </p>
 
-                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-neutral-400">
+                <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] sm:text-xs text-neutral-400">
                   <span className="truncate">{tableName}</span>
 
                   {restaurant.rating != null && (
@@ -147,7 +147,7 @@ export default function RestaurantHeader({
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               {currentOrder && (
                 <CurrentOrderButton
                   status={currentOrder.status}
@@ -159,9 +159,9 @@ export default function RestaurantHeader({
                 type="button"
                 aria-label="Open cart"
                 onClick={onOpenCart}
-                className="relative rounded-full bg-neutral-800 p-2.5 text-orange-400 transition hover:bg-neutral-700 active:scale-95"
+                className="relative rounded-full bg-neutral-800 p-2 sm:p-2.5 text-orange-400 transition hover:bg-neutral-700 active:scale-95"
               >
-                <ShoppingBag className="h-5 w-5" />
+                <ShoppingBag className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
                 {cartItemCount > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white">
                     {cartItemCount}
@@ -172,27 +172,56 @@ export default function RestaurantHeader({
           </div>
         </header>
 
-        {/* Row 2: pill navigation */}
-        <nav className="mx-auto flex max-w-5xl items-center gap-1 px-5 pb-3">
-          {navItems.map(({ key, label, icon: Icon }) => {
-            const isActive = activeNav === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => handleNav(key)}
-                className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition ${
-                  isActive
-                    ? "bg-orange-500/15 text-orange-400"
-                    : "text-neutral-400 hover:bg-white/5 hover:text-neutral-200"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            );
-          })}
-        </nav>
+        {/* Row 2: pill navigation — scrollable on narrow screens, with an
+            edge fade + scroll-snap so users can tell (and feel) that
+            there's more to swipe to instead of it just getting clipped. */}
+        <div className="relative">
+          <nav
+            className="
+              scrollbar-hide
+              flex
+              max-w-5xl
+              gap-2
+              overflow-x-auto
+              whitespace-nowrap
+              scroll-smooth
+              snap-x
+              snap-mandatory
+              px-2.5
+              sm:px-5
+              pb-3
+              mx-auto
+            "
+            style={{
+              WebkitMaskImage:
+                "linear-gradient(to right, transparent 0, black 16px, black calc(100% - 24px), transparent 100%)",
+              maskImage:
+                "linear-gradient(to right, transparent 0, black 16px, black calc(100% - 24px), transparent 100%)",
+            }}
+          >
+            {navItems.map(({ key, label, icon: Icon }) => {
+              const isActive = activeNav === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleNav(key)}
+                  className={`flex shrink-0 snap-start items-center gap-1.5 rounded-full px-3 sm:px-3.5 py-2 text-[13px] sm:text-sm font-medium transition ${
+                    isActive
+                      ? "bg-orange-500/15 text-orange-400"
+                      : "text-neutral-400 hover:bg-white/5 hover:text-neutral-200"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                  {label}
+                </button>
+              );
+            })}
+            {/* Spacer so the last pill can fully clear the right-edge fade
+                instead of sitting flush against it. */}
+            <span className="shrink-0 w-1" aria-hidden="true" />
+          </nav>
+        </div>
       </div>
 
       {/* About bottom sheet */}

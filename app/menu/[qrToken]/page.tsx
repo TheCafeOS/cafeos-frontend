@@ -588,7 +588,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
     activeCategory === "all" && featuredItems.length >= 3 && !searchQuery.trim();
 
   return (
-    <main className="min-h-screen bg-[#0F1115] pb-32">
+   <main className="min-h-screen overflow-x-hidden bg-[#0F1115] pb-32">
       <style>{`
         @keyframes menuFadeIn {
           from { opacity: 0; transform: translateY(6px); }
@@ -625,7 +625,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 
         <div className="border-b border-white/5 bg-[#0F1115]/95 shadow-sm backdrop-blur-xl">
           {/* Header → Search: 20px */}
-          <div className="mx-auto max-w-5xl px-5 pb-4 pt-5 sm:px-8">
+          <div className="mx-auto max-w-5xl px-4 pb-3 pt-4 sm:px-6">
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-neutral-500" />
 
@@ -634,7 +634,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
                 placeholder="Search dishes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-white/5 bg-[#171A20] py-3.5 pl-11 pr-11 text-neutral-100 shadow-inner outline-none transition placeholder:text-neutral-500 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
+                className="w-full rounded-2xl border border-white/5 bg-[#171A20] py-3 pl-11 pr-11 text-neutral-100 shadow-inner outline-none transition placeholder:text-neutral-500 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
               />
 
               <button
@@ -647,7 +647,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
             </div>
 
             {/* Search → Categories: 16px */}
-            <div className="mt-4 flex gap-2.5 overflow-x-auto pb-1">
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               <button
                 type="button"
                 onClick={() => {
@@ -703,7 +703,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
       </div>
 
       {orderMessage ? (
-        <div className="mx-auto mt-5 max-w-5xl px-5 sm:px-8">
+        <div className="mx-auto mt-5 max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
             {orderMessage}
           </div>
@@ -719,7 +719,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
       ) : null}
 
       {/* Categories → Popular: 28px */}
-      <div className="mx-auto max-w-5xl px-5 pt-7 pb-8 sm:px-8">
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
         {showPopular && (
           <section
             ref={popularSectionRef}
@@ -754,7 +754,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 
             <div className="-mx-5 flex gap-5 overflow-x-auto px-5 pb-2 sm:-mx-8 sm:px-8">
               {featuredItems.map((item) => (
-                <div key={`featured-${item.id}`} className="w-[190px] shrink-0">
+                <div key={`featured-${item.id}`} className="w-[170px] xs:w-[180px] sm:w-[190px] shrink-0">
                   <MenuCard
                     item={item}
                     formatPrice={formatPrice}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Plus, Minus, Star, Heart, XCircle } from "lucide-react";
+import { UtensilsCrossed } from "lucide-react";
 
 export type MenuItem = {
   id: string;
@@ -54,7 +55,7 @@ function QuantityStepper({
         type="button"
         onClick={onDecrease}
         className={`flex items-center justify-center rounded-lg bg-neutral-800 text-neutral-100 transition hover:bg-neutral-700 active:scale-95 ${
-          compact ? "h-7 w-7" : "h-8 w-8"
+          compact ? "h-6 w-6 sm:h-7 sm:w-7" : "h-8 w-8"
         }`}
       >
         <Minus className="h-3.5 w-3.5" />
@@ -69,7 +70,7 @@ function QuantityStepper({
         disabled={isUnavailable}
         onClick={onIncrease}
         className={`flex items-center justify-center rounded-lg bg-orange-500 text-white transition hover:bg-orange-600 active:scale-95 disabled:bg-neutral-700 ${
-          compact ? "h-7 w-7" : "h-8 w-8"
+        compact ? "h-6 w-6 sm:h-7 sm:w-7" : "h-8 w-8"
         }`}
       >
         <Plus className="h-3.5 w-3.5" />
@@ -100,7 +101,7 @@ export default function MenuCard({
   if (isFeatured) {
     return (
       <article className="group relative overflow-hidden rounded-3xl bg-[#171A20] shadow-lg shadow-black/20 transition-transform duration-300 hover:-translate-y-1">
-        <div className="relative h-32 w-full">
+        <div className="relative h-28 w-full sm:h-32">
           {item.imageUrl ? (
             <Image
               src={item.imageUrl}
@@ -111,7 +112,7 @@ export default function MenuCard({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-neutral-800 text-4xl">
-              🍽️
+             <UtensilsCrossed className="h-10 w-10 text-neutral-500" />
             </div>
           )}
 
@@ -136,9 +137,8 @@ export default function MenuCard({
           )}
         </div>
 
-        <div className="p-3.5">
-          <h3 className="truncate text-[15px] font-bold text-neutral-100">
-            {item.name}
+        <div className="p-3">
+<h3 className="truncate text-sm font-bold text-neutral-100 sm:text-[15px]">            {item.name}
           </h3>
 
           <div className="mt-1 flex items-center justify-between">
@@ -183,9 +183,8 @@ export default function MenuCard({
 
   // ---------- Full menu (compact horizontal) ----------
   return (
-    <article className="flex gap-4 rounded-2xl bg-[#171A20] p-3 transition-colors duration-200 hover:bg-[#1c2028]">
-      <div className="relative h-[100px] w-[100px] shrink-0 overflow-hidden rounded-xl sm:h-[120px] sm:w-[120px]">
-        {item.imageUrl ? (
+<article className="flex w-full gap-3 rounded-2xl bg-[#171A20] p-3 transition-colors duration-200 hover:bg-[#1c2028]">     
+<div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-xl sm:h-[100px] sm:w-[100px] lg:h-[120px] lg:w-[120px]">        {item.imageUrl ? (
           <Image
             src={item.imageUrl}
             alt={item.name}
@@ -202,8 +201,7 @@ export default function MenuCard({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="truncate text-[15px] font-bold text-neutral-100">
-            {item.name}
+<h3 className="truncate text-sm font-bold text-neutral-100 sm:text-[15px]">            {item.name}
           </h3>
 
           <span className="shrink-0 text-sm font-bold text-orange-400">
@@ -211,11 +209,10 @@ export default function MenuCard({
           </span>
         </div>
 
-        <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-neutral-400">
-          {item.description || "Freshly prepared and served with care."}
+<p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-400 sm:text-[13px]">          {item.description || "Freshly prepared and served with care."}
         </p>
 
-        <div className="mt-auto flex items-center justify-between pt-2">
+        <div className="mt-auto flex items-center justify-between pt-1.5">
           {isUnavailable ? (
             <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-400">
               <XCircle className="h-3 w-3" />
