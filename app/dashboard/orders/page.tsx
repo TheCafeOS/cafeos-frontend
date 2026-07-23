@@ -242,10 +242,7 @@ useEffect(() => {
 
 
   return (
-    <DashboardShell
-      title="Orders"
-      description="Review incoming customer orders for your restaurant."
-    >
+    <DashboardShell title="Orders">
       <div className="w-full min-w-0 space-y-6 overflow-x-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

@@ -485,7 +485,7 @@ async function handleSaveEditMenuItem(itemId: string) {
   return (
     <DashboardShell
       title="Menu"
-      description="Manage your restaurant's menu categories and items"
+      description=" "
     >
       <div className="space-y-8">
         <section>

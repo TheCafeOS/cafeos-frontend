@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Lock, UserCircle2 } from "lucide-react";
+import { ChevronDown, Lock, UserCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,9 @@ type AccountCardProps = {
 export function AccountCard({
   account,
 }: AccountCardProps) {
+  const [showChangePassword, setShowChangePassword] =
+    useState(false);
+
   const [currentPassword, setCurrentPassword] =
     useState("");
 
@@ -60,12 +63,29 @@ export function AccountCard({
       setConfirmPassword("");
 
       toast.success("Password changed successfully.");
+      setShowChangePassword(false);
     } catch (error) {
       console.error(error);
       toast.error("Failed to change password.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function toggleChangePassword() {
+    setShowChangePassword((prev) => {
+      const next = !prev;
+
+      // Clear any partially-entered values when the form is collapsed
+      // so a re-open always starts fresh.
+      if (!next) {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+
+      return next;
+    });
   }
 
   return (
@@ -115,63 +135,78 @@ export function AccountCard({
         </div>
 
         <div className="rounded-xl border border-stone-200 p-4">
-          <div className="mb-4 flex items-center gap-2 font-medium">
-            <Lock className="h-4 w-4" />
-            Change Password
-          </div>
+          <button
+            type="button"
+            onClick={toggleChangePassword}
+            className="flex w-full items-center justify-between gap-2 text-left font-medium"
+            aria-expanded={showChangePassword}
+          >
+            <span className="flex items-center gap-2">
+              <Lock className="h-4 w-4" />
+              Change Password
+            </span>
 
-          <div className="space-y-4">
-            <div>
-              <Label>Current Password</Label>
+            <ChevronDown
+              className={`h-4 w-4 text-stone-500 transition-transform ${
+                showChangePassword ? "rotate-180" : ""
+              }`}
+            />
+          </button>
 
-              <Input
-                type="password"
-                value={currentPassword}
-                onChange={(e) =>
-                  setCurrentPassword(
-                    e.target.value,
-                  )
-                }
-              />
+          {showChangePassword ? (
+            <div className="mt-4 space-y-4">
+              <div>
+                <Label>Current Password</Label>
+
+                <Input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) =>
+                    setCurrentPassword(
+                      e.target.value,
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <Label>New Password</Label>
+
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) =>
+                    setNewPassword(
+                      e.target.value,
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <Label>Confirm Password</Label>
+
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) =>
+                    setConfirmPassword(
+                      e.target.value,
+                    )
+                  }
+                />
+              </div>
+
+              <Button
+                onClick={handleChangePassword}
+                disabled={!canSubmit || loading}
+              >
+                {loading
+                  ? "Changing..."
+                  : "Change Password"}
+              </Button>
             </div>
-
-            <div>
-              <Label>New Password</Label>
-
-              <Input
-                type="password"
-                value={newPassword}
-                onChange={(e) =>
-                  setNewPassword(
-                    e.target.value,
-                  )
-                }
-              />
-            </div>
-
-            <div>
-              <Label>Confirm Password</Label>
-
-              <Input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) =>
-                  setConfirmPassword(
-                    e.target.value,
-                  )
-                }
-              />
-            </div>
-
-            <Button
-              onClick={handleChangePassword}
-              disabled={!canSubmit || loading}
-            >
-              {loading
-                ? "Changing..."
-                : "Change Password"}
-            </Button>
-          </div>
+          ) : null}
         </div>
       </div>
     </section>

@@ -180,16 +180,6 @@ className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow
           })}
         </nav>
       </div>
-
-      <div className="border-t border-stone-200 p-6 text-sm text-stone-500">
-        <p className="font-medium text-stone-700">
-          Shift status
-        </p>
-
-        <p className="mt-1">
-          All systems operational
-        </p>
-      </div>
     </aside>
   );
 }

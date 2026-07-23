@@ -388,7 +388,7 @@ export default function TablesPage() {
   return (
     <DashboardShell
       title="Tables"
-      description="Manage your restaurant's dining tables"
+      description=" "
     >
       <div className="space-y-6">
         <section className="rounded-lg border border-stone-200 bg-white p-6">

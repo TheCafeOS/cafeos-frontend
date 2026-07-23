@@ -186,7 +186,7 @@ async function handleStatusConfirm() {
   return (
    <DashboardShell
   title="Employees"
-      description="Manage restaurant managers and staff."
+      description=" "
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between">

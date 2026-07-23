@@ -127,20 +127,13 @@ export default function DashboardPage() {
   }, [dashboard]);
 
   return (
-    <DashboardShell
-      title="Overview"
-      description="A live summary of your restaurant operations."
-    >
+    <DashboardShell title="Overview">
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold text-stone-900">
               Today&apos;s operations
             </h2>
-
-            <p className="mt-1 text-sm text-stone-600">
-              Track incoming orders and daily performance at a glance.
-            </p>
           </div>
 
           <Button
@@ -255,10 +248,6 @@ export default function DashboardPage() {
                   <h3 className="font-semibold text-stone-900">
                     Recent orders
                   </h3>
-
-                  <p className="mt-1 text-sm text-stone-600">
-                    Your five most recent customer orders.
-                  </p>
                 </div>
 
                 <Link

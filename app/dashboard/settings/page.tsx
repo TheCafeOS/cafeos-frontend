@@ -5,7 +5,7 @@ export default function SettingsPage() {
   return (
     <DashboardShell
       title="Settings"
-      description="Manage restaurant details, account preferences, and session options."
+      description=" "
     >
       <SettingsContent />
     </DashboardShell>
