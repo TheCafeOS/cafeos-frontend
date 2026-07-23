@@ -234,7 +234,7 @@ useEffect(() => {
       title="Orders"
       description="Review incoming customer orders for your restaurant."
     >
-      <div className="space-y-6">
+      <div className="w-full min-w-0 space-y-6 overflow-x-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold text-stone-900">
@@ -251,6 +251,7 @@ useEffect(() => {
             variant="outline"
             disabled={isLoading}
             onClick={() => void loadOrders()}
+            className="h-10 sm:h-9"
           >
             <RefreshCw
               className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
@@ -260,7 +261,7 @@ useEffect(() => {
         </div>
 
         {!isLoading && !error ? (
-          <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-4">
+          <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-3.5 sm:p-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
               <input
@@ -270,7 +271,7 @@ onChange={(event) => {
   setPage(1);
   setSearchQuery(event.target.value);
 }}                placeholder="Search by order ID, table, phone, or item..."
-                className="w-full rounded-lg border border-stone-200 py-2 pl-10 pr-10 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                className="h-11 w-full rounded-lg border border-stone-200 py-2 pl-10 pr-10 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100 sm:h-10"
               />
               {searchQuery ? (
                 <button
@@ -287,29 +288,42 @@ onChange={(event) => {
               ) : null}
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {STATUS_FILTERS.map((filter) => (
-                <Button
-                  key={filter.value}
-                  type="button"
-                  size="sm"
-                  variant={
-                    statusFilter === filter.value ? "default" : "outline"
-                  }
-                  className={
-                    statusFilter === filter.value
-                      ? "bg-amber-600 hover:bg-amber-700"
-                      : "shrink-0"
-                  }
+            {/* Status filter chips: edge fade + scroll-snap so it's
+                obvious there are more chips off-screen on narrow phones,
+                instead of the row just getting clipped. */}
+            <div className="relative">
+              <div
+                className="flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth pb-1"
+                style={{
+                  WebkitMaskImage:
+                    "linear-gradient(to right, black calc(100% - 24px), transparent 100%)",
+                  maskImage:
+                    "linear-gradient(to right, black calc(100% - 24px), transparent 100%)",
+                }}
+              >
+                {STATUS_FILTERS.map((filter) => (
+                  <Button
+                    key={filter.value}
+                    type="button"
+                    size="sm"
+                    variant={
+                      statusFilter === filter.value ? "default" : "outline"
+                    }
+                    className={`h-9 shrink-0 snap-start ${
+                      statusFilter === filter.value
+                        ? "bg-amber-600 hover:bg-amber-700"
+                        : ""
+                    }`}
 onClick={() => {
   setPage(1);
   setStatusFilter(filter.value);
-}}                >
-                  {filter.label}
-                </Button>
-              ))}
+}}                  >
+                    {filter.label}
+                  </Button>
+                ))}
+                <span className="shrink-0 w-2" aria-hidden="true" />
+              </div>
             </div>
-        
           </div>
         ) : null}
 
@@ -350,10 +364,10 @@ onClick={() => {
               return (
                 <article
                   key={order.id}
-                  className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm"
+                  className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-stone-900">
                         {formatOrderReference(order.id)}
                       </p>
@@ -363,7 +377,7 @@ onClick={() => {
                     </div>
 
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[order.status]}`}
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[order.status]}`}
                     >
                       {STATUS_LABELS[order.status]}
                     </span>
@@ -373,19 +387,19 @@ onClick={() => {
                     {order.items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between gap-4 text-sm"
+                        className="flex items-start justify-between gap-3 text-sm"
                       >
-                        <span className="text-stone-700">
+                        <span className="min-w-0 text-stone-700">
                           {item.menuItem.name} × {item.quantity}
                         </span>
-                        <span className="font-medium text-stone-900">
+                        <span className="shrink-0 font-medium text-stone-900">
                           {formatPrice(Number(item.price) * item.quantity)}
                         </span>
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-4">
+                  <div className="mt-4 flex flex-col gap-1 border-t border-stone-100 pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <p className="text-sm text-stone-600">
                       Phone: {order.customerPhone || "Not provided"}
                     </p>
@@ -395,60 +409,66 @@ onClick={() => {
                     </p>
                   </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-4">
+                  {/* Actions: full-width stacked buttons on mobile (44px+
+                      touch targets), side-by-side from sm: up. Primary
+                      action (status update) comes first so it's the one
+                      thumbs reach without scrolling past "View Details". */}
+                  <div className="mt-4 flex flex-col-reverse gap-2 border-t border-stone-100 pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                    <Button
+                      variant="outline"
+                      className="h-11 w-full sm:h-9 sm:w-auto"
+                      onClick={() => {
+                        setSelectedOrder(order);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      View Details
+                    </Button>
 
-  <Button
-    variant="outline"
-    onClick={() => {
-      setSelectedOrder(order);
-      setDialogOpen(true);
-    }}
-  >
-    View Details
-  </Button>
+                    {nextStatus ? (
+                      <Button
+                        type="button"
+                        disabled={isUpdating}
+                        className="h-11 w-full sm:h-9 sm:w-auto"
+                        onClick={() =>
+                          void handleStatusUpdate(order.id, nextStatus)
+                        }
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
 
-  {nextStatus ? (
-    <Button
-      type="button"
-      disabled={isUpdating}
-      onClick={() =>
-        void handleStatusUpdate(order.id, nextStatus)
-      }
-    >
-      {isUpdating ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      ) : null}
-
-      Mark as {STATUS_LABELS[nextStatus]}
-    </Button>
-  ) : (
-    <p className="text-sm font-medium text-stone-500">
-      This order is {STATUS_LABELS[order.status].toLowerCase()}.
-    </p>
-  )}
-
-</div>
+                        Mark as {STATUS_LABELS[nextStatus]}
+                      </Button>
+                    ) : (
+                      <p className="text-center text-sm font-medium text-stone-500 sm:text-right">
+                        This order is {STATUS_LABELS[order.status].toLowerCase()}.
+                      </p>
+                    )}
+                  </div>
                 </article>
               );
             })}
           </div>
         ) : null}
         {pagination.totalPages > 1 && (
-  <div className="mt-6 flex items-center justify-between rounded-xl border border-stone-200 bg-white p-4">
+  <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-4">
     <Button
       variant="outline"
+      className="h-10 sm:h-9"
       disabled={!pagination.hasPreviousPage}
       onClick={() => setPage((prev) => prev - 1)}
     >
       Previous
     </Button>
 
-    <p className="text-sm text-stone-600">
+    <p className="order-first w-full text-center text-sm text-stone-600 sm:order-none sm:w-auto">
       Page {pagination.page} of {pagination.totalPages}
     </p>
 
     <Button
       variant="outline"
+      className="h-10 sm:h-9"
       disabled={!pagination.hasNextPage}
       onClick={() => setPage((prev) => prev + 1)}
     >
