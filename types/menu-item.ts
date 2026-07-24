@@ -1,16 +1,26 @@
+export type FoodType = "VEG" | "NON_VEG" | "EGG";
+
 export type MenuItem = {
   id: string;
   restaurantId: string;
+
   name: string;
   description?: string;
+
   price: number;
+
   categoryId?: string;
   category?: {
     id: string;
     name: string;
   };
+
   imageUrl?: string;
+
+  foodType: FoodType;
+
   isAvailable: boolean;
+
   createdAt: string;
   updatedAt: string;
 };
@@ -18,9 +28,15 @@ export type MenuItem = {
 export type CreateMenuItemPayload = {
   name: string;
   description?: string;
+
   price: number;
+
   categoryId?: string;
+
   imageUrl?: string;
+
+  foodType: FoodType;
+
   isAvailable?: boolean;
 };
 

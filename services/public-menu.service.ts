@@ -6,9 +6,16 @@ export interface MenuItemResponse {
   description: string | null;
   price: number | string;
   imageUrl: string | null;
+
   isAvailable?: boolean;
+
+  foodType: "VEG" | "NON_VEG" | "EGG";
+
   categoryId: string | null;
-  category: { id: string; name: string } | null;
+  category: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export interface CategoryResponse {

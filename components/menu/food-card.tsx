@@ -5,7 +5,14 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import type { MenuItemResponse } from "@/services/public-menu.service";
 import { useCart } from "@/lib/cart-store";
-import { Plus, Minus } from "lucide-react";
+import {
+  Plus,
+  Minus,
+  Leaf,
+  Drumstick,
+  Egg,
+  ImageOff,
+} from "lucide-react";
 
 interface FoodCardProps {
   item: MenuItemResponse;
@@ -13,88 +20,147 @@ interface FoodCardProps {
 
 export function FoodCard({ item }: FoodCardProps) {
   const [quantity, setQuantity] = useState(0);
+
   const { addItem, removeItem } = useCart();
 
   const handleAdd = () => {
-    if (quantity === 0) {
-      addItem(item, 1);
-      setQuantity(1);
-    } else {
-      addItem(item, 1);
-      setQuantity(quantity + 1);
-    }
+    if (!item.isAvailable) return;
+
+    addItem(item, 1);
+    setQuantity((q) => q + 1);
   };
 
   const handleRemove = () => {
-    if (quantity === 1) {
+    if (quantity <= 1) {
       removeItem(item.id);
       setQuantity(0);
-    } else {
-      setQuantity(quantity - 1);
+      return;
     }
+
+    setQuantity((q) => q - 1);
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-stone-200 overflow-hidden hover:shadow-md transition-shadow">
+    <div
+      className={`overflow-hidden rounded-xl border transition-all duration-200
+      ${
+        item.isAvailable
+          ? "border-stone-200 bg-white hover:shadow-md"
+          : "border-stone-200 bg-stone-100 opacity-75"
+      }`}
+    >
+      {/* Image */}
+
       {item.imageUrl ? (
-        <div className="relative w-full h-40 bg-stone-100">
+        <div className="relative h-44 w-full bg-stone-100">
           <Image
             src={item.imageUrl}
             alt={item.name}
             fill
             className="object-cover"
           />
+
+          {!item.isAvailable && (
+            <div className="absolute right-3 top-3 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
+              Sold Out
+            </div>
+          )}
         </div>
       ) : (
-        <div className="w-full h-40 bg-stone-100 flex items-center justify-center">
-          <span className="text-stone-400">No image</span>
+        <div className="flex h-44 w-full items-center justify-center bg-stone-100">
+          <ImageOff className="h-10 w-10 text-stone-400" />
         </div>
       )}
 
-      <div className="p-4">
-        <h3 className="font-semibold text-stone-900 mb-1">{item.name}</h3>
+      {/* Content */}
+
+      <div className="space-y-3 p-4">
+
+        {/* Food Type */}
+
+        <div>
+          {item.foodType === "VEG" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
+              <Leaf className="h-3.5 w-3.5" />
+              Veg
+            </span>
+          )}
+
+          {item.foodType === "NON_VEG" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700">
+              <Drumstick className="h-3.5 w-3.5" />
+              Non-Veg
+            </span>
+          )}
+
+          {item.foodType === "EGG" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-700">
+              <Egg className="h-3.5 w-3.5" />
+              Egg
+            </span>
+          )}
+        </div>
+
+        {/* Name */}
+
+        <h3 className="text-lg font-semibold text-stone-900">
+          {item.name}
+        </h3>
+
+        {/* Description */}
 
         {item.description && (
-          <p className="text-sm text-stone-600 mb-3 line-clamp-2">
+          <p className="line-clamp-2 text-sm text-stone-600">
             {item.description}
           </p>
         )}
 
+        {/* Category */}
+
         {item.category && (
-          <div className="text-xs text-stone-500 mb-3">
+          <p className="text-xs uppercase tracking-wide text-stone-500">
             {item.category.name}
-          </div>
+          </p>
         )}
 
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-stone-900">
+        {/* Footer */}
+
+        <div className="flex items-center justify-between pt-2">
+          <span className="text-xl font-bold text-stone-900">
             ₹{Number(item.price).toFixed(2)}
           </span>
 
           {quantity === 0 ? (
             <Button
               size="sm"
+              disabled={!item.isAvailable}
               onClick={handleAdd}
-              className="bg-orange-500 hover:bg-orange-600"
+              className={
+                item.isAvailable
+                  ? "bg-orange-500 hover:bg-orange-600"
+                  : ""
+              }
             >
-              Add
+              {item.isAvailable ? "Add" : "Unavailable"}
             </Button>
           ) : (
-            <div className="flex items-center gap-2 bg-stone-100 rounded-lg">
+            <div className="flex items-center gap-2 rounded-lg bg-stone-100 px-2 py-1">
               <button
                 onClick={handleRemove}
-                className="p-1 hover:bg-stone-200 rounded"
+                className="rounded p-1 hover:bg-stone-200"
               >
-                <Minus size={16} className="text-stone-700" />
+                <Minus size={16} />
               </button>
-              <span className="w-6 text-center text-sm font-semibold">
+
+              <span className="w-6 text-center font-semibold">
                 {quantity}
               </span>
+
               <button
                 onClick={handleAdd}
-                className="p-1 hover:bg-stone-200 rounded"
+                className="rounded p-1 hover:bg-stone-200"
               >
-                <Plus size={16} className="text-stone-700" />
+                <Plus size={16} />
               </button>
             </div>
           )}
