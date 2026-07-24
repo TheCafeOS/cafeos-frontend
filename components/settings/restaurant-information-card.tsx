@@ -226,17 +226,17 @@ export function RestaurantInformationCard({
       Cover Image
     </Label>
 
-    <div className="relative overflow-hidden rounded-3xl border border-stone-200 bg-stone-100">
-      {coverUrl ? (
-        <Image
+    <div className="relative aspect-[16/7] overflow-hidden rounded-3xl border border-stone-200 bg-stone-100">
+  {coverUrl ? (
+   <Image
   src={coverUrl}
   alt="Restaurant Cover"
-  width={1600}
-  height={900}
+  fill
   priority
-className="h-80 w-full object-cover object-[center_35%]"
+  sizes="(max-width: 768px) 100vw, 70vw"
+  className="object-cover object-[15%_center]"
 />
-      ) : (
+  ) : (
         <div className="flex h-56 w-full flex-col items-center justify-center gap-3 text-stone-400">
           <ImageIcon className="h-10 w-10" />
 
