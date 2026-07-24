@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Plus, Minus, Star, Heart, XCircle } from "lucide-react";
+import { Plus, Minus, Star, XCircle } from "lucide-react";
 import { UtensilsCrossed } from "lucide-react";
 
 export type MenuItem = {
@@ -93,7 +93,7 @@ export default function MenuCard({
   onDecrease,
 }: MenuCardProps) {
   const isUnavailable = item.isAvailable === false;
-  const [isFavorite, setIsFavorite] = useState(false);
+
 
 
 
@@ -116,18 +116,7 @@ export default function MenuCard({
             </div>
           )}
 
-          <button
-            type="button"
-            aria-label="Toggle favourite"
-            onClick={() => setIsFavorite((v) => !v)}
-            className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition active:scale-90"
-          >
-            <Heart
-              className={`h-4 w-4 ${
-                isFavorite ? "fill-orange-500 text-orange-500" : "text-white"
-              }`}
-            />
-          </button>
+          
 
           {isUnavailable && (
             <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 rounded-full bg-red-500 px-2.5 py-1 text-[11px] font-semibold text-white">

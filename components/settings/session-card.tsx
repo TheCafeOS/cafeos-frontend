@@ -10,9 +10,9 @@ export function SessionCard() {
   const router = useRouter();
 
   const handleLogout = () => {
-  clearAuth();
-  router.push("/login");
-};
+    clearAuth();
+    router.push("/login");
+  };
 
   return (
     <section className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
@@ -32,24 +32,20 @@ export function SessionCard() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-        <div className="space-y-4">
-          <div className="flex items-center">
-  <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-    ● Active
-  </span>
-</div>
+      <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 sm:p-4">
+<div className="flex items-center justify-between gap-3">    
+  
+        <span className="inline-flex w-fit items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+            ● Active
+          </span>
 
-          
-
-        <Button
-  onClick={handleLogout}
-  variant="outline"
-  className="h-10 w-full justify-center rounded-lg border border-red-200 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
->
-  <LogOut className="mr-2 h-4 w-4" />
-  Logout
-</Button>
+          <Button
+            onClick={handleLogout}
+            variant="ghost"
+className="h-9 px-3 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </div>
     </section>
