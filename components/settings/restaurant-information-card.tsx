@@ -278,15 +278,16 @@ export function RestaurantInformationCard({
   <div className="flex flex-col gap-6 rounded-3xl border border-stone-200 bg-stone-50 p-6 lg:flex-row lg:items-center">
     <div>
       {logoUrl ? (
-        <Image
+       <Image
   src={logoUrl}
   alt="Restaurant Logo"
-  width={220}
-  height={120}
-className="h-32 w-52 rounded-2xl border border-stone-200 bg-white object-contain p-4 shadow-sm"/>
+  width={96}
+  height={96}
+  className="h-24 w-24 rounded-full border border-stone-200 bg-white object-contain p-2 shadow-sm"
+/>
       ) : (
-        <div className="flex h-28 w-28 items-center justify-center rounded-3xl border bg-white">
-          <Building2 className="h-10 w-10 text-stone-400" />
+<div className="flex h-28 w-28 items-center justify-center rounded-3xl border bg-white">   
+         <Building2 className="h-10 w-10 text-stone-400" />
         </div>
       )}
     </div>
@@ -298,8 +299,7 @@ className="h-32 w-52 rounded-2xl border border-stone-200 bg-white object-contain
         </h3>
 
         <p className="text-sm text-stone-500">
-          This logo will appear in your dashboard,
-          QR menu and customer experience.
+         Displayed across your dashboard, QR menu and customer ordering experience.
         </p>
       </div>
 
