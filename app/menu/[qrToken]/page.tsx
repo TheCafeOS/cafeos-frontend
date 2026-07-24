@@ -22,6 +22,20 @@ import CartDrawer, { type CartItem } from "./components/CartDrawer";
 import CurrentOrderDrawer, {
   type CurrentOrder,
 } from "./components/CurrentOrderDrawer";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 type Category = {
   id: string;
@@ -71,6 +85,33 @@ type OrderUpdatedPayload = {
   status: CurrentOrder["status"];
   timestamp: string;
 };
+
+type SortOption = "popular" | "price-asc" | "price-desc" | "az" | "za";
+
+type MenuFilters = {
+  availableOnly: boolean;
+  sortBy: SortOption;
+};
+
+const DEFAULT_FILTERS: MenuFilters = {
+  availableOnly: false,
+  sortBy: "popular",
+};
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "popular", label: "Popular" },
+  { value: "price-asc", label: "Price: Low → High" },
+  { value: "price-desc", label: "Price: High → Low" },
+  { value: "az", label: "A → Z" },
+  { value: "za", label: "Z → A" },
+];
+
+function isDefaultFilters(filters: MenuFilters): boolean {
+  return (
+    filters.availableOnly === DEFAULT_FILTERS.availableOnly &&
+    filters.sortBy === DEFAULT_FILTERS.sortBy
+  );
+}
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -138,6 +179,156 @@ function getApiMessage(body: unknown): string {
   return "";
 }
 
+// Decides whether the filter control should render as a desktop Popover
+// or a mobile bottom Sheet. We mount only ONE of the two at a time rather
+// than CSS-hiding the other, because SheetContent/PopoverContent both
+// render into a portal at document.body — a `hidden` wrapper around the
+// trigger would not stop the hidden variant's content from still popping
+// up at the body root if it were ever opened. Defaults to false (mobile)
+// until the effect runs on mount, matching the shadcn/ui pattern for
+// responsive dialog/drawer switching.
+function useIsDesktopViewport(breakpointPx = 768): boolean {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(`(min-width: ${breakpointPx}px)`);
+
+   requestAnimationFrame(() => {
+  setIsDesktop(mediaQuery.matches);
+});
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsDesktop(event.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [breakpointPx]);
+
+  return isDesktop;
+}
+
+// Shared body of the filter UI — identical whether it's rendered inside
+// the mobile Sheet or the desktop Popover. Purely controlled: it holds no
+// state of its own, it just reflects `draftFilters` and reports changes
+// upward via `onChange`. Nothing here touches the applied filters.
+function MenuFilterForm({
+  draftFilters,
+  onChange,
+}: {
+  draftFilters: MenuFilters;
+  onChange: (next: MenuFilters) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-500">
+          Availability
+        </p>
+
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() =>
+            onChange({
+              ...draftFilters,
+              availableOnly: !draftFilters.availableOnly,
+            })
+          }
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              onChange({
+                ...draftFilters,
+                availableOnly: !draftFilters.availableOnly,
+              });
+            }
+          }}
+          className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition ${
+            draftFilters.availableOnly
+              ? "border-orange-500/40 bg-orange-500/10"
+              : "border-white/5 bg-[#0F1115] hover:bg-white/5"
+          }`}
+        >
+          {/* pointer-events-none: clicks are handled by the row above so
+              a single tap can't fire both the row handler and Radix's
+              own click handling and cancel itself out. */}
+          <Checkbox
+            checked={draftFilters.availableOnly}
+            className="pointer-events-none border-white/20 data-[state=checked]:border-orange-500 data-[state=checked]:bg-orange-500"
+          />
+          <span className="text-sm font-medium text-neutral-200">
+            Available Only
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-500">
+          Sorting
+        </p>
+
+        <RadioGroup value={draftFilters.sortBy} className="flex flex-col gap-2">
+          {SORT_OPTIONS.map((option) => (
+            <div
+              key={option.value}
+              role="button"
+              tabIndex={0}
+              onClick={() => onChange({ ...draftFilters, sortBy: option.value })}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onChange({ ...draftFilters, sortBy: option.value });
+                }
+              }}
+              className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition ${
+                draftFilters.sortBy === option.value
+                  ? "border-orange-500/40 bg-orange-500/10"
+                  : "border-white/5 bg-[#0F1115] hover:bg-white/5"
+              }`}
+            >
+              <RadioGroupItem
+                value={option.value}
+                className="pointer-events-none border-white/20 text-orange-500"
+              />
+              <span className="text-sm font-medium text-neutral-200">
+                {option.label}
+              </span>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
+    </div>
+  );
+}
+
+function MenuFilterFooter({
+  onReset,
+  onApply,
+}: {
+  onReset: () => void;
+  onApply: () => void;
+}) {
+  return (
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={onReset}
+        className="flex-1 rounded-xl border border-white/10 bg-[#0F1115] py-3 text-sm font-semibold text-neutral-200 transition hover:bg-white/10 active:scale-95"
+      >
+        Reset
+      </button>
+      <button
+        type="button"
+        onClick={onApply}
+        className="flex-1 rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white transition hover:bg-orange-400 active:scale-95"
+      >
+        Apply
+      </button>
+    </div>
+  );
+}
+
 export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [menu, setMenu] = useState<PublicMenuResponse | null>(null);
   const [qrToken, setQrToken] = useState("");
@@ -145,12 +336,16 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
-  // Cosmetic only: which chip lights up while the user free-scrolls
-  // through the "All" view. Deliberately separate from activeCategory
-  // so scrolling never filters/hides sections — only a tap does that.
-  const [scrollSpyCategory, setScrollSpyCategory] = useState<string | null>(
-    null,
-  );
+  const [showFullMenu, setShowFullMenu] = useState(false);
+
+  // Filters: `appliedFilters` is what actually affects the rendered menu.
+  // `draftFilters` is the in-progress edit shown inside the open sheet/
+  // popover — it only ever flows into `appliedFilters` via Apply, so
+  // opening the filter UI or fiddling with it never changes the menu on
+  // its own, and closing without Apply just discards the draft.
+  const [appliedFilters, setAppliedFilters] = useState<MenuFilters>(DEFAULT_FILTERS);
+  const [draftFilters, setDraftFilters] = useState<MenuFilters>(DEFAULT_FILTERS);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -165,6 +360,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [currentOrderError, setCurrentOrderError] = useState("");
   const categories = menu?.categories ?? [];
   const menuItems = menu?.menuItems ?? [];
+  const isDesktopFilterViewport = useIsDesktopViewport();
 
   const currentOrderIdRef = useRef<string | null>(null);
   const popularSectionRef = useRef<HTMLDivElement | null>(null);
@@ -360,37 +556,20 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
     };
   }, [qrToken, fetchCurrentOrder]);
 
-  // Scroll-spy: only runs while browsing the unfiltered "All" view.
-  // The moment a chip is tapped (activeCategory !== "all"), only that
-  // category's section exists in the DOM anyway, so this effect backs
-  // off entirely rather than fighting the filter.
-  useEffect(() => {
-    if (activeCategory !== "all" || categories.length === 0) {
-      return;
-    }
+  // Single source of truth for "go back to the unfiltered All view".
+  //
+  // showFullMenu defaults to true because "All" (the chip, or "View All")
+  // means "show me the complete menu" — every item in every category,
+  // with no items pulled out into a Popular Today rail. The homepage
+  // ("Menu" / "Popular" in the header) is the one exception: it wants
+  // the promo rail, so it explicitly passes showFullMenu: false.
+  function goToAllCategories(options: { showFullMenu?: boolean } = {}) {
+    const { showFullMenu: nextShowFullMenu = true } = options;
 
-    const sections = categories
-      .map((category) => document.getElementById(`category-${category.id}`))
-      .filter(Boolean) as HTMLElement[];
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setScrollSpyCategory(entry.target.id.replace("category-", ""));
-          }
-        });
-      },
-      {
-        threshold: 0.3,
-        rootMargin: "-160px 0px -60% 0px",
-      },
-    );
-
-    sections.forEach((section) => observer.observe(section));
-
-    return () => observer.disconnect();
-  }, [categories, activeCategory]);
+    setShowFullMenu(nextShowFullMenu);
+    setActiveCategory("all");
+    setSearchQuery("");
+  }
 
   const formatPrice = (price: string | number) => {
     const numericPrice = Number(price);
@@ -453,6 +632,80 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 
   function removeFromCart(menuItemId: string) {
     setCart((currentCart) => currentCart.filter((item) => item.id !== menuItemId));
+  }
+
+  // Search + availability filter + sort, computed client-side and
+  // memoized together since they always need to be recomputed as a unit.
+  // Never mutates menuItems: search produces a new filtered array, and
+  // sorting operates on a shallow copy of that result, not the original.
+  const filteredMenuItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    const searched = menuItems.filter((item) => {
+      if (!query) return true;
+
+      const categoryName =
+        categories.find((category) => category.id === item.categoryId)?.name ??
+        "";
+
+      return (
+        item.name.toLowerCase().includes(query) ||
+        (item.description ?? "").toLowerCase().includes(query) ||
+        categoryName.toLowerCase().includes(query)
+      );
+    });
+
+    const availabilityFiltered = appliedFilters.availableOnly
+      ? searched.filter((item) => item.isAvailable !== false)
+      : searched;
+
+    const sorted = [...availabilityFiltered];
+
+    switch (appliedFilters.sortBy) {
+      case "price-asc":
+        sorted.sort((a, b) => Number(a.price) - Number(b.price));
+        break;
+      case "price-desc":
+        sorted.sort((a, b) => Number(b.price) - Number(a.price));
+        break;
+      case "az":
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "za":
+        sorted.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case "popular":
+      default:
+        // "Popular" is the natural order the backend already returns —
+        // no client-side reordering needed.
+        break;
+    }
+
+    return sorted;
+  }, [menuItems, categories, searchQuery, appliedFilters]);
+
+  const hasActiveFilters = !isDefaultFilters(appliedFilters);
+
+  // Opening the sheet/popover always resyncs the draft to whatever is
+  // currently applied. That's what makes "closing without Apply discards
+  // changes" work: any unsaved edits from a previous open simply get
+  // overwritten the next time it's opened, instead of lingering.
+  function handleFilterOpenChange(open: boolean) {
+    if (open) {
+      setDraftFilters(appliedFilters);
+    }
+
+    setIsFilterOpen(open);
+  }
+
+  function handleApplyFilters() {
+    setAppliedFilters(draftFilters);
+    setIsFilterOpen(false);
+  }
+
+  function handleResetFilters() {
+    setDraftFilters(DEFAULT_FILTERS);
+    setAppliedFilters(DEFAULT_FILTERS);
   }
 
   async function handlePlaceOrder() {
@@ -557,21 +810,6 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
     );
   }
 
-  const filteredMenuItems = menuItems.filter((item) => {
-    const query = searchQuery.trim().toLowerCase();
-
-    if (!query) return true;
-
-    const categoryName =
-      categories.find((category) => category.id === item.categoryId)?.name ?? "";
-
-    return (
-      item.name.toLowerCase().includes(query) ||
-      (item.description ?? "").toLowerCase().includes(query) ||
-      categoryName.toLowerCase().includes(query)
-    );
-  });
-
   const uncategorizedItems = filteredMenuItems.filter((item) => !item.categoryId);
   const featuredItems = filteredMenuItems
     .filter((item) => item.isAvailable)
@@ -584,9 +822,11 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
       ? categories
       : categories.filter((category) => category.id === activeCategory);
 
-  const showPopular =
-    activeCategory === "all" && featuredItems.length >= 3 && !searchQuery.trim();
-
+const showPopular =
+  !showFullMenu &&
+  activeCategory === "all" &&
+  featuredItems.length >= 3 &&
+  !searchQuery.trim();
   return (
    <main className="min-h-screen overflow-x-hidden bg-[#0F1115] pb-32">
       <style>{`
@@ -607,13 +847,15 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
           onOpenCart={() => setIsCartOpen(true)}
           onOpenOrder={() => setIsOrderDrawerOpen(true)}
           onNavigateMenu={() => {
-            setActiveCategory("all");
-            setSearchQuery("");
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            goToAllCategories({ showFullMenu: false });
+
+            window.scrollTo({
+              top: 0,
+              behavior: "smooth",
+            });
           }}
           onNavigatePopular={() => {
-            setActiveCategory("all");
-            setSearchQuery("");
+            goToAllCategories({ showFullMenu: false });
             requestAnimationFrame(() => {
               popularSectionRef.current?.scrollIntoView({
                 behavior: "smooth",
@@ -637,23 +879,99 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
                 className="w-full rounded-2xl border border-white/5 bg-[#171A20] py-3 pl-11 pr-11 text-neutral-100 shadow-inner outline-none transition placeholder:text-neutral-500 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
               />
 
-              <button
-                type="button"
-                aria-label="Filters"
-                className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-neutral-200"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-              </button>
+              {isDesktopFilterViewport ? (
+                <Popover open={isFilterOpen} onOpenChange={handleFilterOpenChange}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Filters"
+                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-neutral-200"
+                    >
+                      <SlidersHorizontal className="h-4 w-4" />
+                      {hasActiveFilters ? (
+                        <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-orange-500" />
+                      ) : null}
+                    </button>
+                  </PopoverTrigger>
+
+                  <PopoverContent
+                    align="end"
+                    sideOffset={12}
+                    className="w-80 rounded-2xl border-white/10 bg-[#171A20] p-5 text-neutral-100 shadow-xl"
+                  >
+                    <p className="mb-4 text-sm font-semibold text-neutral-100">
+                      Filter &amp; Sort
+                    </p>
+
+                    <MenuFilterForm
+                      draftFilters={draftFilters}
+                      onChange={setDraftFilters}
+                    />
+
+                    <div className="mt-6">
+                      <MenuFilterFooter
+                        onReset={handleResetFilters}
+                        onApply={handleApplyFilters}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Sheet open={isFilterOpen} onOpenChange={handleFilterOpenChange}>
+                  <SheetTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Filters"
+                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-neutral-200"
+                    >
+                      <SlidersHorizontal className="h-4 w-4" />
+                      {hasActiveFilters ? (
+                        <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-orange-500" />
+                      ) : null}
+                    </button>
+                  </SheetTrigger>
+
+                  <SheetContent
+                    side="bottom"
+                    className="max-h-[85vh] overflow-y-auto rounded-t-3xl border-white/10 bg-[#171A20] text-neutral-100"
+                  >
+                    <SheetHeader className="text-left">
+                      <SheetTitle className="text-neutral-100">
+                        Filter &amp; Sort
+                      </SheetTitle>
+                    </SheetHeader>
+
+                    <div className="mt-4">
+                      <MenuFilterForm
+                        draftFilters={draftFilters}
+                        onChange={setDraftFilters}
+                      />
+                    </div>
+
+                    <div className="mt-6 pb-2">
+                      <MenuFilterFooter
+                        onReset={handleResetFilters}
+                        onApply={handleApplyFilters}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
             </div>
 
-            {/* Search → Categories: 16px */}
+            {/* Search → fCategories: 16px */}
             <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               <button
                 type="button"
                 onClick={() => {
-                  setActiveCategory("all");
-                  setSearchQuery("");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  goToAllCategories();
+
+                  requestAnimationFrame(() => {
+                    menuSectionRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  });
                 }}
                 className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap transition active:scale-95 ${
                   activeCategory === "all"
@@ -666,13 +984,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 
               {categories.map((category) => {
                 const Icon = getCategoryIcon(category.name);
-                // Selected explicitly by tap, OR — while browsing the
-                // unfiltered All view — currently in view per scroll-spy.
-                // Either way this is display-only; it never affects
-                // filteredCategories.
-                const isActive =
-                  activeCategory === category.id ||
-                  (activeCategory === "all" && scrollSpyCategory === category.id);
+                const isActive = activeCategory === category.id;
 
                 return (
                   <button
@@ -740,20 +1052,23 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 
               <button
                 type="button"
-                onClick={() =>
-                  menuSectionRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                  })
-                }
+                onClick={() => {
+                  goToAllCategories();
+
+                  requestAnimationFrame(() => {
+                    menuSectionRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  });
+                }}
                 className="shrink-0 text-sm font-semibold text-orange-400 transition hover:text-orange-300"
               >
                 View All →
               </button>
             </div>
 
-            <div className="-mx-5 flex gap-5 overflow-x-auto px-5 pb-2 sm:-mx-8 sm:px-8">
-              {featuredItems.map((item) => (
+<div className="-mx-5 flex gap-5 overflow-x-auto scrollbar-hide px-5 pb-2 sm:-mx-8 sm:px-8">              {featuredItems.map((item) => (
                 <div key={`featured-${item.id}`} className="w-[170px] xs:w-[180px] sm:w-[190px] shrink-0">
                   <MenuCard
                     item={item}
@@ -816,9 +1131,22 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
                   <h2 className="text-xl font-bold text-neutral-100">
                     {category.name}
                   </h2>
-                  <span className="flex items-center gap-1 text-sm font-medium text-orange-400">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory(category.id);
+                      setSearchQuery("");
+                      requestAnimationFrame(() => {
+                        menuSectionRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
+                      });
+                    }}
+                    className="flex items-center gap-1 text-sm font-medium text-orange-400 transition hover:text-orange-300"
+                  >
                     {categoryItems.length} Items →
-                  </span>
+                  </button>
                 </div>
 
                 <div className="flex flex-col gap-3">
@@ -897,7 +1225,9 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
               <p className="mt-2 text-neutral-400">
                 {searchQuery.trim()
                   ? "No dishes matched your search."
-                  : "No dishes found in this category."}
+                  : hasActiveFilters
+                    ? "No dishes matched your filters."
+                    : "No dishes found in this category."}
               </p>
             </div>
           ) : null}
