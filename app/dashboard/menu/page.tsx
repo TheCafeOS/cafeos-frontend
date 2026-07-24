@@ -1211,12 +1211,28 @@ imagePositionY={activeMenuItem.imagePositionY ?? 0}
 
                         <div className="relative h-44 w-full overflow-hidden bg-stone-100">
                           {item.imageUrl ? (
-                            <Image
-                              src={item.imageUrl}
-                              alt={item.name}
-                              fill
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
+                            /*
+                              The transform (position + scale) is applied on
+                              this wrapper, which sits inside the fixed,
+                              overflow-hidden frame above. This mirrors the
+                              exact framing configured in the image editor
+                              and matches what the public menu renders, so
+                              owners see exactly what customers see.
+                            */
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                transform: `translate(${item.imagePositionX}px, ${item.imagePositionY}px) scale(${item.imageScale})`,
+                                transformOrigin: "center",
+                              }}
+                            >
+                              <Image
+                                src={item.imageUrl}
+                                alt={item.name}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
                           ) : (
                             <MenuItemImagePlaceholder />
                           )}
