@@ -302,8 +302,7 @@ onChange={(event) => {
                 instead of the row just getting clipped. */}
             <div className="relative">
               <div
-                className="flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth pb-1"
-                style={{
+className="flex snap-x snap-mandatory gap-2 overflow-x-auto scrollbar-hide scroll-smooth pb-1"                style={{
                   WebkitMaskImage:
                     "linear-gradient(to right, black calc(100% - 24px), transparent 100%)",
                   maskImage:
@@ -318,11 +317,11 @@ onChange={(event) => {
                     variant={
                       statusFilter === filter.value ? "default" : "outline"
                     }
-                    className={`h-9 shrink-0 snap-start ${
-                      statusFilter === filter.value
-                        ? "bg-amber-600 hover:bg-amber-700"
-                        : ""
-                    }`}
+                  className={`h-9 shrink-0 snap-start rounded-lg border text-xs font-medium shadow-sm transition-all ${
+  statusFilter === filter.value
+    ? "border-amber-600 bg-amber-600 text-white hover:bg-amber-700 hover:border-amber-700"
+    : "border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50"
+}`}
 onClick={() => {
   setPage(1);
   setStatusFilter(filter.value);
