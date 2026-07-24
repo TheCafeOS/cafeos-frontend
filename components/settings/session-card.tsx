@@ -27,33 +27,29 @@ export function SessionCard() {
           </h2>
 
           <p className="text-sm text-stone-500">
-            Manage your current login session.
+            Manage your login session.
           </p>
         </div>
       </div>
 
       <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm font-medium text-stone-600">
-              Session Status
-            </p>
+        <div className="space-y-4">
+          <div className="flex items-center">
+  <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+    ● Active
+  </span>
+</div>
 
-            <p className="text-sm text-emerald-600">
-              Active
-            </p>
-          </div>
+          
 
-          <p className="text-sm text-stone-500">
-            Logging out removes the current access token and returns you to the login screen.
-          </p>
-
-          <Button
-            onClick={handleLogout}
-            variant="destructive"
-          >
-            Logout
-          </Button>
+        <Button
+  onClick={handleLogout}
+  variant="outline"
+  className="h-10 w-full justify-center rounded-lg border border-red-200 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
+>
+  <LogOut className="mr-2 h-4 w-4" />
+  Logout
+</Button>
         </div>
       </div>
     </section>
