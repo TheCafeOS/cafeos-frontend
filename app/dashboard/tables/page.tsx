@@ -583,41 +583,38 @@ className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover
                           </p>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!table.qrCode}
-                            onClick={() => setSelectedQrTable(table)}
-                            className="text-xs"
-                          >
+<div className="grid grid-cols-2 gap-2">
+                            <Button
+  size="sm"
+  variant="outline"
+  disabled={!table.qrCode}
+  onClick={() => setSelectedQrTable(table)}
+  className="h-10 w-full justify-center rounded-lg border border-stone-200 bg-white text-xs font-medium shadow-sm transition-colors hover:bg-stone-50"
+>
                             <QrCode className="mr-1 h-3 w-3" />
                             View QR
                           </Button>
 
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!table.qrCode}
-                            onClick={() =>
-                              void handleCopyQRLink(table.qrCode)
-                            }
-                            className="text-xs"
-                          >
+                         <Button
+  size="sm"
+  variant="outline"
+  disabled={!table.qrCode}
+  onClick={() => void handleCopyQRLink(table.qrCode)}
+  className="h-10 w-full justify-center rounded-lg border border-stone-200 bg-white text-xs font-medium shadow-sm transition-colors hover:bg-stone-50"
+>
                             <Copy className="mr-1 h-3 w-3" />
                             Copy Link
                           </Button>
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-2 pt-3 sm:flex-row">
-                        <Button
+<div className="grid grid-cols-[1fr_auto] gap-2 pt-3">                        <Button
                           size="sm"
                           variant="outline"
                           disabled={isSubmitting}
                           onClick={() => handleStartEdit(table)}
-                          className="flex-1 text-xs"
-                        >
+className="h-10 w-full justify-center rounded-lg border border-stone-200 bg-white text-xs font-medium shadow-sm transition-colors hover:bg-stone-50"
+      >
                           Edit
                         </Button>
 
@@ -628,9 +625,7 @@ className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover
                           onClick={() =>
                             void handleDeleteTable(table.id, table.name)
                           }
-                          className="text-red-600 hover:bg-red-50"
-                          title="Delete table"
-                        >
+className="h-10 w-10 rounded-lg border border-red-200 bg-white text-red-600 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50"                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -692,7 +687,7 @@ className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover
               <p className="text-xs font-medium text-stone-600">
                 QR destination URL
               </p>
-              <p className="mt-1 break-all rounded-lg border border-stone-200 bg-stone-50 p-3 font-mono text-xs text-stone-700">
+              <p className="mt-1 truncate rounded-lg border border-stone-200 bg-stone-50 p-3 font-mono text-xs text-stone-700">
                 {selectedQrUrl}
               </p>
             </div>
@@ -703,7 +698,7 @@ className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover
                 onClick={() =>
                   void handleCopyQRLink(selectedQrTable.qrCode)
                 }
-                className="text-xs"
+             className="h-10 rounded-lg border border-stone-200 bg-white text-xs hover:bg-stone-50"
               >
                 <Copy className="mr-1 h-3 w-3" />
                 Copy
