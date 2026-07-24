@@ -5,11 +5,16 @@ export interface MenuItemResponse {
   name: string;
   description: string | null;
   price: number | string;
+
   imageUrl: string | null;
 
-  isAvailable?: boolean;
+  imageScale: number;
+  imagePositionX: number;
+  imagePositionY: number;
 
   foodType: "VEG" | "NON_VEG" | "EGG";
+
+  isAvailable?: boolean;
 
   categoryId: string | null;
   category: {

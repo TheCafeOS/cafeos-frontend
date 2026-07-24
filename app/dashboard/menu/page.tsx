@@ -58,11 +58,14 @@ const emptyMenuItem: CreateMenuItemPayload = {
   categoryId: "",
   imageUrl: "",
 
+  imageScale: 1,
+  imagePositionX: 0,
+  imagePositionY: 0,
+
   foodType: "VEG",
 
   isAvailable: true,
 };
-
 const FOOD_TYPE_FILTERS: { value: "" | FoodType; label: string }[] = [
   { value: "", label: "All" },
   { value: "VEG", label: "Veg" },
@@ -331,16 +334,22 @@ export default function MenuPage() {
     setIsMenuItemSubmitting(true);
 
     try {
-      const createdItem = await createMenuItem({
-        name: newMenuItem.name.trim(),
-        description: newMenuItem.description?.trim() || undefined,
-        price: Number(newMenuItem.price),
-        categoryId: newMenuItem.categoryId || undefined,
+    const createdItem = await createMenuItem({
+  name: newMenuItem.name.trim(),
+  description: newMenuItem.description?.trim() || undefined,
+  price: Number(newMenuItem.price),
+  categoryId: newMenuItem.categoryId || undefined,
 
-        foodType: newMenuItem.foodType,
+  imageUrl: newMenuItem.imageUrl || undefined,
 
-        isAvailable: newMenuItem.isAvailable,
-      });
+  imageScale: newMenuItem.imageScale,
+  imagePositionX: newMenuItem.imagePositionX,
+  imagePositionY: newMenuItem.imagePositionY,
+
+  foodType: newMenuItem.foodType,
+
+  isAvailable: newMenuItem.isAvailable,
+});
 
       if (!createdItem?.id) {
         throw new Error("Server did not return a valid menu item.");
@@ -373,17 +382,20 @@ export default function MenuPage() {
     setEditingMenuItemId(item.id);
 
     setEditingMenuItem({
-      name: item.name,
-      description: item.description || "",
-      price: Number(item.price),
-      categoryId: item.categoryId || "",
-      imageUrl: item.imageUrl || "",
+  name: item.name,
+  description: item.description || "",
+  price: Number(item.price),
+  categoryId: item.categoryId || "",
+  imageUrl: item.imageUrl || "",
 
-      foodType: item.foodType,
+  imageScale: item.imageScale,
+  imagePositionX: item.imagePositionX,
+  imagePositionY: item.imagePositionY,
 
-      isAvailable: item.isAvailable,
-    });
+  foodType: item.foodType,
 
+  isAvailable: item.isAvailable,
+});
     window.setTimeout(() => {
       menuItemFormRef.current?.scrollIntoView({
         behavior: "smooth",
@@ -413,15 +425,21 @@ export default function MenuPage() {
 
     try {
       const updatedItem = await updateMenuItem(itemId, {
-        name: editingMenuItem.name.trim(),
-        description: editingMenuItem.description?.trim() || undefined,
-        price: Number(editingMenuItem.price),
-        categoryId: editingMenuItem.categoryId || undefined,
+  name: editingMenuItem.name.trim(),
+  description: editingMenuItem.description?.trim() || undefined,
+  price: Number(editingMenuItem.price),
+  categoryId: editingMenuItem.categoryId || undefined,
 
-        foodType: editingMenuItem.foodType,
+  imageUrl: editingMenuItem.imageUrl || undefined,
 
-        isAvailable: editingMenuItem.isAvailable,
-      });
+  imageScale: editingMenuItem.imageScale,
+  imagePositionX: editingMenuItem.imagePositionX,
+  imagePositionY: editingMenuItem.imagePositionY,
+
+  foodType: editingMenuItem.foodType,
+
+  isAvailable: editingMenuItem.isAvailable,
+});
 
       if (!updatedItem?.id) {
         throw new Error("Server did not return a valid menu item.");
