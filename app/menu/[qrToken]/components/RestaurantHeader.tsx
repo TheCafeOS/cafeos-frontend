@@ -93,7 +93,7 @@ export default function RestaurantHeader({
     <>
       <div className="border-b border-white/5 bg-[#0F1115]/80 shadow-lg shadow-black/20 backdrop-blur-xl rounded-b-2xl">
         {/* Row 1: identity + cart */}
-        <header className="h-[64px] sm:h-[72px]">
+        <header className="h-[76px] sm:h-[80px]">
           <div className="mx-auto flex h-full max-w-5xl items-center justify-between gap-2 px-2.5 sm:px-5">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <div className="relative flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-neutral-800 ring-1 ring-white/10">
@@ -110,13 +110,11 @@ export default function RestaurantHeader({
                 )}
               </div>
 
-              <div className="min-w-0 leading-tight">
-                <p className="truncate text-base sm:text-lg font-bold leading-tight text-neutral-100">
-                  {restaurant.name}
+              <div className="min-w-0 py-1">
+<p className="truncate text-[18px] sm:text-xl font-bold leading-snug text-neutral-100">                  {restaurant.name}
                 </p>
 
-                <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] sm:text-xs text-neutral-400">
-                  <span className="truncate">{tableName}</span>
+<div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] sm:text-xs text-neutral-400">                  <span className="truncate">{tableName}</span>
 
                   {restaurant.rating != null && (
                     <>
