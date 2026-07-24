@@ -979,14 +979,28 @@ export default function MenuPage() {
 
                   </div>
 
+<ImageUpload
+  imageUrl={activeMenuItem.imageUrl || ""}
+  imageScale={activeMenuItem.imageScale ?? 1}
+imagePositionX={activeMenuItem.imagePositionX ?? 0}
+imagePositionY={activeMenuItem.imagePositionY ?? 0}
 
-                  <ImageUpload
-                    imageUrl={activeMenuItem.imageUrl || ""}
-                    onUrlChange={(url) =>
-                      updateActiveMenuItem("imageUrl", url)
-                    }
-                    onFileSelect={setSelectedImage}
-                  />
+  onUrlChange={(url) =>
+    updateActiveMenuItem("imageUrl", url)
+  }
+  onFileSelect={setSelectedImage}
+  onImageScaleChange={(value) =>
+    updateActiveMenuItem("imageScale", value)
+  }
+  onImagePositionXChange={(value) =>
+    updateActiveMenuItem("imagePositionX", value)
+  }
+  onImagePositionYChange={(value) =>
+    updateActiveMenuItem("imagePositionY", value)
+  }
+/>
+
+
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
 

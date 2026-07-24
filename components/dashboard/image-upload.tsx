@@ -1,21 +1,40 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Upload, X, Image as ImageIcon, CheckCircle2 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
 type ImageUploadProps = {
   imageUrl: string;
+
+  imageScale: number;
+  imagePositionX: number;
+  imagePositionY: number;
+
+  onImageScaleChange: (value: number) => void;
+  onImagePositionXChange: (value: number) => void;
+  onImagePositionYChange: (value: number) => void;
+
   onUrlChange: (url: string) => void;
+
   onFileSelect?: (file: File) => void;
 };
 
 export default function ImageUpload({
   imageUrl,
+  imageScale,
+  imagePositionX,
+  imagePositionY,
+  onImageScaleChange,
+  onImagePositionXChange,
+  onImagePositionYChange,
   onUrlChange,
   onFileSelect,
-}: ImageUploadProps) {
+}: ImageUploadProps)
+
+
+{
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
@@ -40,7 +59,7 @@ export default function ImageUpload({
 
       toast.success("Image selected successfully.");
     },
-    [onFileSelect, onUrlChange]
+    [onFileSelect, onUrlChange],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -54,12 +73,10 @@ export default function ImageUpload({
 
   return (
     <div className="space-y-6">
-
-      {/* Upload Card */}
+      {/* Upload */}
       <div
         {...getRootProps()}
-        className={`rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200
-        ${
+        className={`rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 ${
           isDragActive
             ? "border-amber-500 bg-amber-50 scale-[1.02]"
             : "border-stone-300 hover:border-amber-400 hover:bg-stone-50"
@@ -77,14 +94,12 @@ export default function ImageUpload({
           Drag & Drop your image here
         </p>
 
-        <p className="text-sm text-stone-500">
-          or
-        </p>
+        <p className="text-sm text-stone-500">or</p>
 
         <button
           type="button"
           onClick={open}
-          className="mt-3 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700"
+          className="mt-3 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
         >
           Choose Image
         </button>
@@ -112,48 +127,69 @@ export default function ImageUpload({
       {/* Preview */}
       {imageUrl ? (
         <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-
           <div className="relative">
-
-         {/* eslint-disable-next-line @next/next/no-img-element */}
-<img
-  src={imageUrl}
-  alt="Preview"
-  className="h-48 w-full object-cover"
-/>
+            <div className="relative h-64 overflow-hidden rounded-xl bg-stone-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt="Preview"
+                draggable={false}
+                className="absolute inset-0 h-full w-full select-none object-cover"
+                style={{
+                  transform: `translate(${imagePositionX}px, ${imagePositionY}px) scale(${imageScale})`,
+                  transformOrigin: "center",
+                }}
+              />
+            </div>
 
             <button
               type="button"
               onClick={() => onUrlChange("")}
-              className="absolute right-3 top-3 rounded-full bg-white/90 p-2 shadow transition hover:bg-white"
+              className="absolute right-3 top-3 rounded-full bg-white/90 p-2 shadow hover:bg-white"
             >
               <X className="h-4 w-4" />
             </button>
+          </div>
 
+          {/* Zoom Slider */}
+          <div className="space-y-2 border-t p-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-stone-700">Zoom</span>
+
+              <span className="text-stone-500">
+                {imageScale.toFixed(2)}x
+              </span>
+            </div>
+
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.05}
+              value={imageScale}
+              onChange={(e) =>
+                onImageScaleChange(Number(e.target.value))
+              }
+              className="w-full accent-amber-600"
+            />
           </div>
 
           <div className="flex items-center gap-2 border-t px-4 py-3 text-sm text-emerald-700">
             <CheckCircle2 className="h-4 w-4" />
             Image ready for upload
           </div>
-
         </div>
       ) : (
         <div className="flex h-48 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50">
-
           <div className="text-center">
-
             <ImageIcon className="mx-auto h-10 w-10 text-stone-400" />
 
             <p className="mt-3 text-sm text-stone-500">
               No image selected
             </p>
-
           </div>
-
         </div>
       )}
-
     </div>
   );
 }
