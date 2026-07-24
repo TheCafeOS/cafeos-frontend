@@ -17,8 +17,15 @@ export type MenuItem = {
 
   imageUrl?: string;
 
+  // Image positioning
+  imageScale: number;
+  imagePositionX: number;
+  imagePositionY: number;
+
+  // Food type
   foodType: FoodType;
 
+  // Availability
   isAvailable: boolean;
 
   createdAt: string;
@@ -35,8 +42,15 @@ export type CreateMenuItemPayload = {
 
   imageUrl?: string;
 
+  // Image positioning
+  imageScale?: number;
+  imagePositionX?: number;
+  imagePositionY?: number;
+
+  // Food type
   foodType: FoodType;
 
+  // Availability
   isAvailable?: boolean;
 };
 
