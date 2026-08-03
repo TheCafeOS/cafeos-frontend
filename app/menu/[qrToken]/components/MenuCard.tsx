@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { Plus, Minus, Star, XCircle } from "lucide-react";
 import { UtensilsCrossed } from "lucide-react";
+
+import { useElementSize } from "@/lib/use-element-size";
+import { getImageTransform } from "@/lib/image-framing";
 
 export type MenuItem = {
   id: string;
@@ -13,6 +15,16 @@ export type MenuItem = {
   imageUrl: string | null;
   categoryId: string | null;
   isAvailable?: boolean;
+
+  // Image positioning — mirrors what the owner configured in the
+  // dashboard image editor. Stored NORMALIZED (see lib/image-framing.ts),
+  // not raw pixels, so the same saved value replays correctly at any
+  // thumbnail size. Optional/defaulted so the card still renders
+  // sensibly for any older records that predate these fields.
+  imageScale?: number;
+  imagePositionX?: number;
+  imagePositionY?: number;
+
   // Optional / decorative — safe to omit, card degrades gracefully.
   rating?: number;
   reviewCount?: number;
@@ -78,6 +90,65 @@ function QuantityStepper({
     </div>
   );
 }
+
+// Renders the item image inside its fixed, overflow-hidden frame using
+// the shared lib/image-framing utility to convert the item's saved
+// (normalized) framing into pixels for THIS card's own live size — the
+// same utility the owner dashboard and the editor use, so all three
+// stay in sync. Falls back to an untransformed, fully-covering image
+// when scale/position aren't set (e.g. legacy items), and to a
+// placeholder when there's no image at all.
+function MenuCardImage({
+  item,
+  sizes,
+  emptyIcon,
+}: {
+  item: MenuItem;
+  sizes: string;
+  emptyIcon: React.ReactNode;
+}) {
+  // Hooks must run unconditionally, before any early return below.
+  const { ref, size } = useElementSize<HTMLDivElement>();
+
+  if (!item.imageUrl) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-neutral-800">
+        {emptyIcon}
+      </div>
+    );
+  }
+
+  const transform = getImageTransform(
+    { x: item.imagePositionX ?? 0, y: item.imagePositionY ?? 0 },
+    item.imageScale ?? 1,
+    size,
+  );
+
+  return (
+    // Outer wrapper owns the item's saved framing (base transform,
+    // computed via the shared utility). Inline style has higher
+    // specificity than a Tailwind class, so the hover-scale effect is
+    // kept on a separate inner element instead of being stacked here —
+    // otherwise it would be silently overridden and never animate.
+    <div ref={ref} className="absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0"
+        style={{ transform, transformOrigin: "center center" }}
+      >
+        <div className="h-full w-full transition-transform duration-500 group-hover:scale-105">
+          <Image
+            src={item.imageUrl}
+            alt={item.name}
+            fill
+            sizes={sizes}
+            className="object-cover"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Two layouts sharing one component:
 // - isFeatured (Popular Today rail): vertical card, image on top, plus
 //   button floats bottom-right over the content.
@@ -94,29 +165,16 @@ export default function MenuCard({
 }: MenuCardProps) {
   const isUnavailable = item.isAvailable === false;
 
-
-
-
   // ---------- Popular Today (vertical) ----------
   if (isFeatured) {
     return (
       <article className="group relative overflow-hidden rounded-3xl bg-[#171A20] shadow-lg shadow-black/20 transition-transform duration-300 hover:-translate-y-1">
-        <div className="relative h-28 w-full sm:h-32">
-          {item.imageUrl ? (
-            <Image
-              src={item.imageUrl}
-              alt={item.name}
-              fill
-              sizes="220px"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-neutral-800 text-4xl">
-             <UtensilsCrossed className="h-10 w-10 text-neutral-500" />
-            </div>
-          )}
-
-          
+        <div className="relative h-28 w-full overflow-hidden sm:h-32">
+          <MenuCardImage
+            item={item}
+            sizes="220px"
+            emptyIcon={<UtensilsCrossed className="h-10 w-10 text-neutral-500" />}
+          />
 
           {isUnavailable && (
             <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 rounded-full bg-red-500 px-2.5 py-1 text-[11px] font-semibold text-white">
@@ -127,7 +185,8 @@ export default function MenuCard({
         </div>
 
         <div className="p-3">
-<h3 className="truncate text-sm font-bold text-neutral-100 sm:text-[15px]">            {item.name}
+          <h3 className="truncate text-sm font-bold text-neutral-100 sm:text-[15px]">
+            {item.name}
           </h3>
 
           <div className="mt-1 flex items-center justify-between">
@@ -157,12 +216,12 @@ export default function MenuCard({
               </button>
             ) : (
               <QuantityStepper
-  compact
-  quantity={quantity}
-  isUnavailable={isUnavailable}
-  onIncrease={onIncrease}
-  onDecrease={onDecrease}
-/>
+                compact
+                quantity={quantity}
+                isUnavailable={isUnavailable}
+                onIncrease={onIncrease}
+                onDecrease={onDecrease}
+              />
             )}
           </div>
         </div>
@@ -172,25 +231,19 @@ export default function MenuCard({
 
   // ---------- Full menu (compact horizontal) ----------
   return (
-<article className="flex w-full gap-3 rounded-2xl bg-[#171A20] p-3 transition-colors duration-200 hover:bg-[#1c2028]">     
-<div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-xl sm:h-[100px] sm:w-[100px] lg:h-[120px] lg:w-[120px]">        {item.imageUrl ? (
-          <Image
-            src={item.imageUrl}
-            alt={item.name}
-            fill
-            sizes="120px"
-            className="object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-neutral-800 text-3xl">
-            🍽️
-          </div>
-        )}
+    <article className="flex w-full gap-3 rounded-2xl bg-[#171A20] p-3 transition-colors duration-200 hover:bg-[#1c2028]">
+      <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-xl sm:h-[100px] sm:w-[100px] lg:h-[120px] lg:w-[120px]">
+        <MenuCardImage
+          item={item}
+          sizes="120px"
+          emptyIcon={<span className="text-3xl">🍽️</span>}
+        />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-start justify-between gap-2">
-<h3 className="truncate text-sm font-bold text-neutral-100 sm:text-[15px]">            {item.name}
+          <h3 className="truncate text-sm font-bold text-neutral-100 sm:text-[15px]">
+            {item.name}
           </h3>
 
           <span className="shrink-0 text-sm font-bold text-orange-400">
@@ -198,7 +251,8 @@ export default function MenuCard({
           </span>
         </div>
 
-<p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-400 sm:text-[13px]">          {item.description || "Freshly prepared and served with care."}
+        <p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-400 sm:text-[13px]">
+          {item.description || "Freshly prepared and served with care."}
         </p>
 
         <div className="mt-auto flex items-center justify-between pt-1.5">
@@ -225,12 +279,12 @@ export default function MenuCard({
             </button>
           ) : (
             <QuantityStepper
-  compact
-  quantity={quantity}
-  isUnavailable={isUnavailable}
-  onIncrease={onIncrease}
-  onDecrease={onDecrease}
-/>
+              compact
+              quantity={quantity}
+              isUnavailable={isUnavailable}
+              onIncrease={onIncrease}
+              onDecrease={onDecrease}
+            />
           )}
         </div>
       </div>

@@ -1,9 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Upload, X, Image as ImageIcon, CheckCircle2, RotateCcw } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
+
+import { useElementSize } from "@/lib/use-element-size";
+import {
+  MIN_SCALE,
+  clampPixelPosition,
+  getImageTransform,
+  normalizedToPixels,
+  pixelsToNormalized,
+} from "@/lib/image-framing";
 
 type ImageUploadProps = {
   imageUrl: string;
@@ -21,30 +30,8 @@ type ImageUploadProps = {
   onFileSelect?: (file: File) => void;
 };
 
-const MIN_SCALE = 1;
 const MAX_SCALE = 3;
 const SCALE_STEP = 0.05;
-
-/**
- * Clamp a translation offset so the (scaled) image can never be dragged
- * far enough to reveal empty space inside the preview frame.
- *
- * Because the image is rendered with object-cover, at scale === 1 it
- * already fully covers the container, so no movement is allowed. As the
- * scale grows, the amount of "extra" image around the edges grows too,
- * which is what we allow the user to pan across.
- */
-function clampOffset(
-  value: number,
-  scale: number,
-  containerSize: number,
-): number {
-  const maxOffset = (Math.max(scale, MIN_SCALE) - 1) * (containerSize / 2);
-
-  if (maxOffset <= 0) return 0;
-
-  return Math.min(maxOffset, Math.max(-maxOffset, value));
-}
 
 export default function ImageUpload({
   imageUrl,
@@ -57,12 +44,14 @@ export default function ImageUpload({
   onUrlChange,
   onFileSelect,
 }: ImageUploadProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
+ const {
+    ref: containerRef,
+    size: containerSize,
+    node: containerNode,
+} = useElementSize<HTMLDivElement>();
 
   const [isDragging, setIsDragging] = useState(false);
 
-  // Drag bookkeeping lives in a ref so it never triggers rerenders while
-  // the pointer is moving — only the resulting position updates do.
   const dragStateRef = useRef<{
     pointerId: number;
     startClientX: number;
@@ -109,63 +98,101 @@ export default function ImageUpload({
     onDrop,
   });
 
-  const handlePointerDown = useCallback(
-    (event: React.PointerEvent<HTMLImageElement>) => {
+const handlePointerDown = useCallback(
+  (event: React.PointerEvent<HTMLDivElement>) => {
+
       if (!imageUrl) return;
 
       event.preventDefault();
+
+const rect =
+containerNode!.getBoundingClientRect();
+
+const currentContainer = {
+    width: rect.width,
+    height: rect.height,
+};
+
+const startPx = normalizedToPixels(
+    { x: imagePositionX, y: imagePositionY },
+    imageScale,
+    currentContainer
+);
+
 
       dragStateRef.current = {
         pointerId: event.pointerId,
         startClientX: event.clientX,
         startClientY: event.clientY,
-        startPosX: imagePositionX,
-        startPosY: imagePositionY,
+        startPosX: startPx.x,
+        startPosY: startPx.y,
       };
 
-      // Pointer capture routes subsequent pointer events to this element
-      // even if the pointer leaves it, so we don't need window listeners
-      // or manual cleanup effects.
       event.currentTarget.setPointerCapture(event.pointerId);
 
       setIsDragging(true);
     },
-    [imageUrl, imagePositionX, imagePositionY],
-  );
+[
+  imageUrl,
+  imagePositionX,
+  imagePositionY,
+  imageScale,
+  containerNode,
+]
+);
 
-  const handlePointerMove = useCallback(
-    (event: React.PointerEvent<HTMLImageElement>) => {
+ const handlePointerMove = useCallback(
+  (event: React.PointerEvent<HTMLDivElement>) => {
+
+
       const dragState = dragStateRef.current;
 
       if (!dragState || dragState.pointerId !== event.pointerId) return;
 
-      const container = containerRef.current;
-      if (!container) return;
-
-      const { width, height } = container.getBoundingClientRect();
-
       const deltaX = event.clientX - dragState.startClientX;
       const deltaY = event.clientY - dragState.startClientY;
 
-      const nextX = clampOffset(
-        dragState.startPosX + deltaX,
-        imageScale,
-        width,
-      );
-      const nextY = clampOffset(
-        dragState.startPosY + deltaY,
-        imageScale,
-        height,
-      );
+const rect =
+containerNode!.getBoundingClientRect();
 
-      onImagePositionXChange(nextX);
-      onImagePositionYChange(nextY);
+const currentContainer = {
+  width: rect.width,
+  height: rect.height,
+};
+
+const nextPx = clampPixelPosition(
+  {
+    x: dragState.startPosX + deltaX,
+    y: dragState.startPosY + deltaY,
+  },
+  imageScale,
+  currentContainer,
+);
+
+const nextNormalized = pixelsToNormalized(
+  nextPx,
+  imageScale,
+  currentContainer,
+);
+
+
+
+onImagePositionXChange(nextNormalized.x);
+onImagePositionYChange(nextNormalized.y);
+
+
+
     },
-    [imageScale, onImagePositionXChange, onImagePositionYChange],
+ [
+  imageScale,
+  containerNode,
+  onImagePositionXChange,
+  onImagePositionYChange,
+],
   );
 
-  const endDrag = useCallback(
-    (event: React.PointerEvent<HTMLImageElement>) => {
+ const endDrag = useCallback(
+  (event: React.PointerEvent<HTMLDivElement>) => {
       const dragState = dragStateRef.current;
 
       if (!dragState || dragState.pointerId !== event.pointerId) return;
@@ -183,25 +210,8 @@ export default function ImageUpload({
   const handleScaleChange = useCallback(
     (nextScale: number) => {
       onImageScaleChange(nextScale);
-
-      const container = containerRef.current;
-      if (!container) return;
-
-      const { width, height } = container.getBoundingClientRect();
-
-      const clampedX = clampOffset(imagePositionX, nextScale, width);
-      const clampedY = clampOffset(imagePositionY, nextScale, height);
-
-      if (clampedX !== imagePositionX) onImagePositionXChange(clampedX);
-      if (clampedY !== imagePositionY) onImagePositionYChange(clampedY);
     },
-    [
-      imagePositionX,
-      imagePositionY,
-      onImageScaleChange,
-      onImagePositionXChange,
-      onImagePositionYChange,
-    ],
+    [onImageScaleChange],
   );
 
   const handleReset = useCallback(() => {
@@ -210,28 +220,19 @@ export default function ImageUpload({
     onImagePositionYChange(0);
   }, [onImageScaleChange, onImagePositionXChange, onImagePositionYChange]);
 
-  // If the preview frame is resized (e.g. responsive breakpoint change)
-  // while a non-default offset is active, re-clamp so the image can't be
-  // left showing empty space.
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || typeof ResizeObserver === "undefined") return;
+ 
+const previewTransform = getImageTransform(
+  {
+    x: imagePositionX,
+    y: imagePositionY,
+  },
+  imageScale,
+  containerSize,
+);
 
-    const observer = new ResizeObserver(() => {
-      const { width, height } = container.getBoundingClientRect();
 
-      const clampedX = clampOffset(imagePositionX, imageScale, width);
-      const clampedY = clampOffset(imagePositionY, imageScale, height);
 
-      if (clampedX !== imagePositionX) onImagePositionXChange(clampedX);
-      if (clampedY !== imagePositionY) onImagePositionYChange(clampedY);
-    });
 
-    observer.observe(container);
-
-    return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageScale]);
 
   return (
     <div className="space-y-6">
@@ -290,24 +291,26 @@ export default function ImageUpload({
       {imageUrl ? (
         <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
           <div className="relative">
-            <div
-              ref={containerRef}
-              className="relative h-[280px] w-full touch-none overflow-hidden rounded-xl bg-stone-100"
-            >
+           <div
+    ref={containerRef}
+    className="relative h-[280px] w-full touch-none overflow-hidden rounded-xl bg-stone-100"
+    onPointerDown={handlePointerDown}
+    onPointerMove={handlePointerMove}
+    onPointerUp={endDrag}
+    onPointerCancel={endDrag}
+>
+
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageUrl}
                 alt="Preview"
                 draggable={false}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={endDrag}
-                onPointerCancel={endDrag}
+               
                 className={`absolute inset-0 h-full w-full select-none object-cover ${
                   isDragging ? "cursor-grabbing" : "cursor-grab"
                 }`}
                 style={{
-                  transform: `translate(${imagePositionX}px, ${imagePositionY}px) scale(${imageScale})`,
+                  transform: previewTransform,
                   transformOrigin: "center",
                   touchAction: "none",
                 }}

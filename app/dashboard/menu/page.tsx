@@ -51,6 +51,43 @@ import {
 import type { Category } from "@/types/category";
 import type { CreateMenuItemPayload, FoodType, MenuItem } from "@/types/menu-item";
 
+import { useElementSize } from "@/lib/use-element-size";
+import { getImageTransform } from "@/lib/image-framing";
+
+// Renders a menu item's image using its saved (normalized) framing,
+// converted to pixels for this card's own live container size via the
+// shared lib/image-framing utility — the same one the editor and the
+// customer-facing card use, so all three stay in sync. Extracted as its
+// own component (rather than inlined in the list below) because it
+// needs its own ResizeObserver-backed size, and hooks can only be
+// called from a real component, not from inside a .map() callback.
+function MenuItemPreviewImage({ item }: { item: MenuItem }) {
+  const { ref, size } = useElementSize<HTMLDivElement>();
+
+  return (
+    <div ref={ref} className="absolute inset-0">
+      <div
+        className="absolute inset-0"
+        style={{
+          transform: getImageTransform(
+            { x: item.imagePositionX, y: item.imagePositionY },
+            item.imageScale,
+            size,
+          ),
+          transformOrigin: "center",
+        }}
+      >
+        <Image
+          src={item.imageUrl as string}
+          alt={item.name}
+          fill
+          className="object-cover"
+        />
+      </div>
+    </div>
+  );
+}
+
 const emptyMenuItem: CreateMenuItemPayload = {
   name: "",
   description: "",
@@ -568,6 +605,8 @@ export default function MenuPage() {
     field: keyof CreateMenuItemPayload,
     value: string | number | boolean,
   ) {
+    console.log("updateActiveMenuItem", field, value);
+
     if (isEditingMenuItem) {
       setEditingMenuItem((current) => ({
         ...current,
@@ -1211,28 +1250,7 @@ imagePositionY={activeMenuItem.imagePositionY ?? 0}
 
                         <div className="relative h-44 w-full overflow-hidden bg-stone-100">
                           {item.imageUrl ? (
-                            /*
-                              The transform (position + scale) is applied on
-                              this wrapper, which sits inside the fixed,
-                              overflow-hidden frame above. This mirrors the
-                              exact framing configured in the image editor
-                              and matches what the public menu renders, so
-                              owners see exactly what customers see.
-                            */
-                            <div
-                              className="absolute inset-0"
-                              style={{
-                                transform: `translate(${item.imagePositionX}px, ${item.imagePositionY}px) scale(${item.imageScale})`,
-                                transformOrigin: "center",
-                              }}
-                            >
-                              <Image
-                                src={item.imageUrl}
-                                alt={item.name}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
+                            <MenuItemPreviewImage item={item} />
                           ) : (
                             <MenuItemImagePlaceholder />
                           )}
