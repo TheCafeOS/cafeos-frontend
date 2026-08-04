@@ -589,8 +589,29 @@ className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover
   variant="outline"
   disabled={!table.qrCode}
   onClick={() => setSelectedQrTable(table)}
-  className="h-10 w-full justify-center rounded-lg border border-stone-200 bg-white text-xs font-medium shadow-sm transition-colors hover:bg-stone-50"
->
+className="
+h-10
+w-full
+justify-center
+rounded-lg
+border
+border-stone-200
+bg-white
+text-xs
+font-medium
+shadow-sm
+transition-colors
+hover:bg-stone-50
+
+focus:bg-white
+focus-visible:bg-white
+active:bg-white
+
+focus:ring-0
+focus-visible:ring-0
+focus-visible:outline-none
+focus-visible:border-stone-200
+">
                             <QrCode className="mr-1 h-3 w-3" />
                             View QR
                           </Button>
@@ -600,8 +621,31 @@ className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover
   variant="outline"
   disabled={!table.qrCode}
   onClick={() => void handleCopyQRLink(table.qrCode)}
-  className="h-10 w-full justify-center rounded-lg border border-stone-200 bg-white text-xs font-medium shadow-sm transition-colors hover:bg-stone-50"
->
+className="
+h-10
+w-full
+justify-center
+rounded-lg
+border
+border-stone-200
+bg-white
+text-xs
+font-medium
+shadow-sm
+transition-colors
+hover:bg-stone-50
+
+focus:bg-white
+focus-visible:bg-white
+active:bg-stone-50
+
+focus:ring-0
+focus-visible:ring-0
+focus:outline-none
+focus-visible:outline-none
+focus:border-stone-200
+focus-visible:border-stone-200
+">
                             <Copy className="mr-1 h-3 w-3" />
                             Copy Link
                           </Button>
@@ -613,7 +657,31 @@ className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover
                           variant="outline"
                           disabled={isSubmitting}
                           onClick={() => handleStartEdit(table)}
-className="h-10 w-full justify-center rounded-lg border border-stone-200 bg-white text-xs font-medium shadow-sm transition-colors hover:bg-stone-50"
+className="
+h-10
+w-full
+justify-center
+rounded-lg
+border
+border-stone-200
+bg-white
+text-xs
+font-medium
+shadow-sm
+transition-colors
+hover:bg-stone-50
+
+focus:bg-white
+focus-visible:bg-white
+active:bg-stone-50
+
+focus:ring-0
+focus-visible:ring-0
+focus:outline-none
+focus-visible:outline-none
+focus:border-stone-200
+focus-visible:border-stone-200
+"
       >
                           Edit
                         </Button>
@@ -625,7 +693,31 @@ className="h-10 w-full justify-center rounded-lg border border-stone-200 bg-whit
                           onClick={() =>
                             void handleDeleteTable(table.id, table.name)
                           }
-className="h-10 w-10 rounded-lg border border-red-200 bg-white text-red-600 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50"                        >
+className="
+h-10
+w-10
+rounded-lg
+border
+border-red-200
+bg-white
+text-red-600
+shadow-sm
+transition-colors
+hover:border-red-300
+hover:bg-red-50
+
+focus:bg-white
+focus-visible:bg-white
+active:bg-red-50
+
+focus:ring-0
+focus-visible:ring-0
+focus:outline-none
+focus-visible:outline-none
+focus:border-red-200
+focus-visible:border-red-200
+"
+>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

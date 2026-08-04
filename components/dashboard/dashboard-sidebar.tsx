@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Coffee,
+  Gift,
   LayoutGrid,
   Package2,
   Settings,
@@ -17,6 +18,8 @@ import { DashboardNavItem } from "@/components/dashboard/dashboard-nav-item";
 import { useRestaurantBranding } from "@/providers/restaurant-branding-provider";
 import { getEmployee } from "@/utils/auth";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+
 
 type DashboardSidebarProps = {
   mobile?: boolean;
@@ -28,8 +31,17 @@ export function DashboardSidebar({
   const pathname = usePathname();
   const { restaurant } = useRestaurantBranding();
 
-  const employee = getEmployee();
 
+
+const [employee, setEmployee] = useState<ReturnType<typeof getEmployee>>(null);
+
+useEffect(() => {
+  const id = setTimeout(() => {
+    setEmployee(getEmployee());
+  }, 0);
+
+  return () => clearTimeout(id);
+}, []);
   const navItems =
     employee?.role === "OWNER"
       ? [
@@ -67,6 +79,11 @@ export function DashboardSidebar({
             href: "/dashboard/employees",
             label: "Employees",
             icon: Users,
+          },
+          {
+            href: "/dashboard/loyalty",
+            label: "Loyalty",
+            icon: Gift,
           },
           {
             href: "/dashboard/settings",
