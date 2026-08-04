@@ -50,9 +50,9 @@ const emptyForm: LoyaltyProgramRequest = {
 };
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
+    currency: "INR",
   }).format(value);
 }
 
@@ -67,7 +67,7 @@ function formatDate(value: string | null | undefined) {
     return "—";
   }
 
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("en-IN", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -246,7 +246,7 @@ export default function LoyaltyPage() {
     try {
       setRedeemingRewardId(reward.id);
   await redeemReward(customerProfile.customer.id, reward.id);
-  
+
       toast.success("Reward redeemed successfully.");
       await refreshCustomerProfile();
       await refreshCustomers();
