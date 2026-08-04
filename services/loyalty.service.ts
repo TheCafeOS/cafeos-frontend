@@ -4,6 +4,8 @@ import type { ApiSuccessResponse } from "@/types/auth.types";
 
 import type {
   LoyaltyCustomerProfile,
+  LoyaltyCustomersQuery,
+  LoyaltyCustomersResponse,
   LoyaltyProgram,
   LoyaltyProgramRequest,
 } from "@/types/loyalty";
@@ -13,25 +15,28 @@ export async function getLoyaltyProgram(): Promise<LoyaltyProgram | null> {
     "/api/v1/loyalty/program",
   );
 
-  return response.data.data;
+  return {
+    ...response.data.data,
+    purchaseThreshold: Number(response.data.data.purchaseThreshold),
+    rewardQuantity: Number(response.data.data.rewardQuantity),
+    minimumOrderValue: Number(response.data.data.minimumOrderValue),
+  };
 }
 
 export async function updateLoyaltyProgram(
   payload: LoyaltyProgramRequest,
-): 
-Promise<LoyaltyProgram | null>
-{
+): Promise<LoyaltyProgram | null> {
   const response = await api.put<ApiSuccessResponse<LoyaltyProgram>>(
     "/api/v1/loyalty/program",
     payload,
   );
 
-return {
-  ...response.data.data,
-  purchaseThreshold: Number(response.data.data.purchaseThreshold),
-  rewardQuantity: Number(response.data.data.rewardQuantity),
-  minimumOrderValue: Number(response.data.data.minimumOrderValue),
-};
+  return {
+    ...response.data.data,
+    purchaseThreshold: Number(response.data.data.purchaseThreshold),
+    rewardQuantity: Number(response.data.data.rewardQuantity),
+    minimumOrderValue: Number(response.data.data.minimumOrderValue),
+  };
 }
 
 export async function getCustomerLoyaltyProfile(
@@ -42,6 +47,19 @@ export async function getCustomerLoyaltyProfile(
   );
 
   return response.data.data;
+}
+
+export async function getLoyaltyCustomers(
+  params?: LoyaltyCustomersQuery,
+): Promise<LoyaltyCustomersResponse> {
+  const response = await api.get("/api/v1/loyalty/customers", {
+    params,
+  });
+
+  return {
+    data: response.data.data,
+    pagination: response.data.pagination,
+  };
 }
 
 export async function redeemReward(
