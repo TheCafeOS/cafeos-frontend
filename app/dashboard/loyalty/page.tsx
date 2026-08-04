@@ -598,15 +598,16 @@ export default function LoyaltyPage() {
                               <Badge
   className={
     status === "Available"
-      ? "border-green-200 bg-green-100 text-green-700"
-      : "border-stone-300 bg-stone-200 text-stone-700"
+  ? "border-green-200 bg-green-100 text-green-700"
+  : "border-stone-700 bg-stone-700 text-white"
   }
 >
   {status}
 </Badge>
                               <div className="flex items-center gap-2">
                                 
-                                {status === "Available" ? (
+                                {status === "Available" 
+                                ? (
                                   <Button
                                     type="button"
                                     variant="default"
