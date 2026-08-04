@@ -51,9 +51,10 @@ const emptyForm: LoyaltyProgramRequest = {
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-  }).format(value);
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+}).format(value);
 }
 
 function formatDate(value: string | null | undefined) {
@@ -586,17 +587,25 @@ export default function LoyaltyPage() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {customerProfile.rewards.map((reward) => {
+                    {customerProfile.rewards.map((reward) => {
                         const rewardWithRedemption = reward as RewardWithRedemption;
-                        const status = rewardWithRedemption.redeemedAt ? "Redeemed" : "Available";
-                        const badgeVariant = status === "Redeemed" ? "default" : "secondary";
-
+ const status = rewardWithRedemption.redeemedAt
+  ? "Redeemed"
+  : "Available";
                         return (
                           <div key={reward.id} className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
                             <div className="flex flex-wrap items-center justify-between gap-3">
-                              <p className="text-sm font-medium text-stone-900">{status}</p>
+                              <Badge
+  className={
+    status === "Available"
+      ? "border-green-200 bg-green-100 text-green-700"
+      : "border-stone-300 bg-stone-200 text-stone-700"
+  }
+>
+  {status}
+</Badge>
                               <div className="flex items-center gap-2">
-                                <Badge variant={badgeVariant}>{status}</Badge>
+                                
                                 {status === "Available" ? (
                                   <Button
                                     type="button"
