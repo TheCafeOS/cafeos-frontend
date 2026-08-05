@@ -56,6 +56,7 @@ type Props = {
   updating: boolean;
   onClose: () => void;
   onStatusUpdate: (status: OrderStatus) => void;
+  onReject: () => void;
 };
 
 export function OrderDetailsDialog({
@@ -64,6 +65,7 @@ export function OrderDetailsDialog({
   updating,
   onClose,
   onStatusUpdate,
+  onReject,
 }: Props) {
   if (!order) return null;
 
@@ -151,29 +153,64 @@ export function OrderDetailsDialog({
 
         {/* Sticky action bar — always visible, never scrolls away, and
             tall enough (h-12 = 48px) to be a comfortable thumb target. */}
-        <div className="shrink-0 border-t border-stone-100 px-5 py-4 sm:px-6">
-          {nextStatus ? (
-            <Button
-              disabled={updating}
-              className="h-12 w-full text-base"
-              onClick={() => onStatusUpdate(nextStatus)}
-            >
-              {updating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                <>Mark as {STATUS_LABELS[nextStatus]}</>
-              )}
-            </Button>
-          ) : (
-            <p className="text-center text-sm text-stone-500">
-              This order is already{" "}
-              {STATUS_LABELS[order.status].toLowerCase()}.
-            </p>
-          )}
-        </div>
+       <div className="shrink-0 border-t border-stone-100 px-5 py-4 sm:px-6">
+
+  {order.status === "PENDING" ? (
+    <div className="grid grid-cols-2 gap-3">
+      <Button
+        variant="destructive"
+        disabled={updating}
+        className="h-12"
+        onClick={onReject}
+      >
+        {updating ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Rejecting...
+          </>
+        ) : (
+          "Reject"
+        )}
+      </Button>
+
+      <Button
+        disabled={updating}
+        className="h-12"
+        onClick={() => onStatusUpdate("CONFIRMED")}
+      >
+        {updating ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Accepting...
+          </>
+        ) : (
+          "Accept"
+        )}
+      </Button>
+    </div>
+  ) : nextStatus ? (
+    <Button
+      disabled={updating}
+      className="h-12 w-full text-base"
+      onClick={() => onStatusUpdate(nextStatus)}
+    >
+      {updating ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Updating...
+        </>
+      ) : (
+        <>Mark as {STATUS_LABELS[nextStatus]}</>
+      )}
+    </Button>
+  ) : (
+    <p className="text-center text-sm text-stone-500">
+      This order is already{" "}
+      {STATUS_LABELS[order.status].toLowerCase()}.
+    </p>
+  )}
+
+</div>
       </DialogContent>
     </Dialog>
   );

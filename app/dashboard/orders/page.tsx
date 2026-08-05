@@ -223,38 +223,7 @@ useOwnerOrderSocket({
   onOrderCreated: handleOrderCreated,
   onOrderUpdated: handleOrderUpdated,
 });
-useEffect(() => {
-  const handleOpenOrderDialog = (
-    event: Event,
-  ) => {
-    const customEvent = event as CustomEvent<{
-      orderId: string;
-    }>;
 
-    const order = orders.find(
-      (item) => item.id === customEvent.detail.orderId,
-    );
-
-    if (!order) {
-      return;
-    }
-
-setSelectedOrderIdLocal(order.id);  
-  setDialogOpen(true);
-  };
-
-  window.addEventListener(
-    "open-order-dialog",
-    handleOpenOrderDialog,
-  );
-
-  return () => {
-    window.removeEventListener(
-      "open-order-dialog",
-      handleOpenOrderDialog,
-    );
-  };
-}, [orders]);
 
 useEffect(() => {
   if (!selectedOrderId || orders.length === 0) {
@@ -277,6 +246,33 @@ queueMicrotask(() => {
 
 }, [orders, selectedOrderId, clearSelectedOrderId]);
 
+useEffect(() => {
+  const handleOpenOrderDialog = (
+    event: Event,
+  ) => {
+    const customEvent = event as CustomEvent<{
+      orderId: string;
+    }>;
+
+    setSelectedOrderIdLocal(
+      customEvent.detail.orderId,
+    );
+
+    setDialogOpen(true);
+  };
+
+  window.addEventListener(
+    "open-order-dialog",
+    handleOpenOrderDialog,
+  );
+
+  return () => {
+    window.removeEventListener(
+      "open-order-dialog",
+      handleOpenOrderDialog,
+    );
+  };
+}, []);
 
   return (
     <DashboardShell title="Orders">
@@ -524,7 +520,8 @@ setSelectedOrderIdLocal(order.id);
   </div>
 )}
       </div>
-      <OrderDetailsDialog
+     
+<OrderDetailsDialog
   open={dialogOpen}
   order={selectedOrder}
   updating={
@@ -533,14 +530,20 @@ setSelectedOrderIdLocal(order.id);
   }
   onClose={() => {
     setDialogOpen(false);
-setSelectedOrderIdLocal(null);
+    setSelectedOrderIdLocal(null);
   }}
   onStatusUpdate={(status) => {
     if (!selectedOrder) return;
 
     void handleStatusUpdate(selectedOrder.id, status);
   }}
+  onReject={() => {
+    if (!selectedOrder) return;
+
+    void handleStatusUpdate(selectedOrder.id, "CANCELLED");
+  }}
 />
+
     </DashboardShell>
   );
 }

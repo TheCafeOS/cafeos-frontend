@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { getSocket } from "@/lib/socket";
-
 import { useOrderDialogStore } from "@/lib/order-dialog-store";
+
 import type { Notification } from "@/types/notification";
 
 type OrderCreatedPayload = {
@@ -22,34 +22,28 @@ export default function OwnerSocketListener() {
   const router = useRouter();
 
   const setSelectedOrderId = useOrderDialogStore(
-  (state) => state.setSelectedOrderId,
-);
+    (state) => state.setSelectedOrderId,
+  );
 
   useEffect(() => {
     const socket = getSocket();
 
     const handleOrderCreated = (payload: OrderCreatedPayload) => {
-      console.log("✅ ORDER_CREATED RECEIVED", payload);
+      console.log("ORDER_CREATED RECEIVED", payload);
 
-      toast.success("🍽️ New Order Received", {
+      toast.success("New Order Received", {
         description: `₹${payload.total} • ${payload.itemCount} item(s)`,
         duration: 10000,
 
         action: {
           label: "View",
           onClick: () => {
-            if (window.location.pathname === "/dashboard/orders") {
-              window.dispatchEvent(
-                new CustomEvent("open-order-dialog", {
-                  detail: {
-                    orderId: payload.orderId,
-                  },
-                }),
-              );
-            } else {
-             setSelectedOrderId(payload.orderId);
+            // Save the order globally
+            setSelectedOrderId(payload.orderId);
 
-router.push("/dashboard/orders");
+            // Navigate only if not already on Orders page
+            if (window.location.pathname !== "/dashboard/orders") {
+              router.push("/dashboard/orders");
             }
           },
         },
@@ -57,7 +51,7 @@ router.push("/dashboard/orders");
     };
 
     const handleNotificationCreated = (payload: Notification) => {
-      console.log("✅ NOTIFICATION_CREATED RECEIVED", payload);
+      console.log("NOTIFICATION_CREATED RECEIVED", payload);
 
       window.dispatchEvent(
         new CustomEvent("notification-created", {
@@ -73,6 +67,7 @@ router.push("/dashboard/orders");
       socket.off("ORDER_CREATED", handleOrderCreated);
       socket.off("NOTIFICATION_CREATED", handleNotificationCreated);
     };
-}, [router, setSelectedOrderId]);
+  }, [router, setSelectedOrderId]);
+
   return null;
 }
