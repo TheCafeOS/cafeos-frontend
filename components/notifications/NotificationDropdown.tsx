@@ -6,12 +6,14 @@ type NotificationDropdownProps = {
   notifications: Notification[];
   loading: boolean;
   onNotificationClick?: (notification: Notification) => void;
+  onMarkAllRead?: () => void;
 };
 
 export default function NotificationDropdown({
   notifications,
   loading,
   onNotificationClick,
+  onMarkAllRead,
 }: NotificationDropdownProps) {
   if (loading) {
     return (
@@ -20,6 +22,8 @@ export default function NotificationDropdown({
       </div>
     );
   }
+
+  const hasUnread = notifications.some((notification) => !notification.isRead);
 
   if (notifications.length === 0) {
     return (
@@ -31,6 +35,17 @@ export default function NotificationDropdown({
 
   return (
     <div className="max-h-96 overflow-y-auto">
+      {hasUnread && onMarkAllRead ? (
+        <div className="flex justify-end px-3 pb-2">
+          <button
+            type="button"
+            onClick={onMarkAllRead}
+            className="rounded-md px-2 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            Mark all as read
+          </button>
+        </div>
+      ) : null}
       {notifications.map((notification) => (
         <NotificationItem
           key={notification.id}

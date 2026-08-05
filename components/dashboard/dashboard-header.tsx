@@ -11,6 +11,8 @@ import NotificationDropdown from "@/components/notifications/NotificationDropdow
 import {
   getNotifications,
   getUnreadCount,
+  markAllNotificationsRead,
+  markNotificationRead,
 } from "@/services/notification.service";
 import type { Notification } from "@/types/notification";
 
@@ -99,6 +101,41 @@ export function DashboardHeader({
     };
   }, [isPopoverOpen]);
 
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      const updatedNotification = await markNotificationRead(notification.id);
+
+      setNotifications((currentNotifications) =>
+        currentNotifications.map((item) =>
+          item.id === updatedNotification.id
+            ? { ...item, isRead: updatedNotification.isRead }
+            : item,
+        ),
+      );
+
+      if (!notification.isRead) {
+        setUnreadCount((currentUnread) => Math.max(0, currentUnread - 1));
+      }
+    } catch {
+      // Leave UI unchanged on failure.
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsRead();
+
+      setNotifications((currentNotifications) =>
+        currentNotifications.map((notification) =>
+          notification.isRead ? notification : { ...notification, isRead: true },
+        ),
+      );
+      setUnreadCount(0);
+    } catch {
+      // Leave UI unchanged on failure.
+    }
+  };
+
   return (
     <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
       <div className="flex items-center gap-3">
@@ -147,6 +184,8 @@ export function DashboardHeader({
             <NotificationDropdown
               notifications={notifications}
               loading={loadingNotifications}
+              onNotificationClick={handleNotificationClick}
+              onMarkAllRead={handleMarkAllRead}
             />
           </PopoverContent>
         </Popover>

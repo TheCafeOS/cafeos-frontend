@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { getSocket } from "@/lib/socket";
+import type { Notification } from "@/types/notification";
 
 type OrderCreatedPayload = {
   tableId: string;
@@ -27,7 +28,6 @@ export default function OwnerSocketListener() {
         action: {
           label: "View",
           onClick: () => {
-            // If already on Orders page, open dialog instantly
             if (window.location.pathname === "/dashboard/orders") {
               window.dispatchEvent(
                 new CustomEvent("open-order-dialog", {
@@ -37,7 +37,6 @@ export default function OwnerSocketListener() {
                 }),
               );
             } else {
-              // Otherwise navigate to Orders
               router.push("/dashboard/orders");
             }
           },
@@ -45,10 +44,20 @@ export default function OwnerSocketListener() {
       });
     };
 
+    const handleNotificationCreated = (payload: Notification) => {
+      window.dispatchEvent(
+        new CustomEvent("notification-created", {
+          detail: payload,
+        }),
+      );
+    };
+
     socket.on("ORDER_CREATED", handleOrderCreated);
+    socket.on("NOTIFICATION_CREATED", handleNotificationCreated);
 
     return () => {
       socket.off("ORDER_CREATED", handleOrderCreated);
+      socket.off("NOTIFICATION_CREATED", handleNotificationCreated);
     };
   }, [router]);
 
