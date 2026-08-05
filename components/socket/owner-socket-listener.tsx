@@ -23,11 +23,12 @@ export default function OwnerSocketListener() {
     const socket = getSocket();
 
     const handleOrderCreated = (payload: OrderCreatedPayload) => {
-  console.log("✅ ORDER_CREATED RECEIVED", payload);
+      console.log("✅ ORDER_CREATED RECEIVED", payload);
 
-  toast.success("🍽️ New Order Received", {
-
+      toast.success("🍽️ New Order Received", {
         description: `₹${payload.total} • ${payload.itemCount} item(s)`,
+        duration: 10000,
+
         action: {
           label: "View",
           onClick: () => {
@@ -40,17 +41,19 @@ export default function OwnerSocketListener() {
                 }),
               );
             } else {
-              router.push("/dashboard/orders");
+              router.push(
+                `/dashboard/orders?orderId=${payload.orderId}`,
+              );
             }
           },
         },
       });
     };
 
-   const handleNotificationCreated = (payload: Notification) => {
-  console.log("✅ NOTIFICATION_CREATED RECEIVED", payload);
+    const handleNotificationCreated = (payload: Notification) => {
+      console.log("✅ NOTIFICATION_CREATED RECEIVED", payload);
 
-  window.dispatchEvent(
+      window.dispatchEvent(
         new CustomEvent("notification-created", {
           detail: payload,
         }),

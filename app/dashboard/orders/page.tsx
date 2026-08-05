@@ -1,6 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+
 import { Loader2, RefreshCw, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -115,8 +121,14 @@ const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [selectedOrder, setSelectedOrder] =
   useState<RestaurantOrder | null>(null);
 
-const [dialogOpen, setDialogOpen] =
-  useState(false);
+const [dialogOpen, setDialogOpen] = useState(false);
+
+const router = useRouter();
+
+const searchParams = useSearchParams();
+
+const orderIdFromUrl = searchParams.get("orderId");
+
 const loadOrders = useCallback(async () => {
   try {
     setIsLoading(true);
@@ -239,6 +251,28 @@ useEffect(() => {
     );
   };
 }, [orders]);
+
+useEffect(() => {
+  if (!orderIdFromUrl || orders.length === 0) {
+    return;
+  }
+
+  const selected = orders.find(
+    (item) => item.id === orderIdFromUrl,
+  );
+
+  if (!selected) {
+    return;
+  }
+
+  setSelectedOrder(selected);
+  setDialogOpen(true);
+
+  // Remove the query AFTER React finishes rendering
+  setTimeout(() => {
+    router.replace("/dashboard/orders");
+  }, 0);
+}, [orders, orderIdFromUrl, router]);
 
 
   return (
