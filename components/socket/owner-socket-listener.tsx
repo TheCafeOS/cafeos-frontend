@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { getSocket } from "@/lib/socket";
+
+import { useOrderDialogStore } from "@/lib/order-dialog-store";
 import type { Notification } from "@/types/notification";
 
 type OrderCreatedPayload = {
@@ -18,6 +20,10 @@ type OrderCreatedPayload = {
 
 export default function OwnerSocketListener() {
   const router = useRouter();
+
+  const setSelectedOrderId = useOrderDialogStore(
+  (state) => state.setSelectedOrderId,
+);
 
   useEffect(() => {
     const socket = getSocket();
@@ -41,9 +47,9 @@ export default function OwnerSocketListener() {
                 }),
               );
             } else {
-              router.push(
-                `/dashboard/orders?orderId=${payload.orderId}`,
-              );
+             setSelectedOrderId(payload.orderId);
+
+router.push("/dashboard/orders");
             }
           },
         },
@@ -67,7 +73,6 @@ export default function OwnerSocketListener() {
       socket.off("ORDER_CREATED", handleOrderCreated);
       socket.off("NOTIFICATION_CREATED", handleNotificationCreated);
     };
-  }, [router]);
-
+}, [router, setSelectedOrderId]);
   return null;
 }

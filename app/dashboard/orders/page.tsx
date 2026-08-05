@@ -2,10 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  useRouter,
-  useSearchParams,
-} from "next/navigation";
 
 import { Loader2, RefreshCw, Search, X } from "lucide-react";
 import { toast } from "sonner";
@@ -16,7 +12,7 @@ import { getOrders, updateOrderStatus } from "@/services/order.service";
 import type { OrderStatus, RestaurantOrder } from "@/types/order";
 import { useOwnerOrderSocket } from "@/hooks/use-owner-order-socket";
 import { OrderDetailsDialog } from "@/components/orders/order-details-dialog";
-
+import { useOrderDialogStore } from "@/lib/order-dialog-store";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: "Pending",
@@ -118,16 +114,23 @@ const [sort, setSort] = useState<
 >("createdAt");
 
 const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const [selectedOrder, setSelectedOrder] =
-  useState<RestaurantOrder | null>(null);
+const [selectedOrderIdLocal, setSelectedOrderIdLocal] =
+  useState<string | null>(null);
+const selectedOrder =
+  orders.find((order) => order.id === selectedOrderIdLocal) ??
+  null;
 
 const [dialogOpen, setDialogOpen] = useState(false);
 
-const router = useRouter();
 
-const searchParams = useSearchParams();
 
-const orderIdFromUrl = searchParams.get("orderId");
+const selectedOrderId = useOrderDialogStore(
+  (state) => state.selectedOrderId,
+);
+
+const clearSelectedOrderId = useOrderDialogStore(
+  (state) => state.clearSelectedOrderId,
+);
 
 const loadOrders = useCallback(async () => {
   try {
@@ -186,8 +189,9 @@ const loadOrders = useCallback(async () => {
         ),
       );
 if (selectedOrder?.id === updatedOrder.id) {
-  setSelectedOrder(updatedOrder);
+  setSelectedOrderIdLocal(updatedOrder.id);
 }
+
       toast.success(
         `Order ${formatOrderReference(updatedOrder.id)} marked as ${STATUS_LABELS[nextStatus]}.`,
       );
@@ -235,8 +239,8 @@ useEffect(() => {
       return;
     }
 
-    setSelectedOrder(order);
-    setDialogOpen(true);
+setSelectedOrderIdLocal(order.id);  
+  setDialogOpen(true);
   };
 
   window.addEventListener(
@@ -253,26 +257,25 @@ useEffect(() => {
 }, [orders]);
 
 useEffect(() => {
-  if (!orderIdFromUrl || orders.length === 0) {
+  if (!selectedOrderId || orders.length === 0) {
     return;
   }
 
   const selected = orders.find(
-    (item) => item.id === orderIdFromUrl,
+    (item) => item.id === selectedOrderId,
   );
 
   if (!selected) {
     return;
   }
 
-  setSelectedOrder(selected);
+queueMicrotask(() => {
+  setSelectedOrderIdLocal(selected.id);
   setDialogOpen(true);
+  clearSelectedOrderId();
+});
 
-  // Remove the query AFTER React finishes rendering
-  setTimeout(() => {
-    router.replace("/dashboard/orders");
-  }, 0);
-}, [orders, orderIdFromUrl, router]);
+}, [orders, selectedOrderId, clearSelectedOrderId]);
 
 
   return (
@@ -460,7 +463,7 @@ onClick={() => {
                       variant="outline"
                       className="h-11 w-full sm:h-9 sm:w-auto"
                       onClick={() => {
-                        setSelectedOrder(order);
+setSelectedOrderIdLocal(order.id);
                         setDialogOpen(true);
                       }}
                     >
@@ -530,7 +533,7 @@ onClick={() => {
   }
   onClose={() => {
     setDialogOpen(false);
-    setSelectedOrder(null);
+setSelectedOrderIdLocal(null);
   }}
   onStatusUpdate={(status) => {
     if (!selectedOrder) return;
