@@ -122,7 +122,8 @@ const selectedOrder =
 
 const [dialogOpen, setDialogOpen] = useState(false);
 
-
+const [highlightedOrderId, setHighlightedOrderId] =
+  useState<string | null>(null);
 
 const selectedOrderId = useOrderDialogStore(
   (state) => state.selectedOrderId,
@@ -238,12 +239,27 @@ useEffect(() => {
     return;
   }
 
-queueMicrotask(() => {
-  setSelectedOrderIdLocal(selected.id);
-  setDialogOpen(true);
-  clearSelectedOrderId();
-});
+  const element = document.getElementById(
+    `order-${selected.id}`,
+  );
 
+  element?.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
+
+  setHighlightedOrderId(selected.id);
+
+  setTimeout(() => {
+    setSelectedOrderIdLocal(selected.id);
+    setDialogOpen(true);
+  }, 500);
+
+  setTimeout(() => {
+    setHighlightedOrderId(null);
+  }, 2500);
+
+  clearSelectedOrderId();
 }, [orders, selectedOrderId, clearSelectedOrderId]);
 
 useEffect(() => {
@@ -403,10 +419,16 @@ onClick={() => {
               const isUpdating = updatingOrderId === order.id;
 
               return (
-                <article
-                  key={order.id}
-                  className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5"
-                >
+               <article
+  id={`order-${order.id}`}
+  key={order.id}
+  className={`rounded-xl border bg-white p-4 shadow-sm transition-all duration-500 sm:p-5 ${
+    highlightedOrderId === order.id
+      ? "border-amber-500 ring-4 ring-amber-200 shadow-xl"
+      : "border-stone-200"
+  }`}
+>
+
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-stone-900">

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { clearAuth } from "@/utils/auth";
 import NotificationDropdown from "@/components/notifications/NotificationDropdown";
+import { useOrderDialogStore } from "@/lib/order-dialog-store";
 import {
   getNotifications,
   getUnreadCount,
@@ -29,6 +30,9 @@ export function DashboardHeader({
   onMenuClick,
 }: DashboardHeaderProps) {
   const router = useRouter();
+  const setSelectedOrderId = useOrderDialogStore(
+  (state) => state.setSelectedOrderId,
+);
   const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -105,25 +109,48 @@ export function DashboardHeader({
   }, [isPopoverOpen]);
 
   
-  const handleNotificationClick = async (notification: Notification) => {
-    try {
-      const updatedNotification = await markNotificationRead(notification.id);
+const handleNotificationClick = async (
+  notification: Notification,
+) => {
+ console.log(
+  "Clicked notification:",
+  JSON.stringify(notification, null, 2),
+);
+  try {
+    const updatedNotification = await markNotificationRead(
+      notification.id,
+    );
 
-      setNotifications((currentNotifications) =>
-        currentNotifications.map((item) =>
-          item.id === updatedNotification.id
-            ? { ...item, isRead: updatedNotification.isRead }
-            : item,
-        ),
-      );
+    setNotifications((currentNotifications) =>
+      currentNotifications.map((item) =>
+        item.id === updatedNotification.id
+          ? {
+              ...item,
+              isRead: updatedNotification.isRead,
+            }
+          : item,
+      ),
+    );
 
-      if (!notification.isRead) {
-        setUnreadCount((currentUnread) => Math.max(0, currentUnread - 1));
-      }
-    } catch {
-      // Leave UI unchanged on failure.
+    if (!notification.isRead) {
+      setUnreadCount((count) => Math.max(0, count - 1));
     }
-  };
+
+    // Close dropdown
+    setIsPopoverOpen(false);
+
+    // Only for order notifications
+   const orderId = notification.data?.orderId;
+
+if (orderId) {
+  setSelectedOrderId(orderId);
+
+  router.push("/dashboard/orders");
+}
+  } catch {
+    // Leave UI unchanged on failure.
+  }
+};
 
   const handleMarkAllRead = async () => {
     try {
