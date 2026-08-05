@@ -5,8 +5,14 @@ import { useRouter, usePathname } from "next/navigation";
 import { Bell, LogOut, Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { clearAuth } from "@/utils/auth";
-import { getUnreadCount } from "@/services/notification.service";
+import NotificationDropdown from "@/components/notifications/NotificationDropdown";
+import {
+  getNotifications,
+  getUnreadCount,
+} from "@/services/notification.service";
+import type { Notification } from "@/types/notification";
 
 type DashboardHeaderProps = {
   title: string;
@@ -22,6 +28,9 @@ export function DashboardHeader({
   const router = useRouter();
   const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const showLogout =
     pathname === "/dashboard" ||
@@ -52,6 +61,44 @@ export function DashboardHeader({
     };
   }, []);
 
+  useEffect(() => {
+    if (!isPopoverOpen) {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadNotifications() {
+      if (!isMounted) {
+        return;
+      }
+
+      setLoadingNotifications(true);
+
+      try {
+        const response = await getNotifications();
+
+        if (isMounted) {
+          setNotifications(response.data);
+        }
+      } catch {
+        if (isMounted) {
+          setNotifications([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingNotifications(false);
+        }
+      }
+    }
+
+    void loadNotifications();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isPopoverOpen]);
+
   return (
     <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
       <div className="flex items-center gap-3">
@@ -79,19 +126,30 @@ export function DashboardHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Notifications"
-          className="relative"
-        >
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 ? (
-            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-semibold leading-none text-white">
-              {unreadCount}
-            </span>
-          ) : null}
-        </Button>
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Notifications"
+              className="relative"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 ? (
+                <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-semibold leading-none text-white">
+                  {unreadCount}
+                </span>
+              ) : null}
+            </Button>
+          </PopoverTrigger>
+
+          <PopoverContent align="end" sideOffset={8}>
+            <NotificationDropdown
+              notifications={notifications}
+              loading={loadingNotifications}
+            />
+          </PopoverContent>
+        </Popover>
 
         {showLogout && (
           <Button
