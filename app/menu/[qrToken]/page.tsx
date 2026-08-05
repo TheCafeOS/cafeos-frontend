@@ -36,6 +36,12 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import LoyaltyCard from "@/components/LoyaltyCard";
+import {
+  getPublicCustomerLoyaltyProfile,
+  getPublicLoyaltyProgram,
+} from "@/services/public-loyalty.service";
+import type { LoyaltyCustomerProfile, LoyaltyProgram } from "@/types/loyalty";
 
 type Category = {
   id: string;
@@ -358,13 +364,40 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [isOrderDrawerOpen, setIsOrderDrawerOpen] = useState(false);
   const [isRefreshingOrder, setIsRefreshingOrder] = useState(false);
   const [currentOrderError, setCurrentOrderError] = useState("");
-  const categories = menu?.categories ?? [];
-  const menuItems = menu?.menuItems ?? [];
+  const [loyaltyProgram, setLoyaltyProgram] = useState<LoyaltyProgram | null>(null);
+  const [loyaltyProfile, setLoyaltyProfile] = useState<LoyaltyCustomerProfile | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const [loyaltyError, setLoyaltyError] = useState("");
+  const categories = useMemo(() => menu?.categories ?? [], [menu?.categories]);
+  const menuItems = useMemo(() => menu?.menuItems ?? [], [menu?.menuItems]);
   const isDesktopFilterViewport = useIsDesktopViewport();
 
   const currentOrderIdRef = useRef<string | null>(null);
   const popularSectionRef = useRef<HTMLDivElement | null>(null);
   const menuSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const loadLoyaltyData = useCallback(async (phone?: string | null) => {
+    try {
+      setLoyaltyLoading(true);
+      setLoyaltyError("");
+
+      const program = await getPublicLoyaltyProgram(qrToken);
+      setLoyaltyProgram(program);
+
+      if (!phone) {
+        setLoyaltyProfile(null);
+        return;
+      }
+
+      const profile = await getPublicCustomerLoyaltyProfile(qrToken, phone);
+      setLoyaltyProfile(profile);
+    } catch (error) {
+      console.error(error);
+      setLoyaltyError("We could not load loyalty details right now.");
+    } finally {
+      setLoyaltyLoading(false);
+    }
+  }, [qrToken]);
 
   useEffect(() => {
     currentOrderIdRef.current = currentOrder?.id ?? null;
@@ -531,6 +564,23 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
 
     void loadMenu();
   }, [params]);
+
+ useEffect(() => {
+  if (!qrToken) {
+    return;
+  }
+
+  const initializeLoyalty = async () => {
+    try {
+      const savedPhone = window.localStorage.getItem("cafeos-customer-phone");
+      await loadLoyaltyData(savedPhone?.trim() || null);
+    } catch {
+      await loadLoyaltyData(null);
+    }
+  };
+
+  void initializeLoyalty();
+}, [loadLoyaltyData, qrToken]);
 
   useEffect(() => {
     if (!qrToken) {
@@ -762,9 +812,21 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
         "Order placed successfully. You can track or follow its progress below.",
       );
 
+      const savedPhone = customerPhone.trim();
+
       setCart([]);
       setCustomerPhone("");
       setIsCartOpen(false);
+
+      if (savedPhone) {
+        try {
+          window.localStorage.setItem("cafeos-customer-phone", savedPhone);
+        } catch {
+          // Ignore localStorage write failures.
+        }
+
+        void loadLoyaltyData(savedPhone);
+      }
 
       await fetchCurrentOrder(createdOrder.id, false);
       setIsOrderDrawerOpen(true);
@@ -1029,6 +1091,14 @@ const showPopular =
           </div>
         </div>
       ) : null}
+
+      <LoyaltyCard
+        program={loyaltyProgram}
+        profile={loyaltyProfile}
+        isLoading={loyaltyLoading}
+        error={loyaltyError}
+        emptyMessage="Place your first order to unlock loyalty rewards."
+      />
 
       {/* Categories → Popular: 28px */}
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
