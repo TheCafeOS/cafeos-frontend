@@ -30,6 +30,18 @@ export function connectSocket() {
 
   if (!socket.connected) {
     socket.connect();
+
+    socket.on("connect", () => {
+      console.log("🟢 Socket Connected:", socket.id);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("🔴 Socket Disconnected:", reason);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.log("❌ Socket Error:", error.message);
+    });
   }
 
   return socket;

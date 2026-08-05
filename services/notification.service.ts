@@ -29,7 +29,7 @@ export async function getUnreadCount(): Promise<number> {
     ApiSuccessResponse<UnreadCountResponse>
   >("/api/v1/notifications/unread-count");
 
-  return response.data.data.unreadCount;
+  return response.data.data.count;
 }
 
 export async function markNotificationRead(

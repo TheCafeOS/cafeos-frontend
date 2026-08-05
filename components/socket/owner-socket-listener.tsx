@@ -23,7 +23,10 @@ export default function OwnerSocketListener() {
     const socket = getSocket();
 
     const handleOrderCreated = (payload: OrderCreatedPayload) => {
-      toast.success("🍽️ New Order Received", {
+  console.log("✅ ORDER_CREATED RECEIVED", payload);
+
+  toast.success("🍽️ New Order Received", {
+
         description: `₹${payload.total} • ${payload.itemCount} item(s)`,
         action: {
           label: "View",
@@ -44,8 +47,10 @@ export default function OwnerSocketListener() {
       });
     };
 
-    const handleNotificationCreated = (payload: Notification) => {
-      window.dispatchEvent(
+   const handleNotificationCreated = (payload: Notification) => {
+  console.log("✅ NOTIFICATION_CREATED RECEIVED", payload);
+
+  window.dispatchEvent(
         new CustomEvent("notification-created", {
           detail: payload,
         }),

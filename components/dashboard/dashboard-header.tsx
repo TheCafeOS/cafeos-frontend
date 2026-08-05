@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
 import { useRouter, usePathname } from "next/navigation";
 import { Bell, LogOut, Menu } from "lucide-react";
 
@@ -46,12 +47,14 @@ export function DashboardHeader({
   useEffect(() => {
     let isMounted = true;
 
-    void getUnreadCount()
-      .then((count) => {
-        if (isMounted) {
-          setUnreadCount(count);
-        }
-      })
+   void getUnreadCount()
+  .then((count) => {
+    console.log("Unread API returned:", count);
+
+    if (isMounted) {
+      setUnreadCount(count);
+    }
+  })
       .catch(() => {
         if (isMounted) {
           setUnreadCount(0);
@@ -101,6 +104,7 @@ export function DashboardHeader({
     };
   }, [isPopoverOpen]);
 
+  
   const handleNotificationClick = async (notification: Notification) => {
     try {
       const updatedNotification = await markNotificationRead(notification.id);
@@ -135,6 +139,63 @@ export function DashboardHeader({
       // Leave UI unchanged on failure.
     }
   };
+
+const handleRealtimeNotification = useCallback(
+  (event: Event) => {
+    console.log("🔥 Dashboard received realtime notification");
+
+    const customEvent = event as CustomEvent<Notification>;
+    const notification = customEvent.detail;
+
+    console.log("Payload:", notification);
+
+    if (!notification) {
+      return;
+    }
+
+    setNotifications((currentNotifications) => {
+      console.log(
+        "Current notifications:",
+        currentNotifications.length,
+      );
+
+      if (
+        currentNotifications.some(
+          (item) => item.id === notification.id,
+        )
+      ) {
+        console.log("Duplicate notification");
+        return currentNotifications;
+      }
+
+      console.log("Adding notification");
+
+      return [notification, ...currentNotifications];
+    });
+
+    setUnreadCount((count) => {
+      console.log("Unread:", count, "->", count + 1);
+      return count + 1;
+    });
+  },
+  [],
+);
+
+
+useEffect(() => {
+  window.addEventListener(
+    "notification-created",
+    handleRealtimeNotification,
+  );
+
+  return () => {
+    window.removeEventListener(
+      "notification-created",
+      handleRealtimeNotification,
+    );
+  };
+}, [handleRealtimeNotification]);
+
 
   return (
     <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
