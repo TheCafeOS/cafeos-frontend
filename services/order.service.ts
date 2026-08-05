@@ -15,24 +15,38 @@ export async function getOrders(
   orders: RestaurantOrder[];
   pagination: OrdersPagination;
 }> {
-  const response = await api.get<GetOrdersResponse>("/api/v1/orders", {
-    params,
-  });
+  const response = await api.get<GetOrdersResponse>(
+    "/api/v1/orders",
+    {
+      params,
+    },
+  );
 
- return {
-  orders: response.data.data,
-  pagination: response.data.pagination,
-};
+  return {
+    orders: response.data.data,
+    pagination: response.data.pagination,
+  };
+}
+
+export async function getOrderById(
+  orderId: string,
+): Promise<RestaurantOrder> {
+  const response = await api.get(
+    `/api/v1/orders/${orderId}`,
+  );
+
+  return response.data.data;
 }
 
 export async function updateOrderStatus(
   orderId: string,
   payload: UpdateOrderStatusPayload,
 ): Promise<UpdateOrderStatusResponse["data"]> {
-  const response = await api.patch<UpdateOrderStatusResponse>(
-    `/api/v1/orders/${orderId}/status`,
-    payload,
-  );
+  const response =
+    await api.patch<UpdateOrderStatusResponse>(
+      `/api/v1/orders/${orderId}/status`,
+      payload,
+    );
 
   return response.data.data;
 }

@@ -8,7 +8,11 @@ import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { getOrders, updateOrderStatus } from "@/services/order.service";
+import {
+  getOrders,
+  getOrderById,
+  updateOrderStatus,
+} from "@/services/order.service";
 import type { OrderStatus, RestaurantOrder } from "@/types/order";
 import { useOwnerOrderSocket } from "@/hooks/use-owner-order-socket";
 import { OrderDetailsDialog } from "@/components/orders/order-details-dialog";
@@ -116,10 +120,8 @@ const [sort, setSort] = useState<
 const [order, setOrder] = useState<"asc" | "desc">("desc");
 const [selectedOrderIdLocal, setSelectedOrderIdLocal] =
   useState<string | null>(null);
-const selectedOrder =
-  orders.find((order) => order.id === selectedOrderIdLocal) ??
-  null;
-
+const [selectedOrder, setSelectedOrder] =
+  useState<RestaurantOrder | null>(null);
 const [dialogOpen, setDialogOpen] = useState(false);
 
 const [highlightedOrderId, setHighlightedOrderId] =
@@ -227,40 +229,49 @@ useOwnerOrderSocket({
 
 
 useEffect(() => {
-  if (!selectedOrderId || orders.length === 0) {
+  if (!selectedOrderId) {
     return;
   }
 
-  const selected = orders.find(
-    (item) => item.id === selectedOrderId,
-  );
+  async function openSelectedOrder() {
+    try {
+const orderId = selectedOrderId;
 
-  if (!selected) {
-    return;
+if (!orderId) return;
+
+const fullOrder = await getOrderById(orderId);
+      setSelectedOrder(fullOrder);
+      setSelectedOrderIdLocal(fullOrder.id);
+
+      const element = document.getElementById(
+        `order-${fullOrder.id}`,
+      );
+
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+
+      setHighlightedOrderId(fullOrder.id);
+
+      setDialogOpen(true);
+
+      setTimeout(() => {
+        setHighlightedOrderId(null);
+      }, 2500);
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to open order.");
+    } finally {
+      clearSelectedOrderId();
+    }
   }
 
-  const element = document.getElementById(
-    `order-${selected.id}`,
-  );
+  void openSelectedOrder();
+}, [selectedOrderId, clearSelectedOrderId]);
 
-  element?.scrollIntoView({
-    behavior: "smooth",
-    block: "center",
-  });
-
-  setHighlightedOrderId(selected.id);
-
-  setTimeout(() => {
-    setSelectedOrderIdLocal(selected.id);
-    setDialogOpen(true);
-  }, 500);
-
-  setTimeout(() => {
-    setHighlightedOrderId(null);
-  }, 2500);
-
-  clearSelectedOrderId();
-}, [orders, selectedOrderId, clearSelectedOrderId]);
 
 useEffect(() => {
   const handleOpenOrderDialog = (
@@ -480,10 +491,13 @@ onClick={() => {
                     <Button
                       variant="outline"
                       className="h-11 w-full sm:h-9 sm:w-auto"
-                      onClick={() => {
-setSelectedOrderIdLocal(order.id);
-                        setDialogOpen(true);
-                      }}
+onClick={async () => {
+  const fullOrder = await getOrderById(order.id);
+
+  setSelectedOrder(fullOrder);
+  setSelectedOrderIdLocal(order.id);
+  setDialogOpen(true);
+}}
                     >
                       View Details
                     </Button>
