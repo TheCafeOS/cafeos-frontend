@@ -9,40 +9,15 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { formatRelativeTime } from "@/lib/utils";
+import { useRelativeTime } from "@/hooks/use-relative-time";
+
 import type { Notification } from "@/types/notification";
 
 type NotificationItemProps = {
   notification: Notification;
   onClick?: () => void;
 };
-
-function getRelativeTime(date: string) {
-  const now = new Date().getTime();
-  const created = new Date(date).getTime();
-
-  const diff = Math.floor((now - created) / 1000);
-
-  if (diff < 60) {
-    return "Just now";
-  }
-
-  if (diff < 3600) {
-    return `${Math.floor(diff / 60)} min ago`;
-  }
-
-  if (diff < 86400) {
-    return `${Math.floor(diff / 3600)} hr ago`;
-  }
-
-  if (diff < 172800) {
-    return "Yesterday";
-  }
-
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "numeric",
-    month: "short",
-  }).format(new Date(date));
-}
 
 function getNotificationStyle(notification: Notification) {
   switch (notification.type) {
@@ -93,8 +68,9 @@ export default function NotificationItem({
   notification,
   onClick,
 }: NotificationItemProps) {
-  const style = getNotificationStyle(notification);
+  useRelativeTime();
 
+  const style = getNotificationStyle(notification);
   const Icon = style.icon;
 
   return (
@@ -163,7 +139,7 @@ export default function NotificationItem({
 
           <div className="mt-3 flex items-center justify-between">
             <span className="text-xs text-stone-400">
-              {getRelativeTime(notification.createdAt)}
+              {formatRelativeTime(notification.createdAt)}
             </span>
 
             {notification.data.orderId && (
