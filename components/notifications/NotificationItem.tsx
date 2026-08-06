@@ -1,14 +1,5 @@
 "use client";
 
-import {
-  ArrowRight,
-  Bell,
-  CheckCircle2,
-  Gift,
-  ShoppingBag,
-  XCircle,
-} from "lucide-react";
-
 import { formatRelativeTime } from "@/lib/utils";
 import { useRelativeTime } from "@/hooks/use-relative-time";
 
@@ -23,43 +14,68 @@ function getNotificationStyle(notification: Notification) {
   switch (notification.type) {
     case "NEW_ORDER":
       return {
-        icon: ShoppingBag,
-        iconBg: "bg-orange-100",
-        iconColor: "text-orange-600",
-        border: "border-l-orange-500",
+        title: "New Order Received",
+        accent: "border-l-blue-500",
+        amount: "text-blue-600",
+        button:
+          "border-blue-300 text-blue-600 hover:bg-blue-50",
       };
 
     case "ORDER_STATUS":
-      if (notification.data.status === "CANCELLED") {
-        return {
-          icon: XCircle,
-          iconBg: "bg-red-100",
-          iconColor: "text-red-600",
-          border: "border-l-red-500",
-        };
-      }
+      switch (notification.data.status) {
+        case "PREPARING":
+          return {
+            title: "Order Preparing",
+            accent: "border-l-amber-500",
+            amount: "text-amber-600",
+            button:
+              "border-amber-300 text-amber-600 hover:bg-amber-50",
+          };
 
-      return {
-        icon: CheckCircle2,
-        iconBg: "bg-emerald-100",
-        iconColor: "text-emerald-600",
-        border: "border-l-emerald-500",
-      };
+        case "COMPLETED":
+          return {
+            title: "Order Completed",
+            accent: "border-l-emerald-500",
+            amount: "text-emerald-600",
+            button:
+  "border-stone-300 text-stone-700 hover:bg-stone-50",
+          };
+
+        case "CANCELLED":
+          return {
+            title: "Order Cancelled",
+            accent: "border-l-stone-300",
+            amount: "text-stone-600",
+            button:
+              "border-stone-300 text-stone-600 hover:bg-stone-50",
+          };
+
+        default:
+          return {
+            title: "Order Updated",
+            accent: "border-l-stone-400",
+            amount: "text-stone-600",
+            button:
+              "border-stone-300 text-stone-600 hover:bg-stone-50",
+          };
+      }
 
     case "LOYALTY_REWARD":
       return {
-        icon: Gift,
-        iconBg: "bg-violet-100",
-        iconColor: "text-violet-600",
-        border: "border-l-violet-500",
+        title: "Loyalty Reward",
+        accent: "border-l-violet-500",
+        amount: "text-violet-600",
+        button:
+          "border-violet-300 text-violet-600 hover:bg-violet-50",
       };
 
     default:
       return {
-        icon: Bell,
-        iconBg: "bg-stone-100",
-        iconColor: "text-stone-600",
-        border: "border-l-stone-400",
+        title: notification.title,
+        accent: "border-l-stone-400",
+        amount: "text-stone-600",
+        button:
+          "border-stone-300 text-stone-600 hover:bg-stone-50",
       };
   }
 }
@@ -71,7 +87,6 @@ export default function NotificationItem({
   useRelativeTime();
 
   const style = getNotificationStyle(notification);
-  const Icon = style.icon;
 
   return (
     <button
@@ -81,75 +96,101 @@ export default function NotificationItem({
         group
         relative
         w-full
-        border-b
-        border-stone-100
+        rounded-xl
+        border
+        border-stone-200
         border-l-4
-        ${style.border}
+        ${style.accent}
         bg-white
-        px-5
-        py-4
+        px-4
+        py-1
         text-left
         transition-all
         duration-200
-        hover:bg-stone-50
-        hover:shadow-sm
-        ${
-          !notification.isRead
-            ? "bg-orange-50/40"
-            : ""
-        }
+        hover:-translate-y-0.5
+        hover:border-stone-300
+        hover:shadow-md
       `}
     >
-      <div className="flex items-start gap-4">
-        <div
-          className={`
-            mt-0.5
-            rounded-xl
-            p-2.5
-            ${style.iconBg}
-          `}
-        >
-          <Icon
-            className={`h-5 w-5 ${style.iconColor}`}
-          />
+      {!notification.isRead && (
+        <span className="absolute right-4 top-4 h-2.5 w-2.5 rounded-full bg-orange-500" />
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-semibold text-stone-900">
+          {style.title}
+        </h3>
+
+        {notification.data.orderId && (
+          <span
+            className={`
+              rounded-lg
+              border
+  px-2.5
+py-1
+text-[11px]
+              font-medium
+              transition
+              ${style.button}
+            `}
+          >
+            View Order
+          </span>
+        )}
+      </div>
+
+      {/* Information */}
+<div className="mt-3 grid grid-cols-3 gap-5">
+          <div>
+          <p className="text-[11px] uppercase tracking-wider text-stone-400">
+            Table
+          </p>
+
+          <p className="mt-1 text-[16px] font-semibold text-stone-900">
+            {notification.data.tableName ?? "-"}
+          </p>
         </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h4 className="text-sm font-semibold text-stone-900">
-                {notification.title}
-              </h4>
+        <div>
+          <p className="text-[11px] uppercase tracking-wider text-stone-400">
+            Order ID
+          </p>
 
-              <p className="mt-1 text-sm leading-6 text-stone-600">
-                {notification.message}
-              </p>
-            </div>
-
-            {!notification.isRead && (
-              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-orange-500" />
-            )}
-          </div>
-
-          {notification.data.tableName && (
-            <div className="mt-3 inline-flex rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700">
-              {notification.data.tableName}
-            </div>
-          )}
-
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-stone-400">
-              {formatRelativeTime(notification.createdAt)}
-            </span>
-
-            {notification.data.orderId && (
-              <div className="flex items-center gap-1 text-xs font-semibold text-orange-600 opacity-0 transition-opacity group-hover:opacity-100">
-                View Order
-                <ArrowRight className="h-3.5 w-3.5" />
-              </div>
-            )}
-          </div>
+          <p className="mt-1 text-base font-semibold text-stone-900">
+            {notification.data.orderId
+              ? `#${notification.data.orderId
+                  .slice(-6)
+                  .toUpperCase()}`
+              : "-"}
+          </p>
         </div>
+
+        <div>
+          <p className="text-[11px] uppercase tracking-wider text-stone-400">
+            Amount
+          </p>
+
+          <p className={`mt-1 text-lg font-bold ${style.amount}`}>
+            {notification.data.total
+              ? `₹${notification.data.total}`
+              : "-"}
+          </p>
+        </div>
+      </div>
+
+      {/* Footer */}
+<div className="mt-3 flex items-center justify-between text-xs text-stone-500">
+          <span>
+          {notification.data.itemCount
+            ? `${notification.data.itemCount} ${
+                notification.data.itemCount === 1
+                  ? "item"
+                  : "items"
+              } • `
+            : ""}
+          {formatRelativeTime(notification.createdAt)}
+        </span>
       </div>
     </button>
   );
