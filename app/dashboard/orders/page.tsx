@@ -47,11 +47,20 @@ const STATUS_FILTERS: Array<{
 ];
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
-  PENDING: "bg-amber-100 text-amber-800",
-  CONFIRMED: "bg-sky-100 text-sky-800",
-  PREPARING: "bg-violet-100 text-violet-800",
-  COMPLETED: "bg-emerald-100 text-emerald-800",
-  CANCELLED: "bg-red-100 text-red-800",
+  PENDING:
+    "border border-amber-200 bg-amber-50 text-amber-700",
+
+  CONFIRMED:
+    "border border-sky-200 bg-sky-50 text-sky-700",
+
+  PREPARING:
+    "border border-violet-200 bg-violet-50 text-violet-700",
+
+  COMPLETED:
+    "border border-emerald-200 bg-emerald-50 text-emerald-700",
+
+  CANCELLED:
+    "border border-red-200 bg-red-50 text-red-700",
 };
 const ACTION_BUTTON_STYLES: Partial<Record<OrderStatus, string>> = {
   PENDING:
@@ -449,7 +458,8 @@ setStatusFilter(filter.value);}}                  >
 
         {!isLoading && !error && orders.length === 0 ? (
           <div className="rounded-lg border border-stone-200 bg-stone-50 py-12 text-center text-stone-600">
-            No orders have been placed yet.
+           No matching orders
+           Try another search or clear your filters.
           </div>
         ) : null}
 
@@ -483,7 +493,7 @@ setStatusFilter(filter.value);}}                  >
                     </div>
 
                     <span
-                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[order.status]}`}
+                      className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold ${STATUS_STYLES[order.status]}`}
                     >
                       {STATUS_LABELS[order.status]}
                     </span>
@@ -505,15 +515,27 @@ setStatusFilter(filter.value);}}                  >
                     ))}
                   </div>
 
-                  <div className="mt-4 flex flex-col gap-1 border-t border-stone-100 pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                    <p className="text-sm text-stone-600">
-                      Phone: {order.customerPhone || "Not provided"}
-                    </p>
+             <div className="mt-4 flex flex-col gap-4 border-t border-stone-100 pt-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
+      Customer Phone
+    </p>
 
-                    <p className="font-semibold text-stone-900">
-                      Total: {formatPrice(order.total)}
-                    </p>
-                  </div>
+    <p className="mt-1 text-sm text-stone-700">
+      {order.customerPhone || "Not provided"}
+    </p>
+  </div>
+
+  <div className="text-left sm:text-right">
+    <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">
+      Total
+    </p>
+
+    <p className="mt-1 text-2xl font-bold tracking-tight text-stone-900">
+      {formatPrice(order.total)}
+    </p>
+  </div>
+</div>
 
                   {/* Actions: full-width stacked buttons on mobile (44px+
                       touch targets), side-by-side from sm: up. Primary
@@ -531,7 +553,7 @@ setSelectedOrderIdLocal(fullOrder.id);
 setDialogOpen(true);
 }}
                     >
-                      View Details
+                     View Details →
                     </Button>
 
                     {nextStatus ? (
@@ -549,8 +571,13 @@ setDialogOpen(true);
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : null}
 
-                        Mark as {STATUS_LABELS[nextStatus]}
-                      </Button>
+{nextStatus === "CONFIRMED"
+  ? "Accept Order"
+  : nextStatus === "PREPARING"
+    ? "Start Preparing"
+    : "Complete Order"}
+    
+                          </Button>
                     ) : (
                       <p className="text-center text-sm font-medium text-stone-500 sm:text-right">
                         This order is {STATUS_LABELS[order.status].toLowerCase()}.
