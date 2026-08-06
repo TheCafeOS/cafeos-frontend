@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-
+import { useRelativeTime } from "@/hooks/use-relative-time";
 import { Loader2, RefreshCw, Search, X } from "lucide-react";
 import { toast } from "sonner";
+import { formatRelativeTime } from "@/lib/utils";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
@@ -78,15 +79,12 @@ function formatOrderReference(orderId: string): string {
   return `#${orderId.slice(-6).toUpperCase()}`;
 }
 
-function formatDate(date: string): string {
-  return new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(date));
-}
 
 export default function OrdersPage() {
+  useRelativeTime();
+
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -449,7 +447,7 @@ setStatusFilter(filter.value);}}                  >
                         {formatOrderReference(order.id)}
                       </p>
                       <p className="mt-1 text-sm text-stone-600">
-                        {order.table.name} · {formatDate(order.createdAt)}
+{order.table.name} · {formatRelativeTime(order.createdAt)}
                       </p>
                     </div>
 
