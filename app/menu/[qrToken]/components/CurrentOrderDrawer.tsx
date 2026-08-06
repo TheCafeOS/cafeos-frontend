@@ -7,6 +7,9 @@ import {
   X,
 } from "lucide-react";
 
+import { formatRelativeTime } from "@/lib/utils";
+import { useRelativeTime } from "@/hooks/use-relative-time";
+
 type OrderItem = {
   id: string;
   quantity: number;
@@ -98,6 +101,8 @@ export default function CurrentOrderDrawer({
   onClose,
   onRefresh,
 }: CurrentOrderDrawerProps) {
+  useRelativeTime();
+
   if (!isOpen || !order) {
     return null;
   }
@@ -105,6 +110,7 @@ export default function CurrentOrderDrawer({
   const isCancelled = order.status === "CANCELLED";
   const currentStepIndex = getCurrentStepIndex(order.status);
 
+  
   return (
     <div className="fixed inset-0 z-50 bg-black/40">
       <div className="absolute bottom-0 right-0 h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl sm:top-0 sm:h-full sm:rounded-none">
@@ -161,7 +167,8 @@ export default function CurrentOrderDrawer({
               isCancelled ? "text-red-800" : "text-amber-800"
             }`}
           >
-            Placed {new Date(order.createdAt).toLocaleString()}
+Placed {formatRelativeTime(order.createdAt)}
+
           </p>
         </div>
 
