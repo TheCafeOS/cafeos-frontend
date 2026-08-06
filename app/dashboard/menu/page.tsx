@@ -32,6 +32,8 @@ import {
   updateCategory,
 } from "@/services/category.service";
 
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+
 import {
   createMenuItem,
   deleteMenuItem,
@@ -155,6 +157,23 @@ export default function MenuPage() {
     useState<CreateMenuItemPayload>(emptyMenuItem);
 
   const [togglingItemId, setTogglingItemId] = useState<string | null>(null);
+
+const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+const [menuItemToDelete, setMenuItemToDelete] =
+  useState<MenuItem | null>(null);
+
+const [isDeletingMenuItem, setIsDeletingMenuItem] =
+  useState(false);
+
+const [categoryDeleteDialogOpen, setCategoryDeleteDialogOpen] =
+  useState(false);
+
+const [categoryToDelete, setCategoryToDelete] =
+  useState<Category | null>(null);
+
+const [isDeletingCategory, setIsDeletingCategory] =
+  useState(false);
 
   const employee = getEmployee();
 
@@ -337,23 +356,32 @@ export default function MenuPage() {
     }
   }
 
-  async function handleDeleteCategory(category: Category) {
-    const confirmed = window.confirm(`Delete "${category.name}" category?`);
+  async function handleDeleteCategory() {
+  if (!categoryToDelete) return;
 
-    if (!confirmed) return;
+  try {
+    setIsDeletingCategory(true);
 
-    try {
-      await deleteCategory(category.id);
+    await deleteCategory(categoryToDelete.id);
 
-      setCategories((current) =>
-        current.filter((item) => item.id !== category.id),
-      );
+    setCategories((current) =>
+      current.filter(
+        (item) => item.id !== categoryToDelete.id,
+      ),
+    );
 
-      toast.success("Category deleted successfully.");
-    } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to delete category"));
-    }
+    toast.success("Category deleted successfully.");
+
+    setCategoryDeleteDialogOpen(false);
+    setCategoryToDelete(null);
+  } catch (error) {
+    toast.error(
+      getErrorMessage(error, "Failed to delete category"),
+    );
+  } finally {
+    setIsDeletingCategory(false);
   }
+}
 
   async function handleAddMenuItem(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -505,23 +533,33 @@ export default function MenuPage() {
     }
   }
 
-  async function handleDeleteMenuItem(item: MenuItem) {
-    const confirmed = window.confirm(`Delete "${item.name}" menu item?`);
+  
+  async function handleDeleteMenuItem() {
+  if (!menuItemToDelete) return;
 
-    if (!confirmed) return;
+  try {
+    setIsDeletingMenuItem(true);
 
-    try {
-      await deleteMenuItem(item.id);
+    await deleteMenuItem(menuItemToDelete.id);
 
-      setMenuItems((current) =>
-        current.filter((menuItem) => menuItem.id !== item.id),
-      );
+    setMenuItems((current) =>
+      current.filter(
+        (item) => item.id !== menuItemToDelete.id,
+      ),
+    );
 
-      toast.success("Menu item deleted successfully.");
-    } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to delete menu item"));
-    }
+    toast.success("Menu item deleted successfully.");
+
+    setDeleteDialogOpen(false);
+    setMenuItemToDelete(null);
+  } catch (error) {
+    toast.error(
+      getErrorMessage(error, "Failed to delete menu item"),
+    );
+  } finally {
+    setIsDeletingMenuItem(false);
   }
+}
 
   // Quick availability toggle — reuses the existing update endpoint,
   // no new API surface. Optimistic update with rollback on failure.
@@ -832,7 +870,10 @@ export default function MenuPage() {
     hover:bg-red-50
     hover:text-red-700
   "
-  onClick={() => void handleDeleteCategory(category)}
+onClick={() => {
+  setCategoryToDelete(category);
+  setCategoryDeleteDialogOpen(true);
+}}
 >
   <Trash2 className="h-4 w-4" />
 </Button>
@@ -1341,7 +1382,10 @@ imagePositionY={activeMenuItem.imagePositionY ?? 0}
                                 variant="ghost"
                                 aria-label={`Delete ${item.name}`}
                                 className="gap-1.5 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700"
-                                onClick={() => void handleDeleteMenuItem(item)}
+onClick={() => {
+  setMenuItemToDelete(item);
+  setDeleteDialogOpen(true);
+}}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                                 Delete
@@ -1382,6 +1426,38 @@ imagePositionY={activeMenuItem.imagePositionY ?? 0}
           </div>
         </section>
       </div>
+      <ConfirmDialog
+  open={deleteDialogOpen}
+  loading={isDeletingMenuItem}
+  title="Delete menu item?"
+  description={`"${menuItemToDelete?.name}" will be permanently deleted. This action cannot be undone.`}
+  confirmText="Delete"
+  cancelText="Cancel"
+  onCancel={() => {
+    setDeleteDialogOpen(false);
+    setMenuItemToDelete(null);
+  }}
+  onConfirm={() => {
+    void handleDeleteMenuItem();
+  }}
+/>
+
+<ConfirmDialog
+  open={categoryDeleteDialogOpen}
+  loading={isDeletingCategory}
+  title="Delete category?"
+  description={`"${categoryToDelete?.name}" will be permanently deleted. This action cannot be undone.`}
+  confirmText="Delete"
+  cancelText="Cancel"
+  onCancel={() => {
+    setCategoryDeleteDialogOpen(false);
+    setCategoryToDelete(null);
+  }}
+  onConfirm={() => {
+    void handleDeleteCategory();
+  }}
+/>
     </DashboardShell>
+    
   );
 }
