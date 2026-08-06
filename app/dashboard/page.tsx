@@ -15,6 +15,9 @@ import { toast } from "sonner";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
+import { useRelativeTime } from "@/hooks/use-relative-time";
+import { formatRelativeTime } from "@/lib/utils";
+
 import { useOwnerOrderSocket } from "@/hooks/use-owner-order-socket";
 import { getDashboardSummary } from "@/services/dashboard.service";
 import type {
@@ -34,12 +37,6 @@ function formatOrderReference(orderId: string): string {
   return `#${orderId.slice(-6).toUpperCase()}`;
 }
 
-function formatTime(date: string): string {
-  return new Intl.DateTimeFormat("en-IN", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(date));
-}
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error
@@ -55,6 +52,7 @@ function getStatusCount(
 }
 
 export default function DashboardPage() {
+  useRelativeTime();
   const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -282,7 +280,8 @@ export default function DashboardPage() {
                         </p>
 
                         <p className="mt-1 text-sm text-stone-500">
-                          {formatTime(order.createdAt)}
+{formatRelativeTime(order.createdAt)}
+
                         </p>
                       </div>
                     </div>
