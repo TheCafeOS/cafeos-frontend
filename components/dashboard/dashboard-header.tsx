@@ -271,7 +271,16 @@ useEffect(() => {
 <PopoverContent
   align="end"
   sideOffset={8}
-  className="w-[560px] overflow-hidden rounded-xl border border-stone-200 bg-white p-0 shadow-xl"
+className="
+w-[580px]
+overflow-hidden
+rounded-2xl
+border
+border-stone-100
+bg-white
+p-0
+shadow-[0_20px_60px_rgba(15,23,42,0.14)]
+"
 >
               <NotificationDropdown
               notifications={notifications}

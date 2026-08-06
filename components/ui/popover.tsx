@@ -44,12 +44,13 @@ function PopoverContent({
             z-50
             origin-(--radix-popover-content-transform-origin)
             overflow-hidden
-            rounded-xl
+            rounded-2xl
             border
-            border-stone-200
+            border-stone-100
             bg-white
             text-stone-900
-            shadow-xl
+           shadow-[0_20px_60px_rgba(15,23,42,0.14)]
+
             outline-none
 
             data-[state=open]:animate-in
