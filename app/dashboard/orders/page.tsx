@@ -192,6 +192,7 @@ const loadOrders = useCallback(async () => {
         ),
       );
 if (selectedOrder?.id === updatedOrder.id) {
+  setSelectedOrder(updatedOrder);
   setSelectedOrderIdLocal(updatedOrder.id);
 }
 
@@ -274,19 +275,26 @@ const fullOrder = await getOrderById(orderId);
 
 
 useEffect(() => {
-  const handleOpenOrderDialog = (
+  async function handleOpenOrderDialog(
     event: Event,
-  ) => {
+  ) {
     const customEvent = event as CustomEvent<{
       orderId: string;
     }>;
 
-    setSelectedOrderIdLocal(
-      customEvent.detail.orderId,
-    );
+    try {
+      const fullOrder = await getOrderById(
+        customEvent.detail.orderId,
+      );
 
-    setDialogOpen(true);
-  };
+      setSelectedOrder(fullOrder);
+      setSelectedOrderIdLocal(fullOrder.id);
+      setDialogOpen(true);
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to open order.");
+    }
+  }
 
   window.addEventListener(
     "open-order-dialog",
@@ -300,6 +308,8 @@ useEffect(() => {
     );
   };
 }, []);
+
+
 
   return (
     <DashboardShell title="Orders">
@@ -494,9 +504,9 @@ onClick={() => {
 onClick={async () => {
   const fullOrder = await getOrderById(order.id);
 
-  setSelectedOrder(fullOrder);
-  setSelectedOrderIdLocal(order.id);
-  setDialogOpen(true);
+setSelectedOrder(fullOrder);
+setSelectedOrderIdLocal(fullOrder.id);
+setDialogOpen(true);
 }}
                     >
                       View Details
@@ -564,10 +574,11 @@ onClick={async () => {
     selectedOrder !== null &&
     updatingOrderId === selectedOrder.id
   }
-  onClose={() => {
-    setDialogOpen(false);
-    setSelectedOrderIdLocal(null);
-  }}
+ onClose={() => {
+  setDialogOpen(false);
+  setSelectedOrder(null);
+  setSelectedOrderIdLocal(null);
+}}
   onStatusUpdate={(status) => {
     if (!selectedOrder) return;
 
