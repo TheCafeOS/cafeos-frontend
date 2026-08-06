@@ -652,10 +652,17 @@ export default function MenuPage() {
     >
       <div className="space-y-8">
         <section>
-          <h2 className="mb-6 text-xl font-semibold text-stone-900">
-            Categories
-          </h2>
+         <div className="mb-6 flex items-end justify-between">
+  <div>
+    <h2 className="text-2xl font-bold text-stone-900">
+      Categories
+    </h2>
 
+    <p className="mt-1 text-sm text-stone-500">
+      {categories.length} categor{categories.length === 1 ? "y" : "ies"}
+    </p>
+  </div>
+</div>
           <div className="space-y-6">
             {canManageMenu && (
               <div className="rounded-lg border border-stone-200 bg-white p-6">
@@ -744,9 +751,10 @@ export default function MenuPage() {
               <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
                 {categories.filter(Boolean).map((category) => (
                   <div
-                    key={category.id}
-                    className="flex items-center justify-between gap-4 border-b border-stone-200 px-6 py-4 last:border-b-0"
-                  >
+  key={category.id}
+  className="flex items-center justify-between gap-4 border-b border-stone-100 px-6 py-5 transition-all duration-200 hover:bg-amber-50/40 last:border-b-0"
+>
+
                     {editingCategoryId === category.id ? (
                       <>
                         <input
@@ -784,32 +792,50 @@ export default function MenuPage() {
                       </>
                     ) : (
                       <>
-                        <p className="font-medium text-stone-900">
-                          {category.name}
-                        </p>
-
+                       <div>
+  <p className="text-base font-semibold text-stone-900">
+    {category.name}
+  </p>
+</div>
                         <div className="flex gap-2">
                           {canManageMenu && (
                             <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleStartEditCategory(category)}
-                            >
-                              Edit
-                            </Button>
+  type="button"
+  size="sm"
+  variant="outline"
+  className="
+    rounded-lg
+    border-stone-300
+    px-4
+    text-stone-700
+    transition-all
+    hover:border-amber-300
+    hover:bg-amber-50
+    hover:text-amber-700
+  "
+  onClick={() => handleStartEditCategory(category)}
+>
+  Edit
+</Button>
                           )}
 
                           {canDeleteMenu && (
                             <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              aria-label={`Delete ${category.name} category`}
-                              onClick={() => void handleDeleteCategory(category)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
+  type="button"
+  size="icon"
+  variant="ghost"
+  aria-label={`Delete ${category.name} category`}
+  className="
+    rounded-lg
+    text-red-600
+    transition-all
+    hover:bg-red-50
+    hover:text-red-700
+  "
+  onClick={() => void handleDeleteCategory(category)}
+>
+  <Trash2 className="h-4 w-4" />
+</Button>
                           )}
                         </div>
                       </>
