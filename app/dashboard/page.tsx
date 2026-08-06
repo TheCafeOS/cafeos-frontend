@@ -51,6 +51,13 @@ function getStatusCount(
 ): number {
   return statusBreakdown.find((item) => item.status === status)?.count ?? 0;
 }
+const DASHBOARD_STATUS_STYLES = {
+  PENDING: "bg-amber-100 text-amber-800",
+  CONFIRMED: "bg-sky-100 text-sky-800",
+  PREPARING: "bg-violet-100 text-violet-800",
+  COMPLETED: "bg-emerald-100 text-emerald-800",
+  CANCELLED: "bg-red-100 text-red-800",
+};
 
 export default function DashboardPage() {
   useRelativeTime();
@@ -130,7 +137,7 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold text-stone-900">
-              Today&apos;s operations
+              Today&apos;s Overview
             </h2>
           </div>
 
@@ -167,7 +174,19 @@ export default function DashboardPage() {
         {!isLoading && !error && dashboard ? (
           <>
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+              <div className="
+  rounded-xl
+  border
+  border-stone-200
+  bg-white
+  p-5
+  shadow-sm
+  transition-all
+  duration-300
+  hover:-translate-y-1
+  hover:border-amber-300
+  hover:shadow-lg
+"      >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-stone-600">
                     Today&apos;s orders
@@ -184,7 +203,19 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+              <div className="
+  rounded-xl
+  border
+  border-stone-200
+  bg-white
+  p-5
+  shadow-sm
+  transition-all
+  duration-300
+  hover:-translate-y-1
+  hover:border-amber-300
+  hover:shadow-lg
+"              >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-stone-600">
                     Active orders
@@ -201,7 +232,20 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+              <div 
+className="
+  rounded-xl
+  border
+  border-stone-200
+  bg-white
+  p-5
+  shadow-sm
+  transition-all
+  duration-300
+  hover:-translate-y-1
+  hover:border-amber-300
+  hover:shadow-lg
+"              >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-stone-600">
                     Completed orders
@@ -218,7 +262,20 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+              <div 
+className="
+  rounded-xl
+  border
+  border-stone-200
+  bg-white
+  p-5
+  shadow-sm
+  transition-all
+  duration-300
+  hover:-translate-y-1
+  hover:border-amber-300
+  hover:shadow-lg
+"              >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-stone-600">
                     Today&apos;s revenue
@@ -258,17 +315,39 @@ export default function DashboardPage() {
                   {metrics.recentOrders.map((order) => (
                     <div
                       key={order.id}
-                      className="flex flex-wrap items-center justify-between gap-3 p-5"
+className="
+  flex
+  flex-wrap
+  items-center
+  justify-between
+  gap-3
+  rounded-lg
+  p-5
+  transition-all
+  duration-200
+  hover:bg-stone-50
+  hover:shadow-sm
+"
                     >
                       <div>
                         <p className="text-sm font-semibold text-stone-900">
                           {formatOrderReference(order.id)} · {order.tableName}
                         </p>
-
-                        <p className="mt-1 text-sm text-stone-600">
-                          {order.status.charAt(0) +
-                            order.status.slice(1).toLowerCase()}
-                        </p>
+<span
+  className={`
+    mt-2
+    inline-flex
+    rounded-full
+    px-2.5
+    py-1
+    text-xs
+    font-semibold
+    ${DASHBOARD_STATUS_STYLES[order.status]}
+  `}
+>
+  {order.status.charAt(0) +
+    order.status.slice(1).toLowerCase()}
+</span>
                       </div>
 
                       <div className="text-right">
@@ -285,10 +364,18 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="p-10 text-center text-sm text-stone-600">
-                  No customer orders yet. Orders placed through a table QR will
-                  appear here.
-                </div>
+               <div className="p-12 text-center">
+  <div className="text-4xl">📦</div>
+
+  <h3 className="mt-4 text-lg font-semibold text-stone-900">
+    No recent orders
+  </h3>
+
+  <p className="mt-2 text-sm text-stone-500">
+    Orders placed through the QR menu
+    will appear here.
+  </p>
+</div>
               )}
             </section>
           </>
