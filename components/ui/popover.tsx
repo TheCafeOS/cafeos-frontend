@@ -49,7 +49,7 @@ function PopoverContent({
             border-stone-100
             bg-white
             text-stone-900
-           shadow-[0_20px_60px_rgba(15,23,42,0.14)]
+       shadow-[0_8px_24px_rgba(0,0,0,0.08)]
 
             outline-none
 

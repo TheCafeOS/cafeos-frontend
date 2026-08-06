@@ -16,7 +16,7 @@ function getNotificationStyle(notification: Notification) {
       return {
         title: "New Order Received",
         accent: "border-l-blue-500",
-        amount: "text-blue-600",
+        amount: "text-stone-900",
         button:
           "border-blue-300 text-blue-600 hover:bg-blue-50",
       };
@@ -27,7 +27,7 @@ function getNotificationStyle(notification: Notification) {
           return {
             title: "Order Preparing",
             accent: "border-l-amber-500",
-            amount: "text-amber-600",
+           amount: "text-stone-900",
             button:
               "border-amber-300 text-amber-600 hover:bg-amber-50",
           };
@@ -36,7 +36,7 @@ function getNotificationStyle(notification: Notification) {
           return {
             title: "Order Completed",
             accent: "border-l-emerald-500",
-            amount: "text-emerald-600",
+            amount: "text-stone-900",
             button:
   "border-stone-300 text-stone-700 hover:bg-stone-50",
           };
@@ -106,10 +106,10 @@ export default function NotificationItem({
         py-1
         text-left
         transition-all
-        duration-200
-        hover:-translate-y-0.5
-        hover:border-stone-300
-        hover:shadow-md
+      duration-300 ease-out
+        hover:-translate-y-[2px]
+hover:border-stone-300
+hover:shadow-lg
       `}
     >
       {!notification.isRead && (
@@ -117,8 +117,8 @@ export default function NotificationItem({
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-stone-900">
+<div className="flex items-start justify-between gap-3">
+          <h3 className="text-base font-semibold text-stone-900">
           {style.title}
         </h3>
 
@@ -131,7 +131,7 @@ export default function NotificationItem({
 py-1
 text-[11px]
               font-medium
-              transition
+          transition-all duration-200
               ${style.button}
             `}
           >
@@ -180,8 +180,8 @@ text-[11px]
       </div>
 
       {/* Footer */}
-<div className="mt-3 flex items-center justify-between text-xs text-stone-500">
-          <span>
+<div className="mt-3 flex items-center text-xs text-stone-500">
+            <span>
           {notification.data.itemCount
             ? `${notification.data.itemCount} ${
                 notification.data.itemCount === 1

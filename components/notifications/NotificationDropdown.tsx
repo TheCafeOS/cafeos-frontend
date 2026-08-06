@@ -18,17 +18,29 @@ export default function NotificationDropdown({
 }: NotificationDropdownProps) {
   if (loading) {
     return (
-      <div className="w-[500px] overflow-hidden p-5">
-        <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="flex items-start gap-3">
-              <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
+      <div className="w-[560px]">
+        <div className="border-b border-stone-200 px-5 py-4">
+          <Skeleton className="h-6 w-40" />
+        </div>
 
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-3 w-20" />
+        <div className="space-y-2 p-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="rounded-xl border border-stone-200 p-4"
+            >
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-8 w-24 rounded-lg" />
               </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-5">
+                <Skeleton className="h-10" />
+                <Skeleton className="h-10" />
+                <Skeleton className="h-10" />
+              </div>
+
+              <Skeleton className="mt-4 h-4 w-28" />
             </div>
           ))}
         </div>
@@ -42,8 +54,18 @@ export default function NotificationDropdown({
 
   if (notifications.length === 0) {
     return (
-      <div className="w-[560px] p-10 text-center text-sm text-stone-500">
-        No notifications found.
+      <div className="w-[560px] p-10 text-center">
+        <div className="space-y-2">
+          <p className="text-lg">🔔</p>
+
+          <p className="font-medium text-stone-700">
+         You&apos;re all caught up
+          </p>
+
+          <p className="text-sm text-stone-500">
+            No new notifications.
+          </p>
+        </div>
       </div>
     );
   }
@@ -57,7 +79,7 @@ export default function NotificationDropdown({
 
         <button
           type="button"
-          className="text-sm font-medium text-amber-600 transition hover:text-amber-700"
+          className="text-sm font-medium text-amber-600 transition-colors hover:text-amber-700"
         >
           View all
         </button>
@@ -68,14 +90,28 @@ export default function NotificationDropdown({
           <button
             type="button"
             onClick={onMarkAllRead}
-            className="text-xs font-medium text-stone-500 transition hover:text-stone-900"
+            className="text-xs font-medium text-stone-500 transition-colors hover:text-stone-900"
           >
             Mark all as read
           </button>
         </div>
       )}
 
-      <div className="max-h-[560px] space-y-2 overflow-y-auto p-4">
+  <div
+  className="
+   max-h-[calc(100vh-180px)]
+    overflow-y-auto
+    px-4
+    pt-4
+    pb-6
+    pr-3
+    space-y-3
+    scrollbar-thin
+    scrollbar-thumb-stone-300
+    scrollbar-track-transparent
+  "
+>
+
         {notifications.map((notification) => (
           <NotificationItem
             key={notification.id}
