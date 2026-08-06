@@ -6,6 +6,7 @@ import { useRelativeTime } from "@/hooks/use-relative-time";
 import { Loader2, RefreshCw, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatRelativeTime } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
@@ -396,11 +397,41 @@ setStatusFilter(filter.value);}}                  >
           </div>
         ) : null}
 
-        {isLoading ? (
-          <div className="flex justify-center rounded-lg border border-stone-200 bg-stone-50 py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-stone-600" />
+      {isLoading ? (
+  <div className="space-y-4">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <div
+        key={index}
+        className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm"
+      >
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-4 w-40" />
           </div>
-        ) : null}
+
+          <Skeleton className="h-7 w-24 rounded-full" />
+        </div>
+
+        <div className="mt-5 space-y-3 border-t border-stone-100 pt-5">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+
+        <div className="mt-5 flex items-center justify-between border-t border-stone-100 pt-5">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-5 w-20" />
+        </div>
+
+        <div className="mt-5 flex gap-3 border-t border-stone-100 pt-5">
+          <Skeleton className="h-11 flex-1 rounded-lg" />
+          <Skeleton className="h-11 flex-1 rounded-lg" />
+        </div>
+      </div>
+    ))}
+  </div>
+) : null}
 
         {error && !isLoading ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4">
