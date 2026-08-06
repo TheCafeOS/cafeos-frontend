@@ -268,8 +268,12 @@ useEffect(() => {
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent align="end" sideOffset={8}>
-            <NotificationDropdown
+<PopoverContent
+  align="end"
+  sideOffset={8}
+  className="w-96 p-0 overflow-hidden"
+>
+              <NotificationDropdown
               notifications={notifications}
               loading={loadingNotifications}
               onNotificationClick={handleNotificationClick}

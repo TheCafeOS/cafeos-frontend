@@ -1,6 +1,8 @@
 import NotificationItem from "./NotificationItem";
 
 import type { Notification } from "@/types/notification";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 type NotificationDropdownProps = {
   notifications: Notification[];
@@ -15,13 +17,25 @@ export default function NotificationDropdown({
   onNotificationClick,
   onMarkAllRead,
 }: NotificationDropdownProps) {
-  if (loading) {
-    return (
-      <div className="w-96 p-4 text-center text-sm text-stone-500">
-        Loading notifications...
+ if (loading) {
+  return (
+    <div className="w-96 overflow-hidden p-4">
+      <div className="space-y-4">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="flex items-start gap-3">
+            <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
+
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-4 w-32 max-w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+        ))}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   const hasUnread = notifications.some((notification) => !notification.isRead);
 
