@@ -109,10 +109,9 @@ export default function DashboardPage() {
     }
 
     const activeOrderCount =
-      getStatusCount(dashboard.statusBreakdown, "PENDING") +
-      getStatusCount(dashboard.statusBreakdown, "CONFIRMED") +
-      getStatusCount(dashboard.statusBreakdown, "PREPARING") +
-      getStatusCount(dashboard.statusBreakdown, "READY");
+  getStatusCount(dashboard.statusBreakdown, "PENDING") +
+  getStatusCount(dashboard.statusBreakdown, "CONFIRMED") +
+  getStatusCount(dashboard.statusBreakdown, "PREPARING");
 
     return {
       todayOrderCount: dashboard.today.totalOrders,
@@ -203,7 +202,7 @@ export default function DashboardPage() {
                 </p>
 
                 <p className="mt-1 text-sm text-stone-500">
-                  Pending, accepted, preparing, or ready
+                  Pending, accepted or preparing
                 </p>
               </div>
 

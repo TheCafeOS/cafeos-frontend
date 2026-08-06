@@ -433,8 +433,12 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
           );
         }
 
-        setCurrentOrder(unwrapApiResponse<CurrentOrder>(responseBody));
-      } catch (caughtError) {
+const updatedOrder =
+  unwrapApiResponse<CurrentOrder>(responseBody);
+
+console.log("Fetched latest order:", updatedOrder);
+
+setCurrentOrder(updatedOrder);      } catch (caughtError) {
         setCurrentOrderError(
           caughtError instanceof Error
             ? caughtError.message
@@ -594,12 +598,17 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
     });
 
     socket.on("ORDER_UPDATED", (payload: OrderUpdatedPayload) => {
-      if (payload.orderId !== currentOrderIdRef.current) {
-        return;
-      }
+  console.log("ORDER_UPDATED received:", payload);
 
-      void fetchCurrentOrder(payload.orderId, false);
-    });
+  if (payload.orderId !== currentOrderIdRef.current) {
+    console.log("Ignoring different order");
+    return;
+  }
+
+  console.log("Fetching updated order...");
+
+  void fetchCurrentOrder(payload.orderId, false);
+});
 
     return () => {
       socket.disconnect();

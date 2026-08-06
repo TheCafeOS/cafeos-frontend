@@ -15,16 +15,13 @@ export function useOwnerOrderSocket({
   useEffect(() => {
     const socket = getSocket();
 
-    const handleOrderCreated = () => {
-      
-      onOrderCreated();
-    };
+  const handleOrderCreated = () => {
+  onOrderCreated();
+};
 
-    const handleOrderUpdated = () => {
-     
-      
-      onOrderUpdated();
-    };
+const handleOrderUpdated = () => {
+  onOrderUpdated();
+};
 
     socket.on("ORDER_CREATED", handleOrderCreated);
     socket.on("ORDER_UPDATED", handleOrderUpdated);

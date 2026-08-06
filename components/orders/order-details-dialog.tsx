@@ -18,8 +18,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: "Pending",
   CONFIRMED: "Accepted",
   PREPARING: "Preparing",
-  READY: "Ready",
-  COMPLETED: "Completed",
+  COMPLETED: "Delivered",
   CANCELLED: "Cancelled",
 };
 
@@ -27,16 +26,14 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
   PENDING: "bg-amber-100 text-amber-800",
   CONFIRMED: "bg-sky-100 text-sky-800",
   PREPARING: "bg-violet-100 text-violet-800",
-  READY: "bg-emerald-100 text-emerald-800",
-  COMPLETED: "bg-stone-200 text-stone-700",
+  COMPLETED: "bg-emerald-100 text-emerald-800",
   CANCELLED: "bg-red-100 text-red-800",
 };
 
 const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   PENDING: "CONFIRMED",
   CONFIRMED: "PREPARING",
-  PREPARING: "READY",
-  READY: "COMPLETED",
+  PREPARING: "COMPLETED",
 };
 
 function formatPrice(price: number | string) {

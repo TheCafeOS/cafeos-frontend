@@ -56,19 +56,32 @@ const ORDER_STEPS = [
     description: "Your items are being prepared.",
   },
   {
-    status: "READY",
-    title: "Ready",
-    description: "Your order is ready to be served.",
-  },
-  {
     status: "COMPLETED",
-    title: "Completed",
-    description: "Your order has been completed. Thank you.",
+    title: "Delivered",
+    description: "Your order has been delivered. Enjoy your meal!",
   },
 ] as const;
 
 function formatStatus(status: string) {
-  return status.charAt(0) + status.slice(1).toLowerCase();
+  switch (status) {
+    case "PENDING":
+      return "Pending";
+
+    case "CONFIRMED":
+      return "Accepted";
+
+    case "PREPARING":
+      return "Preparing";
+
+    case "COMPLETED":
+      return "Delivered";
+
+    case "CANCELLED":
+      return "Cancelled";
+
+    default:
+      return status;
+  }
 }
 
 function getCurrentStepIndex(status: string) {
