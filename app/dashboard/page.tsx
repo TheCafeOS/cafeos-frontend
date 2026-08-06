@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
@@ -146,11 +147,7 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center rounded-xl border border-stone-200 bg-stone-50 py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-stone-600" />
-          </div>
-        ) : null}
+        {isLoading ? <DashboardSkeleton /> : null}
 
         {error && !isLoading ? (
           <div className="rounded-xl border border-red-200 bg-red-50 p-5">
