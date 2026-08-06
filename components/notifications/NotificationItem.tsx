@@ -87,6 +87,86 @@ export default function NotificationItem({
   useRelativeTime();
 
   const style = getNotificationStyle(notification);
+if (notification.type === "LOYALTY_REWARD") {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="
+        group
+        relative
+        w-full
+        rounded-xl
+        border
+        border-stone-200
+        border-l-4
+        border-l-violet-500
+        bg-white
+        px-4
+        py-3
+        text-left
+        transition-all
+        duration-300
+        ease-out
+        hover:-translate-y-[2px]
+        hover:border-stone-300
+        hover:shadow-lg
+      "
+    >
+      {!notification.isRead && (
+        <span className="absolute right-4 top-4 h-2.5 w-2.5 rounded-full bg-orange-500" />
+      )}
+
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-semibold text-stone-900">
+          🎉 Loyalty Reward
+        </h3>
+
+        <span className="rounded-lg border border-violet-300 px-2.5 py-1 text-[11px] font-medium text-violet-600">
+          Reward
+        </span>
+      </div>
+
+      <p className="mt-3 text-sm text-stone-600">
+        {notification.message}
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-5">
+        <div>
+          <p className="text-[11px] uppercase tracking-wider text-stone-400">
+            Reward
+          </p>
+
+          <p className="mt-1 text-[16px] font-semibold text-stone-900">
+            {notification.data.rewardName ?? "-"}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-[11px] uppercase tracking-wider text-stone-400">
+            Order ID
+          </p>
+
+          <p className="mt-1 text-[16px] font-semibold text-stone-900">
+            {notification.data.orderId
+              ? `#${notification.data.orderId
+                  .slice(-6)
+                  .toUpperCase()}`
+              : "-"}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center text-xs text-stone-500">
+        <span>
+          {notification.data.rewardCount ?? 1} Reward
+          {" • "}
+          {formatRelativeTime(notification.createdAt)}
+        </span>
+      </div>
+    </button>
+  );
+}
 
   return (
     <button

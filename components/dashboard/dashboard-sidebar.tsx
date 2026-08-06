@@ -46,10 +46,10 @@ useEffect(() => {
     employee?.role === "OWNER"
       ? [
           {
-            href: "/dashboard",
-            label: "Overview",
-            icon: LayoutGrid,
-          },
+  href: "/dashboard",
+  label: "Dashboard",
+  icon: LayoutGrid,
+},
           {
             href: "/dashboard/orders",
             label: "Orders",
@@ -94,10 +94,10 @@ useEffect(() => {
       : employee?.role === "MANAGER"
         ? [
             {
-              href: "/dashboard",
-              label: "Overview",
-              icon: LayoutGrid,
-            },
+  href: "/dashboard",
+  label: "Dashboard",
+  icon: LayoutGrid,
+},
             {
               href: "/dashboard/orders",
               label: "Orders",
