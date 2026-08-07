@@ -931,7 +931,7 @@ const showPopular =
       {/* Sticky root: header + search + categories. No hero, no
           collapsing — every offset below is a fixed spacing value. */}
       <div className="sticky top-0 z-20">
-       <RestaurantHeader
+   <RestaurantHeader
   restaurant={menu.restaurant}
   tableName={menu.table.name}
   cartItemCount={cartItemCount}
@@ -939,6 +939,7 @@ const showPopular =
   onOpenCart={() => setIsCartOpen(true)}
   onOpenOrder={() => setIsOrderDrawerOpen(true)}
   onOpenLoyalty={() => setIsLoyaltyOpen(true)}
+  onOpenRestaurantInfo={() => setIsInfoOpen(true)}
 />
 
         <div className="border-b border-white/5 bg-[#0F1115]/95 shadow-sm backdrop-blur-xl">
@@ -1330,16 +1331,7 @@ const showPopular =
         </div>
       </div>
 
-{hasAnyContactInfo && (
-  <button
-    type="button"
-    onClick={() => setIsInfoOpen(true)}
-    aria-label="Restaurant Information"
-    className="fixed bottom-28 right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#171A20]/95 text-orange-400 shadow-xl backdrop-blur-xl transition hover:scale-105 hover:bg-[#1D2128] active:scale-95"
-  >
-    <Info className="h-5 w-5" />
-  </button>
-)}
+
 
 <Sheet open={isLoyaltyOpen} onOpenChange={setIsLoyaltyOpen}>
   <SheetContent
@@ -1365,7 +1357,7 @@ const showPopular =
 <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
 <DialogContent
   className="
-    max-w-xl
+    max-w-2xl
     rounded-3xl
     border-white/10
     bg-[#171A20]
@@ -1374,27 +1366,27 @@ const showPopular =
   "
 >
 
-<DialogHeader className="border-b border-white/10 px-8 py-6">
+<DialogHeader className="border-b border-white/10 px-8 py-7">
     <DialogTitle className="flex items-center gap-3 text-left text-2xl font-bold text-white">
-        <Info className="h-6 w-6 text-orange-400" />
+        <Info className="h-7 w-7 text-orange-400" />
        Restaurant Information
     </DialogTitle>
 </DialogHeader>
 
 <div>
     <div className="mx-auto max-w-2xl px-5 py-8 sm:px-8 text-center">
-            <h2 className="text-xl sm:text-2xl font-bold leading-tight tracking-tight text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight text-white">
         {menu.restaurant.name}
       </h2>
 
       {menu.restaurant.tagline && (
-        <p className="mt-2 text-sm sm:text-sm text-neutral-400">
+        <p className="mt-23 text-base sm:text-sm text-neutral-400">
           {menu.restaurant.tagline}
         </p>
       )}
 
       {menu.restaurant.cuisineType && (
-        <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-orange-400">
+        <p className="mt-3 text-xm font-semibold uppercase tracking-wider text-orange-400">
           {menu.restaurant.cuisineType}
         </p>
       )}

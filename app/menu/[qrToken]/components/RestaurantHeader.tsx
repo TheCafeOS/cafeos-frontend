@@ -5,6 +5,7 @@ import {
   Building2,
   ShoppingBag,
   Gift,
+  Info,
 } from "lucide-react";
 
 
@@ -37,6 +38,7 @@ type RestaurantHeaderProps = {
   onOpenCart: () => void;
   onOpenOrder: () => void;
   onOpenLoyalty: () => void;
+  onOpenRestaurantInfo: () => void;
 };
 
 export default function RestaurantHeader({
@@ -46,8 +48,10 @@ export default function RestaurantHeader({
   currentOrder,
   onOpenCart,
   onOpenOrder,
-  onOpenLoyalty,
-}: RestaurantHeaderProps) {
+ onOpenLoyalty,
+onOpenRestaurantInfo,
+}: RestaurantHeaderProps)
+ {
 
   const isOpen = restaurant.isOpen ?? true;
 
@@ -77,21 +81,35 @@ export default function RestaurantHeader({
                   {restaurant.name}
                 </p>
 
-                <div className="mt-1 flex flex-col gap-1 text-[11px] sm:text-xs text-neutral-500">
+                <div className="mt-1.5 flex flex-col gap-1 text-[11px] sm:text-xs text-neutral-500">
                   <span className="truncate">{tableName}</span>
 
-                  <span
-                    className={`flex items-center gap-1.5 ${
-                      isOpen ? "text-green-400" : "text-neutral-500"
-                    }`}
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        isOpen ? "bg-green-400" : "bg-neutral-500"
-                      }`}
-                    />
-                    {isOpen ? "Open Now" : "Closed"}
-                  </span>
+<div className="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm">
+    <span
+    className={`flex items-center gap-1.5 ${
+      isOpen ? "text-green-400" : "text-neutral-500"
+    }`}
+  >
+    <span
+      className={`h-1.5 w-1.5 rounded-full ${
+        isOpen ? "bg-green-400" : "bg-neutral-500"
+      }`}
+    />
+    {isOpen ? "Open Now" : "Closed"}
+  </span>
+
+  <span className="text-neutral-700">•</span>
+
+  <button
+    type="button"
+    onClick={onOpenRestaurantInfo}
+className="group flex items-center gap-1.5 text-xs sm:text-sm font-medium text-neutral-200 hover:text-orange-400 transition-colors duration-200 hover:text-orange-400"
+  >
+<Info className="h-5 w-5 opacity-80 transition-opacity group-hover:opacity-100" />    <span>Restaurant Info</span>
+  </button>
+</div>
+
+
                 </div>
               </div>
             </div>
@@ -137,7 +155,3 @@ export default function RestaurantHeader({
     </>
   );
 }
-
-
-
-
