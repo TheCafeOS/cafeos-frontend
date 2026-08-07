@@ -5,12 +5,6 @@ import {
   Loader2,
   Search,
   SlidersHorizontal,
-  Coffee,
-  Pizza,
-  Sandwich,
-  IceCreamCone,
-  CupSoda,
-  Soup,
   UtensilsCrossed,
 } from "lucide-react";
 import RestaurantHeader from "./components/RestaurantHeader";
@@ -127,20 +121,7 @@ if (!API_BASE_URL) {
 
 // Best-effort icon per category name — purely cosmetic, falls back to
 // a generic utensils icon. Doesn't touch the API contract.
-function getCategoryIcon(name: string) {
-  const key = name.toLowerCase();
 
-  if (key.includes("coffee") || key.includes("espresso")) return Coffee;
-  if (key.includes("pizza")) return Pizza;
-  if (key.includes("burger")) return Sandwich;
-  if (key.includes("dessert") || key.includes("cake") || key.includes("ice"))
-    return IceCreamCone;
-  if (key.includes("tea") || key.includes("juice") || key.includes("drink"))
-    return CupSoda;
-  if (key.includes("soup") || key.includes("pasta")) return Soup;
-
-  return UtensilsCrossed;
-}
 
 function unwrapApiResponse<T>(body: ApiResponse<T> | T): T {
   if (
@@ -937,8 +918,8 @@ const showPopular =
         />
 
         <div className="border-b border-white/5 bg-[#0F1115]/95 shadow-sm backdrop-blur-xl">
-          {/* Header → Search: 20px */}
-          <div className="mx-auto max-w-5xl px-4 pb-3 pt-4 sm:px-6">
+          {/* Header → Search: generous breathing room, feels like its own section */}
+          <div className="mx-auto max-w-5xl px-4 pb-5 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-neutral-500" />
 
@@ -947,7 +928,7 @@ const showPopular =
                 placeholder="Search dishes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-white/5 bg-[#171A20] py-3 pl-11 pr-11 text-neutral-100 shadow-inner outline-none transition placeholder:text-neutral-500 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
+                className="w-full rounded-xl border border-white/10 bg-[#171A20] py-4 pl-11 pr-11 text-neutral-100 shadow-md outline-none transition-all duration-200 placeholder:text-neutral-500 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
               />
 
               {isDesktopFilterViewport ? (
@@ -956,7 +937,7 @@ const showPopular =
                     <button
                       type="button"
                       aria-label="Filters"
-                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-neutral-200"
+                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-neutral-400 transition-all duration-200 hover:bg-white/5 hover:text-neutral-200"
                     >
                       <SlidersHorizontal className="h-4 w-4" />
                       {hasActiveFilters ? (
@@ -993,7 +974,7 @@ const showPopular =
                     <button
                       type="button"
                       aria-label="Filters"
-                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-neutral-200"
+                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-neutral-400 transition-all duration-200 hover:bg-white/5 hover:text-neutral-200"
                     >
                       <SlidersHorizontal className="h-4 w-4" />
                       {hasActiveFilters ? (
@@ -1030,8 +1011,8 @@ const showPopular =
               )}
             </div>
 
-            {/* Search → fCategories: 16px */}
-            <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {/* Search → Categories: extra breathing room */}
+            <div className="mt-6 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               <button
                 type="button"
                 onClick={() => {
@@ -1044,7 +1025,7 @@ const showPopular =
                     });
                   });
                 }}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap transition active:scale-95 ${
+                className={`flex items-center gap-2 rounded-full px-5 py-3.5 text-[15px] font-medium whitespace-nowrap transition-all duration-200 active:scale-95 ${
                   activeCategory === "all"
                     ? "bg-orange-500 text-white"
                     : "bg-[#171A20] text-neutral-300 hover:bg-white/10"
@@ -1054,7 +1035,6 @@ const showPopular =
               </button>
 
               {categories.map((category) => {
-                const Icon = getCategoryIcon(category.name);
                 const isActive = activeCategory === category.id;
 
                 return (
@@ -1069,13 +1049,13 @@ const showPopular =
                         block: "start",
                       });
                     }}
-                    className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap transition active:scale-95 ${
+                    className={`flex items-center gap-2 rounded-full px-5 py-3.5 text-[15px] font-medium whitespace-nowrap transition-all duration-200 active:scale-95 ${
                       isActive
                         ? "bg-orange-500 text-white"
                         : "bg-[#171A20] text-neutral-300 hover:bg-white/10"
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
+          
                     {category.name}
                   </button>
                 );
@@ -1086,7 +1066,7 @@ const showPopular =
       </div>
 
       {orderMessage ? (
-        <div className="mx-auto mt-5 max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto mt-6 max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
             {orderMessage}
           </div>
@@ -1094,38 +1074,30 @@ const showPopular =
       ) : null}
 
       {orderError ? (
-        <div className="mx-auto mt-5 max-w-5xl px-5 sm:px-8">
+        <div className="mx-auto mt-6 max-w-5xl px-5 sm:px-8">
           <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {orderError}
           </div>
         </div>
       ) : null}
 
-      <LoyaltyCard
-        program={loyaltyProgram}
-        profile={loyaltyProfile}
-        isLoading={loyaltyLoading}
-        error={loyaltyError}
-        emptyMessage="Place your first order to unlock loyalty rewards."
-      />
-
-      {/* Categories → Popular: 28px */}
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
+      {/* Categories → Popular: generous breathing room */}
+      <div className="mx-auto w-full max-w-5xl px-4 pt-8 sm:px-6 sm:pt-10 lg:px-8">
         {showPopular && (
           <section
             ref={popularSectionRef}
-            className="mb-9 scroll-mt-48 animate-[menuFadeIn_0.25s_ease-out]"
+            className="mb-14 scroll-mt-48 animate-[menuFadeIn_0.25s_ease-out] rounded-3xl border border-white/5 bg-[#14171C] p-5 sm:p-6"
           >
-            <div className="mb-5 flex items-end justify-between">
+            <div className="mb-6 flex items-end justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-orange-500">
                   Popular Today
                 </p>
-                <h2 className="mt-1 text-[26px] font-bold leading-tight text-neutral-100">
+                <h2 className="mt-1 text-3xl font-bold leading-tight text-neutral-100">
                   Most Ordered Today
                 </h2>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Customer favourites
+                  Freshly prepared favourites
                 </p>
               </div>
 
@@ -1141,14 +1113,14 @@ const showPopular =
                     });
                   });
                 }}
-                className="shrink-0 text-sm font-semibold text-orange-400 transition hover:text-orange-300"
+                className="shrink-0 text-sm font-semibold text-orange-400 transition-colors duration-200 hover:text-orange-300"
               >
-                View All →
+                View all
               </button>
             </div>
 
-<div className="-mx-5 flex gap-5 overflow-x-auto scrollbar-hide px-5 pb-2 sm:-mx-8 sm:px-8">              {featuredItems.map((item) => (
-                <div key={`featured-${item.id}`} className="w-[170px] xs:w-[180px] sm:w-[190px] shrink-0">
+<div className="-mx-5 flex gap-5 overflow-x-auto scrollbar-hide px-5 pb-2 sm:-mx-6 sm:px-6">              {featuredItems.map((item) => (
+                <div key={`featured-${item.id}`} className="w-[170px] xs:w-[180px] sm:w-[190px] shrink-0 transition-transform duration-200">
                   <MenuCard
                     item={item}
                     formatPrice={formatPrice}
@@ -1204,12 +1176,17 @@ const showPopular =
               <section
                 key={category.id}
                 id={`category-${category.id}`}
-                className="mb-9 scroll-mt-48"
+                className="mb-8 scroll-mt-48 rounded-3xl border border-white/5 bg-[#14171C] p-5 sm:p-6"
               >
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-neutral-100">
-                    {category.name}
-                  </h2>
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-semibold text-neutral-100">
+                      {category.name}
+                    </h2>
+                    <p className="mt-1 text-sm font-medium text-neutral-500">
+                      {categoryItems.length} {categoryItems.length === 1 ? "item" : "items"}
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={() => {
@@ -1222,13 +1199,13 @@ const showPopular =
                         });
                       });
                     }}
-                    className="flex items-center gap-1 text-sm font-medium text-orange-400 transition hover:text-orange-300"
+                    className="shrink-0 text-sm font-medium text-orange-400 transition-colors duration-200 hover:text-orange-300"
                   >
-                    {categoryItems.length} Items →
+                    View
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-5">
                   {categoryItems.map((item) => (
                     <MenuCard
                       key={item.id}
@@ -1257,12 +1234,17 @@ const showPopular =
           })}
 
           {activeCategory === "all" && uncategorizedItems.length > 0 ? (
-            <section className="mb-9">
-              <h2 className="mb-4 text-xl font-bold text-neutral-100">
-                More items
-              </h2>
+            <section className="mb-8 rounded-3xl border border-white/5 bg-[#14171C] p-5 sm:p-6">
+              <div className="mb-5">
+                <h2 className="text-2xl font-semibold text-neutral-100">
+                  More items
+                </h2>
+                <p className="mt-1 text-sm font-medium text-neutral-500">
+                  {uncategorizedItems.length} {uncategorizedItems.length === 1 ? "item" : "items"}
+                </p>
+              </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-5">
                 {uncategorizedItems.map((item) => (
                   <MenuCard
                     key={item.id}
@@ -1292,16 +1274,16 @@ const showPopular =
           {filteredMenuItems.filter(
             (item) => activeCategory === "all" || item.categoryId === activeCategory,
           ).length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-[#171A20] p-12 text-center">
+            <div className="flex min-h-[50vh] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-[#171A20] px-6 py-16 text-center sm:py-20">
               <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-500/10">
                 <UtensilsCrossed className="h-10 w-10 text-orange-400" />
               </div>
 
-              <h3 className="mt-4 text-xl font-semibold text-neutral-100">
+              <h3 className="mt-6 text-xl font-semibold text-neutral-100">
                 No dishes found
               </h3>
 
-              <p className="mt-2 text-neutral-400">
+              <p className="mt-3 max-w-xs text-neutral-400">
                 {searchQuery.trim()
                   ? "No dishes matched your search."
                   : hasActiveFilters
@@ -1311,6 +1293,16 @@ const showPopular =
             </div>
           ) : null}
         </div>
+      </div>
+
+      <div className="mx-auto mt-14 w-full max-w-5xl px-4 sm:px-6 lg:px-8">
+        <LoyaltyCard
+          program={loyaltyProgram}
+          profile={loyaltyProfile}
+          isLoading={loyaltyLoading}
+          error={loyaltyError}
+          emptyMessage="Place your first order to unlock loyalty rewards."
+        />
       </div>
 
       <CartBar
