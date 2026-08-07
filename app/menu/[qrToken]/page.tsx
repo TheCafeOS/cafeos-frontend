@@ -6,6 +6,8 @@ import {
   Search,
   SlidersHorizontal,
   UtensilsCrossed,
+  ChevronRight,
+  Info,
 } from "lucide-react";
 import RestaurantHeader from "./components/RestaurantHeader";
 import { io } from "socket.io-client";
@@ -49,16 +51,24 @@ type PublicMenuResponse = {
     status: string;
   };
 
-  restaurant: {
-    id: string;
-    name: string;
-    slug: string;
-    logoUrl: string | null;
-    coverImageUrl: string | null;
-    tagline: string | null;
-    cuisineType: string | null;
-    themeColor: string | null;
-  };
+restaurant: {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  coverImageUrl: string | null;
+  tagline: string | null;
+  cuisineType: string | null;
+  themeColor: string | null;
+
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  whatsapp?: string |null;
+  instagramUrl?: string | null;
+  mapsUrl?: string | null;
+  openingHours?: string | null;
+};
 
   categories: Category[];
   menuItems: MenuItem[];
@@ -349,6 +359,9 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [loyaltyProfile, setLoyaltyProfile] = useState<LoyaltyCustomerProfile | null>(null);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [loyaltyError, setLoyaltyError] = useState("");
+
+  const [isLoyaltyOpen, setIsLoyaltyOpen] = useState(false);
+const [isInfoOpen, setIsInfoOpen] = useState(false);
   const categories = useMemo(() => menu?.categories ?? [], [menu?.categories]);
   const menuItems = useMemo(() => menu?.menuItems ?? [], [menu?.menuItems]);
   const isDesktopFilterViewport = useIsDesktopViewport();
@@ -891,31 +904,15 @@ const showPopular =
       {/* Sticky root: header + search + categories. No hero, no
           collapsing — every offset below is a fixed spacing value. */}
       <div className="sticky top-0 z-20">
-        <RestaurantHeader
-          restaurant={menu.restaurant}
-          tableName={menu.table.name}
-          cartItemCount={cartItemCount}
-          currentOrder={currentOrder}
-          onOpenCart={() => setIsCartOpen(true)}
-          onOpenOrder={() => setIsOrderDrawerOpen(true)}
-          onNavigateMenu={() => {
-            goToAllCategories({ showFullMenu: false });
-
-            window.scrollTo({
-              top: 0,
-              behavior: "smooth",
-            });
-          }}
-          onNavigatePopular={() => {
-            goToAllCategories({ showFullMenu: false });
-            requestAnimationFrame(() => {
-              popularSectionRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
-            });
-          }}
-        />
+       <RestaurantHeader
+  restaurant={menu.restaurant}
+  tableName={menu.table.name}
+  cartItemCount={cartItemCount}
+  currentOrder={currentOrder}
+  onOpenCart={() => setIsCartOpen(true)}
+  onOpenOrder={() => setIsOrderDrawerOpen(true)}
+  onOpenLoyalty={() => setIsLoyaltyOpen(true)}
+/>
 
         <div className="border-b border-white/5 bg-[#0F1115]/95 shadow-sm backdrop-blur-xl">
           {/* Header → Search: generous breathing room, feels like its own section */}
@@ -928,7 +925,7 @@ const showPopular =
                 placeholder="Search dishes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#171A20] py-4 pl-11 pr-11 text-neutral-100 shadow-md outline-none transition-all duration-200 placeholder:text-neutral-500 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
+                className="w-full rounded-xl border border-white/10 bg-[#171A20] py-4 pl-11 pr-11 text-neutral-100 shadow-md outline-none transition-all duration-200 placeholder:text-neutral-500 hover:border-white/20 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
               />
 
               {isDesktopFilterViewport ? (
@@ -1025,10 +1022,10 @@ const showPopular =
                     });
                   });
                 }}
-                className={`flex items-center gap-2 rounded-full px-5 py-3.5 text-[15px] font-medium whitespace-nowrap transition-all duration-200 active:scale-95 ${
+                className={`flex items-center gap-2 rounded-full border px-5 py-3.5 text-[15px] font-medium whitespace-nowrap transition-all duration-200 active:scale-95 ${
                   activeCategory === "all"
-                    ? "bg-orange-500 text-white"
-                    : "bg-[#171A20] text-neutral-300 hover:bg-white/10"
+                    ? "border-orange-500 bg-orange-500 text-white shadow-md shadow-orange-500/20"
+                    : "border-white/5 bg-[#1B1F26] text-neutral-300 hover:-translate-y-0.5 hover:border-orange-500/20 hover:bg-white/10"
                 }`}
               >
                 All
@@ -1049,10 +1046,10 @@ const showPopular =
                         block: "start",
                       });
                     }}
-                    className={`flex items-center gap-2 rounded-full px-5 py-3.5 text-[15px] font-medium whitespace-nowrap transition-all duration-200 active:scale-95 ${
+                    className={`flex items-center gap-2 rounded-full border px-5 py-3.5 text-[15px] font-medium whitespace-nowrap transition-all duration-200 active:scale-95 ${
                       isActive
-                        ? "bg-orange-500 text-white"
-                        : "bg-[#171A20] text-neutral-300 hover:bg-white/10"
+                        ? "border-orange-500 bg-orange-500 text-white shadow-md shadow-orange-500/20"
+                        : "border-white/5 bg-[#1B1F26] text-neutral-300 hover:-translate-y-0.5 hover:border-orange-500/20 hover:bg-white/10"
                     }`}
                   >
           
@@ -1086,14 +1083,14 @@ const showPopular =
         {showPopular && (
           <section
             ref={popularSectionRef}
-            className="mb-14 scroll-mt-48 animate-[menuFadeIn_0.25s_ease-out] rounded-3xl border border-white/5 bg-[#14171C] p-5 sm:p-6"
+            className="mb-14 scroll-mt-48 animate-[menuFadeIn_0.25s_ease-out] rounded-[28px] border border-white/5 bg-[#14171C] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.15)] sm:p-7"
           >
-            <div className="mb-6 flex items-end justify-between">
+            <div className="mb-8 flex items-end justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-orange-500">
                   Popular Today
                 </p>
-                <h2 className="mt-1 text-3xl font-bold leading-tight text-neutral-100">
+                <h2 className="mt-0.5 text-3xl font-bold leading-tight text-neutral-100">
                   Most Ordered Today
                 </h2>
                 <p className="mt-1 text-sm text-neutral-500">
@@ -1119,7 +1116,7 @@ const showPopular =
               </button>
             </div>
 
-<div className="-mx-5 flex gap-5 overflow-x-auto scrollbar-hide px-5 pb-2 sm:-mx-6 sm:px-6">              {featuredItems.map((item) => (
+<div className="-mx-5 flex gap-5 overflow-x-auto scrollbar-hide px-5 pb-2 sm:-mx-7 sm:px-7">              {featuredItems.map((item) => (
                 <div key={`featured-${item.id}`} className="w-[170px] xs:w-[180px] sm:w-[190px] shrink-0 transition-transform duration-200">
                   <MenuCard
                     item={item}
@@ -1176,14 +1173,14 @@ const showPopular =
               <section
                 key={category.id}
                 id={`category-${category.id}`}
-                className="mb-8 scroll-mt-48 rounded-3xl border border-white/5 bg-[#14171C] p-5 sm:p-6"
+                className="mb-6 scroll-mt-48 rounded-3xl border border-white/[0.04] bg-[#14171C] px-4 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.10)] sm:px-5 sm:py-3.5"
               >
-                <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="mb-3 flex items-end justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-semibold text-neutral-100">
+                    <h2 className="text-3xl font-bold tracking-tight leading-tight text-neutral-100">
                       {category.name}
                     </h2>
-                    <p className="mt-1 text-sm font-medium text-neutral-500">
+                    <p className="mt-1 text-xs font-medium text-neutral-400">
                       {categoryItems.length} {categoryItems.length === 1 ? "item" : "items"}
                     </p>
                   </div>
@@ -1199,21 +1196,70 @@ const showPopular =
                         });
                       });
                     }}
-                    className="shrink-0 text-sm font-medium text-orange-400 transition-colors duration-200 hover:text-orange-300"
+                    className="group flex shrink-0 items-center gap-1 text-sm font-medium text-neutral-300 transition-colors duration-200 hover:text-orange-400"
                   >
-                    View
+                    View all
+                    <ChevronRight className="h-4 w-4 transition-transform duration-200 ease-out group-hover:translate-x-1" />
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-5">
+                <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth px-4 pb-1 scrollbar-hide sm:-mx-5 sm:px-5">
                   {categoryItems.map((item) => (
-                    <MenuCard
+                    <div
                       key={item.id}
+                      className="w-[78%] shrink-0 snap-start transition-transform duration-200 hover:-translate-y-0.5 xs:w-[62%] sm:w-[46%] lg:w-[38%] xl:w-[28%]"
+                    >
+                      <MenuCard
+                        item={item}
+                        formatPrice={formatPrice}
+                        isFeatured
+                        quantity={
+                          cart.find((cartItem) => cartItem.id === item.id)
+                            ?.quantity ?? 0
+                        }
+                        onAddToCart={() => addToCart(item)}
+                        onIncrease={() => addToCart(item)}
+                        onDecrease={() => {
+                          const current = cart.find(
+                            (cartItem) => cartItem.id === item.id,
+                          );
+
+                          if (current) {
+                            updateQuantity(item.id, current.quantity - 1);
+                          }
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+
+          {activeCategory === "all" && uncategorizedItems.length > 0 ? (
+            <section className="mb-6 rounded-3xl border border-white/[0.04] bg-[#14171C] px-4 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.10)] sm:px-5 sm:py-3.5">
+              <div className="mb-3">
+                <h2 className="text-3xl font-bold tracking-tight leading-tight text-neutral-100">
+                  More items
+                </h2>
+                <p className="mt-1 text-xs font-medium text-neutral-400">
+                  {uncategorizedItems.length} {uncategorizedItems.length === 1 ? "item" : "items"}
+                </p>
+              </div>
+
+              <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth px-4 pb-1 scrollbar-hide sm:-mx-5 sm:px-5">
+                {uncategorizedItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="w-[78%] shrink-0 snap-start transition-transform duration-200 hover:-translate-y-0.5 xs:w-[62%] sm:w-[46%] lg:w-[38%] xl:w-[28%]"
+                  >
+                    <MenuCard
                       item={item}
                       formatPrice={formatPrice}
+                      isFeatured
                       quantity={
-                        cart.find((cartItem) => cartItem.id === item.id)
-                          ?.quantity ?? 0
+                        cart.find((cartItem) => cartItem.id === item.id)?.quantity ??
+                        0
                       }
                       onAddToCart={() => addToCart(item)}
                       onIncrease={() => addToCart(item)}
@@ -1227,45 +1273,7 @@ const showPopular =
                         }
                       }}
                     />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-
-          {activeCategory === "all" && uncategorizedItems.length > 0 ? (
-            <section className="mb-8 rounded-3xl border border-white/5 bg-[#14171C] p-5 sm:p-6">
-              <div className="mb-5">
-                <h2 className="text-2xl font-semibold text-neutral-100">
-                  More items
-                </h2>
-                <p className="mt-1 text-sm font-medium text-neutral-500">
-                  {uncategorizedItems.length} {uncategorizedItems.length === 1 ? "item" : "items"}
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-5">
-                {uncategorizedItems.map((item) => (
-                  <MenuCard
-                    key={item.id}
-                    item={item}
-                    formatPrice={formatPrice}
-                    quantity={
-                      cart.find((cartItem) => cartItem.id === item.id)?.quantity ??
-                      0
-                    }
-                    onAddToCart={() => addToCart(item)}
-                    onIncrease={() => addToCart(item)}
-                    onDecrease={() => {
-                      const current = cart.find(
-                        (cartItem) => cartItem.id === item.id,
-                      );
-
-                      if (current) {
-                        updateQuantity(item.id, current.quantity - 1);
-                      }
-                    }}
-                  />
+                  </div>
                 ))}
               </div>
             </section>
@@ -1295,15 +1303,121 @@ const showPopular =
         </div>
       </div>
 
-      <div className="mx-auto mt-14 w-full max-w-5xl px-4 sm:px-6 lg:px-8">
-        <LoyaltyCard
-          program={loyaltyProgram}
-          profile={loyaltyProfile}
-          isLoading={loyaltyLoading}
-          error={loyaltyError}
-          emptyMessage="Place your first order to unlock loyalty rewards."
-        />
+     <button
+  type="button"
+  onClick={() => setIsInfoOpen(true)}
+  aria-label="Restaurant Information"
+  className="fixed bottom-28 left-5 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#171A20]/95 text-orange-400 shadow-xl backdrop-blur-xl transition hover:scale-105 hover:bg-[#1D2128] active:scale-95"
+>
+  <Info className="h-5 w-5" />
+</button>
+<Sheet open={isLoyaltyOpen} onOpenChange={setIsLoyaltyOpen}>
+  <SheetContent
+    side="bottom"
+    className="max-h-[85vh] rounded-t-3xl border-white/10 bg-[#171A20] text-neutral-100"
+  >
+    <SheetHeader>
+      <SheetTitle>Loyalty Rewards</SheetTitle>
+    </SheetHeader>
+
+    <div className="mt-6">
+      <LoyaltyCard
+        program={loyaltyProgram}
+        profile={loyaltyProfile}
+        isLoading={loyaltyLoading}
+        error={loyaltyError}
+        emptyMessage="Place your first order to unlock loyalty rewards."
+      />
+    </div>
+  </SheetContent>
+</Sheet>
+
+<Sheet open={isInfoOpen} onOpenChange={setIsInfoOpen}>
+  <SheetContent
+    side="bottom"
+    className="max-h-[85vh] overflow-y-auto rounded-t-3xl border-white/10 bg-[#171A20] text-neutral-100"
+  >
+    <SheetHeader>
+      <SheetTitle>Restaurant Information</SheetTitle>
+    </SheetHeader>
+
+    <div className="mt-6 space-y-4">
+
+      <div>
+        <p className="text-xl font-bold">{menu.restaurant.name}</p>
+
+        {menu.restaurant.tagline && (
+          <p className="text-sm text-neutral-400 mt-1">
+            {menu.restaurant.tagline}
+          </p>
+        )}
       </div>
+
+      {menu.restaurant.cuisineType && (
+        <div>
+          <p className="text-xs uppercase text-neutral-500">
+            Cuisine
+          </p>
+
+          <p>{menu.restaurant.cuisineType}</p>
+        </div>
+      )}
+
+      {menu.restaurant.address && (
+        <div>
+          <p className="text-xs uppercase text-neutral-500">
+            Address
+          </p>
+
+          <p>{menu.restaurant.address}</p>
+        </div>
+      )}
+
+      {menu.restaurant.phone && (
+        <div>
+          <p className="text-xs uppercase text-neutral-500">
+            Phone
+          </p>
+
+          <a
+            href={`tel:${menu.restaurant.phone}`}
+            className="text-orange-400"
+          >
+            {menu.restaurant.phone}
+          </a>
+        </div>
+      )}
+
+      {menu.restaurant.email && (
+        <div>
+          <p className="text-xs uppercase text-neutral-500">
+            Email
+          </p>
+
+          <a
+            href={`mailto:${menu.restaurant.email}`}
+            className="text-orange-400"
+          >
+            {menu.restaurant.email}
+          </a>
+        </div>
+      )}
+
+      {menu.restaurant.mapsUrl && (
+        <a
+          href={menu.restaurant.mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block rounded-xl bg-orange-500 py-3 text-center font-semibold text-white"
+        >
+          Open in Google Maps
+        </a>
+      )}
+
+    </div>
+  </SheetContent>
+</Sheet>
+
 
       <CartBar
         itemCount={cartItemCount}

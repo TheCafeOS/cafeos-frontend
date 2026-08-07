@@ -135,7 +135,7 @@ function MenuCardImage({
         className="absolute inset-0"
         style={{ transform, transformOrigin: "center center" }}
       >
-        <div className="h-full w-full transition-transform duration-500 group-hover:scale-105">
+        <div className="h-full w-full transition-transform duration-[400ms] ease-out group-hover:scale-[1.03]">
           <Image
             src={item.imageUrl}
             alt={item.name}
@@ -154,6 +154,12 @@ function MenuCardImage({
 //   button floats bottom-right over the content.
 // - default (full menu list): compact horizontal card — image left,
 //   content right — per spec ("no massive white cards").
+//
+// NOTE: as of the current page.tsx, every call site passes isFeatured
+// (Popular Today rail, category grids, and "More items"), so this is
+// effectively the only layout in use today. The description is
+// rendered in both branches so it displays correctly regardless of
+// which one a given call site uses, now or if that changes later.
 export default function MenuCard({
   item,
   formatPrice,
@@ -168,8 +174,8 @@ export default function MenuCard({
   // ---------- Popular Today (vertical) ----------
   if (isFeatured) {
     return (
-      <article className="group relative overflow-hidden rounded-3xl bg-[#171A20] shadow-lg shadow-black/20 transition-transform duration-300 hover:-translate-y-1">
-        <div className="relative h-28 w-full overflow-hidden sm:h-32">
+      <article className="group relative overflow-hidden rounded-3xl bg-[#171A20] shadow-lg shadow-black/20 transition-transform duration-200 ease-out hover:-translate-y-[3px]">
+        <div className="relative mx-2 mt-2 h-32 overflow-hidden rounded-xl sm:h-36">
           <MenuCardImage
             item={item}
             sizes="220px"
@@ -185,12 +191,18 @@ export default function MenuCard({
         </div>
 
         <div className="p-3">
-          <h3 className="truncate text-sm font-bold text-neutral-100 sm:text-[15px]">
+          <h3 className="truncate text-sm font-bold tracking-tight text-neutral-100 sm:text-[15px]">
             {item.name}
           </h3>
 
-          <div className="mt-1 flex items-center justify-between">
-            <span className="text-sm font-bold text-orange-400">
+          {item.description && (
+            <p className="mt-1.5 line-clamp-2 text-sm leading-[1.45] text-neutral-300">
+              {item.description}
+            </p>
+          )}
+
+          <div className="mt-2.5 flex items-center justify-between">
+            <span className="text-base font-semibold text-orange-400">
               {formatPrice(item.price)}
             </span>
 
@@ -203,16 +215,16 @@ export default function MenuCard({
             )}
           </div>
 
-          <div className="mt-3">
+          <div className="mt-4">
             {quantity === 0 ? (
               <button
                 type="button"
                 disabled={isUnavailable}
                 onClick={onAddToCart}
                 aria-label="Add to cart"
-                className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-white shadow-md transition hover:bg-orange-600 active:scale-90 disabled:bg-neutral-700 disabled:text-neutral-500"
+                className="ml-auto flex h-[42px] w-[42px] items-center justify-center rounded-full bg-orange-500 text-white shadow-lg shadow-orange-500/25 transition-transform duration-200 ease-out hover:scale-105 hover:bg-orange-600 active:scale-90 disabled:bg-neutral-700 disabled:text-neutral-500 disabled:shadow-none"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-5 w-5" />
               </button>
             ) : (
               <QuantityStepper
@@ -251,9 +263,11 @@ export default function MenuCard({
           </span>
         </div>
 
-        <p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-400 sm:text-[13px]">
-          {item.description || "Freshly prepared and served with care."}
-        </p>
+        {item.description && (
+          <p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-400 sm:text-[13px]">
+            {item.description}
+          </p>
+        )}
 
         <div className="mt-auto flex items-center justify-between pt-1.5">
           {isUnavailable ? (
