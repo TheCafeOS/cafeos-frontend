@@ -8,7 +8,17 @@ import {
   UtensilsCrossed,
   ChevronRight,
   Info,
+  Phone,
+  Camera,
 } from "lucide-react";
+
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+
 import RestaurantHeader from "./components/RestaurantHeader";
 import { io } from "socket.io-client";
 
@@ -892,6 +902,10 @@ const showPopular =
   activeCategory === "all" &&
   featuredItems.length >= 3 &&
   !searchQuery.trim();
+  const instagramHandle = menu.restaurant.instagramUrl
+  ?.replace(/^https?:\/\/(www\.)?instagram\.com\//, "")
+  ?.replace(/^@/, "")
+  ?.replace(/\/$/, "");
   return (
    <main className="min-h-screen overflow-x-hidden bg-[#0F1115] pb-32">
       <style>{`
@@ -1302,15 +1316,15 @@ const showPopular =
           ) : null}
         </div>
       </div>
-
-     <button
+<button
   type="button"
   onClick={() => setIsInfoOpen(true)}
   aria-label="Restaurant Information"
-  className="fixed bottom-28 left-5 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#171A20]/95 text-orange-400 shadow-xl backdrop-blur-xl transition hover:scale-105 hover:bg-[#1D2128] active:scale-95"
+  className="fixed bottom-28 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#171A20]/95 text-orange-400 shadow-xl backdrop-blur-xl transition hover:scale-105 hover:bg-[#1D2128] active:scale-95"
 >
   <Info className="h-5 w-5" />
 </button>
+
 <Sheet open={isLoyaltyOpen} onOpenChange={setIsLoyaltyOpen}>
   <SheetContent
     side="bottom"
@@ -1332,91 +1346,106 @@ const showPopular =
   </SheetContent>
 </Sheet>
 
-<Sheet open={isInfoOpen} onOpenChange={setIsInfoOpen}>
-  <SheetContent
-    side="bottom"
-    className="max-h-[85vh] overflow-y-auto rounded-t-3xl border-white/10 bg-[#171A20] text-neutral-100"
-  >
-    <SheetHeader>
-      <SheetTitle>Restaurant Information</SheetTitle>
-    </SheetHeader>
+<Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
+<DialogContent
+  className="
+    max-w-2xl
+    rounded-3xl
+    border-white/10
+    bg-[#171A20]
+    p-0
+    text-neutral-100
+  "
+>
 
-    <div className="mt-6 space-y-4">
+<DialogHeader className="border-b border-white/10 px-8 py-6">
+    <DialogTitle className="flex items-center gap-3 text-left text-2xl font-bold text-white">
+        <Info className="h-6 w-6 text-orange-400" />
+        Restaurant Information
+    </DialogTitle>
+</DialogHeader>
 
-      <div>
-        <p className="text-xl font-bold">{menu.restaurant.name}</p>
+<div className="max-h-[75vh] overflow-y-auto">
+    <div className="mx-auto max-w-2xl px-5 py-8 sm:px-8 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold leading-tight tracking-tight text-white">
+        {menu.restaurant.name}
+      </h2>
 
-        {menu.restaurant.tagline && (
-          <p className="text-sm text-neutral-400 mt-1">
-            {menu.restaurant.tagline}
-          </p>
-        )}
-      </div>
+      {menu.restaurant.tagline && (
+        <p className="mt-4 text-sm sm:text-base lg:text-xl text-neutral-400">
+          {menu.restaurant.tagline}
+        </p>
+      )}
 
       {menu.restaurant.cuisineType && (
-        <div>
-          <p className="text-xs uppercase text-neutral-500">
-            Cuisine
-          </p>
-
-          <p>{menu.restaurant.cuisineType}</p>
-        </div>
+        <p className="mt-6 text-sm sm:text-base lg:text-lg font-semibold text-orange-400">
+          {menu.restaurant.cuisineType}
+        </p>
       )}
 
-      {menu.restaurant.address && (
-        <div>
-          <p className="text-xs uppercase text-neutral-500">
-            Address
-          </p>
-
-          <p>{menu.restaurant.address}</p>
-        </div>
-      )}
-
-      {menu.restaurant.phone && (
-        <div>
-          <p className="text-xs uppercase text-neutral-500">
-            Phone
-          </p>
-
-          <a
-            href={`tel:${menu.restaurant.phone}`}
-            className="text-orange-400"
-          >
-            {menu.restaurant.phone}
-          </a>
-        </div>
-      )}
-
-      {menu.restaurant.email && (
-        <div>
-          <p className="text-xs uppercase text-neutral-500">
-            Email
-          </p>
-
-          <a
-            href={`mailto:${menu.restaurant.email}`}
-            className="text-orange-400"
-          >
-            {menu.restaurant.email}
-          </a>
-        </div>
-      )}
-
-      {menu.restaurant.mapsUrl && (
+      <div className="mt-4 space-y-6 text-left">
         <a
-          href={menu.restaurant.mapsUrl}
+          href={menu.restaurant.instagramUrl || "#"}
           target="_blank"
           rel="noopener noreferrer"
-          className="block rounded-xl bg-orange-500 py-3 text-center font-semibold text-white"
+          className={`group flex items-center justify-between rounded-2xl border border-white/10 bg-[#1B1F26] px-5 py-4 sm:px-6 sm:py-5 ${
+            menu.restaurant.instagramUrl
+              ? "hover:border-orange-500/20 hover:bg-[#232833]"
+              : "pointer-events-none opacity-60"
+          }`}
         >
-          Open in Google Maps
-        </a>
-      )}
+          <div className="flex items-center gap-5">
+            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-orange-500/10">
+              <Camera className="h-6 w-6 sm:h-7 sm:w-7 text-orange-400" />
+            </div>
 
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-neutral-300">
+                Instagram
+              </p>
+
+              <p className="mt-2 text-lg sm:text-xl font-semibold text-orange-400">
+                {instagramHandle
+                  ? `@${instagramHandle}`
+                  : "Coming Soon"}
+              </p>
+            </div>
+          </div>
+
+          <ChevronRight className="h-7 w-7 text-neutral-400 transition group-hover:translate-x-1" />
+        </a>
+
+        <a
+          href={menu.restaurant.phone ? `tel:${menu.restaurant.phone}` : "#"}
+          className={`group flex items-center justify-between rounded-2xl border border-white/10 bg-[#1B1F26] px-5 py-4 sm:px-6 sm:py-5 ${
+            menu.restaurant.phone
+              ? "hover:border-orange-500/20 hover:bg-[#232833]"
+              : "pointer-events-none opacity-60"
+          }`}
+        >
+          <div className="flex items-center gap-5">
+            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-orange-500/10">
+              <Phone className="h-6 w-6 sm:h-7 sm:w-7 text-orange-400" />
+            </div>
+
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-neutral-300">
+                Contact Us
+              </p>
+
+              <p className="mt-2 text-lg sm:text-xl font-semibold text-orange-400">
+                {menu.restaurant.phone || "Coming Soon"}
+              </p>
+            </div>
+          </div>
+
+          <ChevronRight className="h-7 w-7 text-neutral-400 transition group-hover:translate-x-1" />
+        </a>
+      </div>
     </div>
-  </SheetContent>
-</Sheet>
+    </div>
+ </DialogContent>
+</Dialog>
 
 
       <CartBar
