@@ -55,6 +55,7 @@ import type { CreateMenuItemPayload, FoodType, MenuItem } from "@/types/menu-ite
 
 import { useElementSize } from "@/lib/use-element-size";
 import { getImageTransform } from "@/lib/image-framing";
+import { FolderOpen } from "lucide-react";
 
 // Renders a menu item's image using its saved (normalized) framing,
 // converted to pixels for this card's own live container size via the
@@ -783,110 +784,94 @@ const [isDeletingCategory, setIsDeletingCategory] =
               />
             ) : null}
 
-            {!isLoadingCategories &&
-            !categoryError &&
-            categories.length > 0 ? (
-              <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
-                {categories.filter(Boolean).map((category) => (
-                  <div
-  key={category.id}
-  className="flex items-center justify-between gap-4 border-b border-stone-100 px-6 py-5 transition-all duration-200 hover:bg-amber-50/40 last:border-b-0"
->
+          {!isLoadingCategories &&
+          !categoryError &&
+          categories.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {categories.filter(Boolean).map((category) => (
+                <div
+                  key={category.id}
+                  className="flex flex-col rounded-2xl border border-stone-200 bg-white p-5 transition-all duration-200 hover:-translate-y-1 hover:border-amber-300 hover:shadow-lg"
+                  >
+                  {editingCategoryId === category.id ? (
+                    <>
+                      <input
+                        type="text"
+                        value={editingCategoryName}
+                        onChange={(event) =>
+                          setEditingCategoryName(event.target.value)
+                        }
+                        className="mb-4 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                      />
 
-                    {editingCategoryId === category.id ? (
-                      <>
-                        <input
-                          type="text"
-                          value={editingCategoryName}
-                          onChange={(event) =>
-                            setEditingCategoryName(event.target.value)
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            void handleSaveEditCategory(category.id)
                           }
-                          className="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-                        />
+                        >
+                          <Check className="h-4 w-4 text-green-600" />
+                        </Button>
 
-                        <div className="flex w-full justify-end gap-2 sm:w-auto">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={handleCancelEditCategory}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="mb-6">
+                        <h3 className="line-clamp-2 text-xl font-semibold text-stone-900">
+                          {category.name}
+                        </h3>
+                      </div>
+
+                      <div className="mt-auto flex items-center gap-2">
+                        {canManageMenu && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 rounded-xl border-stone-300 hover:border-amber-300 hover:bg-amber-50"
+                            onClick={() => handleStartEditCategory(category)}
+                          >
+                            Edit
+                          </Button>
+                        )}
+
+                        {canDeleteMenu && (
                           <Button
                             type="button"
                             size="icon"
                             variant="ghost"
-                            aria-label="Save category name"
-                            onClick={() =>
-                              void handleSaveEditCategory(category.id)
-                            }
+                            className="rounded-xl text-red-600 hover:bg-red-50"
+                            onClick={() => {
+                              setCategoryToDelete(category);
+                              setCategoryDeleteDialogOpen(true);
+                            }}
                           >
-                            <Check className="h-4 w-4 text-green-600" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : null}
 
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            aria-label="Cancel editing category"
-                            onClick={handleCancelEditCategory}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                       <div>
-  <p className="text-base font-semibold text-stone-900">
-    {category.name}
-  </p>
-</div>
-                        <div className="flex gap-2">
-                          {canManageMenu && (
-                            <Button
-  type="button"
-  size="sm"
-  variant="outline"
-  className="
-    rounded-lg
-    border-stone-300
-    px-4
-    text-stone-700
-    transition-all
-    hover:border-amber-300
-    hover:bg-amber-50
-    hover:text-amber-700
-  "
-  onClick={() => handleStartEditCategory(category)}
->
-  Edit
-</Button>
-                          )}
-
-                          {canDeleteMenu && (
-                            <Button
-  type="button"
-  size="icon"
-  variant="ghost"
-  aria-label={`Delete ${category.name} category`}
-  className="
-    rounded-lg
-    text-red-600
-    transition-all
-    hover:bg-red-50
-    hover:text-red-700
-  "
-onClick={() => {
-  setCategoryToDelete(category);
-  setCategoryDeleteDialogOpen(true);
-}}
->
-  <Trash2 className="h-4 w-4" />
-</Button>
-                          )}
-                        </div>
-                      </>
-                    )}
                   </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
+                </section>
+
 
         <section className="border-t-2 border-stone-200 pt-8">
           <h2 className="mb-6 text-xl font-semibold text-stone-900">

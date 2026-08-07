@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Info,
   Phone,
+  Mail,
   Camera,
 } from "lucide-react";
 
@@ -906,6 +907,18 @@ const showPopular =
   ?.replace(/^https?:\/\/(www\.)?instagram\.com\//, "")
   ?.replace(/^@/, "")
   ?.replace(/\/$/, "");
+
+  // Drives whether the floating Info button (and therefore the dialog it
+  // opens) shows up at all. If the restaurant hasn't filled in any of
+  // Instagram/phone/email, there's nothing useful to show, so we skip
+  // rendering the entry point entirely rather than opening a dialog that
+  // just says "nothing here yet".
+  const hasAnyContactInfo = Boolean(
+    menu.restaurant.instagramUrl ||
+    menu.restaurant.phone ||
+    menu.restaurant.email,
+  );
+
   return (
    <main className="min-h-screen overflow-x-hidden bg-[#0F1115] pb-32">
       <style>{`
@@ -1316,14 +1329,17 @@ const showPopular =
           ) : null}
         </div>
       </div>
-<button
-  type="button"
-  onClick={() => setIsInfoOpen(true)}
-  aria-label="Restaurant Information"
-  className="fixed bottom-28 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#171A20]/95 text-orange-400 shadow-xl backdrop-blur-xl transition hover:scale-105 hover:bg-[#1D2128] active:scale-95"
->
-  <Info className="h-5 w-5" />
-</button>
+
+{hasAnyContactInfo && (
+  <button
+    type="button"
+    onClick={() => setIsInfoOpen(true)}
+    aria-label="Restaurant Information"
+    className="fixed bottom-28 right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-[#171A20]/95 text-orange-400 shadow-xl backdrop-blur-xl transition hover:scale-105 hover:bg-[#1D2128] active:scale-95"
+  >
+    <Info className="h-5 w-5" />
+  </button>
+)}
 
 <Sheet open={isLoyaltyOpen} onOpenChange={setIsLoyaltyOpen}>
   <SheetContent
@@ -1349,7 +1365,7 @@ const showPopular =
 <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
 <DialogContent
   className="
-    max-w-2xl
+    max-w-xl
     rounded-3xl
     border-white/10
     bg-[#171A20]
@@ -1361,86 +1377,108 @@ const showPopular =
 <DialogHeader className="border-b border-white/10 px-8 py-6">
     <DialogTitle className="flex items-center gap-3 text-left text-2xl font-bold text-white">
         <Info className="h-6 w-6 text-orange-400" />
-        Restaurant Information
+       Restaurant Information
     </DialogTitle>
 </DialogHeader>
 
-<div className="max-h-[75vh] overflow-y-auto">
+<div>
     <div className="mx-auto max-w-2xl px-5 py-8 sm:px-8 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold leading-tight tracking-tight text-white">
+            <h2 className="text-xl sm:text-2xl font-bold leading-tight tracking-tight text-white">
         {menu.restaurant.name}
       </h2>
 
       {menu.restaurant.tagline && (
-        <p className="mt-4 text-sm sm:text-base lg:text-xl text-neutral-400">
+        <p className="mt-2 text-sm sm:text-sm text-neutral-400">
           {menu.restaurant.tagline}
         </p>
       )}
 
       {menu.restaurant.cuisineType && (
-        <p className="mt-6 text-sm sm:text-base lg:text-lg font-semibold text-orange-400">
+        <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-orange-400">
           {menu.restaurant.cuisineType}
         </p>
       )}
 
-      <div className="mt-4 space-y-6 text-left">
-        <a
-          href={menu.restaurant.instagramUrl || "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`group flex items-center justify-between rounded-2xl border border-white/10 bg-[#1B1F26] px-5 py-4 sm:px-6 sm:py-5 ${
-            menu.restaurant.instagramUrl
-              ? "hover:border-orange-500/20 hover:bg-[#232833]"
-              : "pointer-events-none opacity-60"
-          }`}
-        >
-          <div className="flex items-center gap-5">
-            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-orange-500/10">
-              <Camera className="h-6 w-6 sm:h-7 sm:w-7 text-orange-400" />
+      {/* Only real, filled-in contact channels render here. A channel
+          with no value (no Instagram, no phone, no email) is omitted
+          entirely rather than shown as a disabled "Coming Soon" card —
+          same convention as Google Maps / Zomato / Swiggy business
+          listings, which never advertise missing information. */}
+      <div className="mt-4 space-y-4 text-left">
+        {menu.restaurant.instagramUrl && (
+          <a
+            href={menu.restaurant.instagramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center justify-between rounded-2xl border border-white/10 bg-[#1B1F26] px-5 py-4 sm:px-6 hover:border-orange-500/20 hover:bg-[#232833]"
+          >
+            <div className="flex items-center gap-5">
+              <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-orange-500/10">
+                <Camera className="h-6 w-6 sm:h-7 sm:w-7 text-orange-400" />
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-neutral-300">
+                  Instagram
+                </p>
+
+                <p className="mt-2 text-lg sm:text-xl font-semibold text-orange-400">
+                  @{instagramHandle}
+                </p>
+              </div>
             </div>
 
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-neutral-300">
-                Instagram
-              </p>
+          </a>
+        )}
 
-              <p className="mt-2 text-lg sm:text-xl font-semibold text-orange-400">
-                {instagramHandle
-                  ? `@${instagramHandle}`
-                  : "Coming Soon"}
-              </p>
-            </div>
-          </div>
+        {menu.restaurant.phone && (
+          <a
+            href={`tel:${menu.restaurant.phone}`}
+            className="group flex items-center justify-between rounded-2xl border border-white/10 bg-[#1B1F26] px-5 py-4 sm:px-6 hover:border-orange-500/20 hover:bg-[#232833]"
+          >
+            <div className="flex items-center gap-5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10">
+                <Phone className="h-6 w-6 sm:h-7 sm:w-7 text-orange-400" />
+              </div>
 
-          <ChevronRight className="h-7 w-7 text-neutral-400 transition group-hover:translate-x-1" />
-        </a>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-neutral-300">
+                  Contact Us
+                </p>
 
-        <a
-          href={menu.restaurant.phone ? `tel:${menu.restaurant.phone}` : "#"}
-          className={`group flex items-center justify-between rounded-2xl border border-white/10 bg-[#1B1F26] px-5 py-4 sm:px-6 sm:py-5 ${
-            menu.restaurant.phone
-              ? "hover:border-orange-500/20 hover:bg-[#232833]"
-              : "pointer-events-none opacity-60"
-          }`}
-        >
-          <div className="flex items-center gap-5">
-            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-orange-500/10">
-              <Phone className="h-6 w-6 sm:h-7 sm:w-7 text-orange-400" />
+                <p className="mt-2 text-lg sm:text-xl font-semibold text-orange-400">
+                  {menu.restaurant.phone}
+                </p>
+              </div>
             </div>
 
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-neutral-300">
-                Contact Us
-              </p>
+          </a>
+        )}
 
-              <p className="mt-2 text-lg sm:text-xl font-semibold text-orange-400">
-                {menu.restaurant.phone || "Coming Soon"}
-              </p>
+        {menu.restaurant.email && (
+          <a
+            href={`mailto:${menu.restaurant.email}`}
+            className="group flex items-center justify-between rounded-2xl border border-white/10 bg-[#1B1F26] px-5 py-4 sm:px-6 sm:py-5 hover:border-orange-500/20 hover:bg-[#232833]"
+          >
+            <div className="flex items-center gap-5">
+              <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-orange-500/10">
+                <Mail className="h-6 w-6 sm:h-7 sm:w-7 text-orange-400" />
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-neutral-300">
+                  Email
+                </p>
+
+             <p className="mt-1 break-all text-sm sm:text-base font-semibold leading-5 text-orange-400">
+    {menu.restaurant.email}
+</p>
+
+              </div>
             </div>
-          </div>
 
-          <ChevronRight className="h-7 w-7 text-neutral-400 transition group-hover:translate-x-1" />
-        </a>
+          </a>
+        )}
       </div>
     </div>
     </div>
