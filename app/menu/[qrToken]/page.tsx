@@ -1503,6 +1503,7 @@ onOpenLoyalty={
         customerPhone={customerPhone}
         isPlacingOrder={isPlacingOrder}
         total={cartTotal}
+        loyaltyEnabled={Boolean(loyaltyProgram)}
         formatPrice={formatPrice}
         onClose={() => setIsCartOpen(false)}
         onPhoneChange={setCustomerPhone}
