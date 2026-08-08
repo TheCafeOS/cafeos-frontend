@@ -37,7 +37,7 @@ type RestaurantHeaderProps = {
   currentOrder: CurrentOrder | null;
   onOpenCart: () => void;
   onOpenOrder: () => void;
-  onOpenLoyalty: () => void;
+onOpenLoyalty?: () => void;
   onOpenRestaurantInfo: () => void;
 };
 
@@ -121,15 +121,16 @@ className="group flex items-center gap-1.5 text-xs sm:text-sm font-medium text-n
                   onClick={onOpenOrder}
                 />
               )}
-
-              <button
-                type="button"
-                aria-label="Loyalty Rewards"
-              onClick={onOpenLoyalty}
-                className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/10 bg-neutral-800 text-orange-400 transition-colors duration-200 hover:border-orange-400/30 hover:bg-neutral-700 active:scale-95"
-              >
-                <Gift className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
-              </button>
+{onOpenLoyalty && (
+  <button
+    type="button"
+    aria-label="Loyalty Rewards"
+    onClick={onOpenLoyalty}
+    className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/10 bg-neutral-800 text-orange-400 transition-colors duration-200 hover:border-orange-400/30 hover:bg-neutral-700 active:scale-95"
+  >
+    <Gift className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
+  </button>
+)}
 
               <button
                 type="button"

@@ -944,7 +944,9 @@ const showPopular =
   currentOrder={currentOrder}
   onOpenCart={() => setIsCartOpen(true)}
   onOpenOrder={() => setIsOrderDrawerOpen(true)}
-  onOpenLoyalty={() => setIsLoyaltyOpen(true)}
+onOpenLoyalty={
+  loyaltyProgram ? () => setIsLoyaltyOpen(true) : undefined
+}
   onOpenRestaurantInfo={() => setIsInfoOpen(true)}
 />
 
