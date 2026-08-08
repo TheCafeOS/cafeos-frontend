@@ -43,6 +43,17 @@ export interface LoyaltyCustomerProfile {
   rewards: LoyaltyReward[];
   progress: LoyaltyProgress;
 }
+export interface PublicLoyaltyCustomer {
+  phone: string;
+  visitCount: number;
+  progressCount: number;
+}
+
+export interface PublicLoyaltyCustomerProfile {
+  customer: PublicLoyaltyCustomer;
+  rewards: LoyaltyReward[];
+  progress: LoyaltyProgress;
+}
 
 /* -------------------- Loyalty Customers List -------------------- */
 

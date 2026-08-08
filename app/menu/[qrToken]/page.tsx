@@ -48,7 +48,10 @@ import {
   getPublicCustomerLoyaltyProfile,
   getPublicLoyaltyProgram,
 } from "@/services/public-loyalty.service";
-import type { LoyaltyCustomerProfile, LoyaltyProgram } from "@/types/loyalty";
+import type {
+  PublicLoyaltyCustomerProfile,
+  LoyaltyProgram,
+} from "@/types/loyalty";
 
 type Category = {
   id: string;
@@ -367,7 +370,9 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [isRefreshingOrder, setIsRefreshingOrder] = useState(false);
   const [currentOrderError, setCurrentOrderError] = useState("");
   const [loyaltyProgram, setLoyaltyProgram] = useState<LoyaltyProgram | null>(null);
-  const [loyaltyProfile, setLoyaltyProfile] = useState<LoyaltyCustomerProfile | null>(null);
+const [loyaltyProfile, setLoyaltyProfile] =
+  useState<PublicLoyaltyCustomerProfile | null>(null);
+  
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [loyaltyError, setLoyaltyError] = useState("");
 
@@ -386,16 +391,17 @@ const [isInfoOpen, setIsInfoOpen] = useState(false);
       setLoyaltyLoading(true);
       setLoyaltyError("");
 
-      const program = await getPublicLoyaltyProgram(qrToken);
-      setLoyaltyProgram(program);
+    const program = await getPublicLoyaltyProgram(qrToken);
 
-      if (!phone) {
-        setLoyaltyProfile(null);
-        return;
-      }
+setLoyaltyProgram(program);
 
-      const profile = await getPublicCustomerLoyaltyProfile(qrToken, phone);
-      setLoyaltyProfile(profile);
+if (!program || !phone) {
+  setLoyaltyProfile(null);
+  return;
+}
+
+const profile = await getPublicCustomerLoyaltyProfile(qrToken, phone);
+setLoyaltyProfile(profile);
     } catch (error) {
       console.error(error);
       setLoyaltyError("We could not load loyalty details right now.");
@@ -1013,7 +1019,7 @@ const showPopular =
                     className="max-h-[85vh] overflow-y-auto rounded-t-3xl border-white/10 bg-[#171A20] text-neutral-100"
                   >
                     <SheetHeader className="text-left">
-                      <SheetTitle className="text-neutral-100">
+<SheetTitle className="text-xl font-semibold text-neutral-100 sm:text-2xl">
                         Filter &amp; Sort
                       </SheetTitle>
                     </SheetHeader>
@@ -1332,18 +1338,19 @@ const showPopular =
       </div>
 
 
-
 <Sheet open={isLoyaltyOpen} onOpenChange={setIsLoyaltyOpen}>
   <SheetContent
     side="bottom"
-    className="max-h-[85vh] rounded-t-3xl border-white/10 bg-[#171A20] text-neutral-100"
+    className="flex max-h-[85vh] flex-col overflow-hidden rounded-t-3xl border-white/10 bg-[#171A20] text-neutral-100"
   >
-    <SheetHeader>
-      <SheetTitle>Loyalty Rewards</SheetTitle>
+    <SheetHeader className="shrink-0">
+      <SheetTitle className="text-xl font-semibold text-neutral-100 sm:text-2xl">
+        Loyalty Rewards
+      </SheetTitle>
     </SheetHeader>
 
-    <div className="mt-6">
-      <LoyaltyCard
+<div className="mt-2 min-h-0 flex-1 overflow-y-auto scrollbar-hide pb-8">
+        <LoyaltyCard
         program={loyaltyProgram}
         profile={loyaltyProfile}
         isLoading={loyaltyLoading}
@@ -1353,6 +1360,8 @@ const showPopular =
     </div>
   </SheetContent>
 </Sheet>
+
+
 
 <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
 <DialogContent
