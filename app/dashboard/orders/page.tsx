@@ -112,16 +112,17 @@ const [pagination, setPagination] = useState({
   hasPreviousPage: false,
 });
 
-const [tableFilter, setTableFilter] = useState("");
-const [fromDate, setFromDate] = useState("");
-const [toDate, setToDate] = useState("");
-const [sort, setSort] = useState<
+const [tableFilter] = useState("");
+const [fromDate] = useState("");
+const [toDate] = useState("");
+const [sort] = useState<
   "createdAt" | "status" | "total"
 >("createdAt");
 
-const [order, setOrder] = useState<"asc" | "desc">("desc");
-const [selectedOrderIdLocal, setSelectedOrderIdLocal] =
+const [order] = useState<"asc" | "desc">("desc");
+const [, setSelectedOrderIdLocal] =
   useState<string | null>(null);
+  
 const [selectedOrder, setSelectedOrder] =
   useState<RestaurantOrder | null>(null);
 const [dialogOpen, setDialogOpen] = useState(false);
