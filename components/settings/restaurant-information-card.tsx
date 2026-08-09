@@ -2,7 +2,12 @@
 
 import Image from "next/image";
 import { ChangeEvent, useMemo, useRef, useState } from "react";
-import { Building2, Camera, ImageIcon } from "lucide-react";
+import {
+  Building2,
+  Camera,
+  ImageIcon,
+  Clock3,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +26,80 @@ import type {
   UpdateSettingsRequest,
 } from "@/types/settings";
 
+import {
+  DAY_KEYS,
+  type DayKey,
+  type OpeningHours,
+} from "@/types/opening-hours";
+
+const DAY_LABELS: Record<DayKey, string> = {
+  monday: "Monday",
+  tuesday: "Tuesday",
+  wednesday: "Wednesday",
+  thursday: "Thursday",
+  friday: "Friday",
+  saturday: "Saturday",
+  sunday: "Sunday",
+};
+
+function createDefaultOpeningHours(): OpeningHours {
+  return {
+    monday: {
+      isOpen: false,
+      open: null,
+      close: null,
+    },
+    tuesday: {
+      isOpen: false,
+      open: null,
+      close: null,
+    },
+    wednesday: {
+      isOpen: false,
+      open: null,
+      close: null,
+    },
+    thursday: {
+      isOpen: false,
+      open: null,
+      close: null,
+    },
+    friday: {
+      isOpen: false,
+      open: null,
+      close: null,
+    },
+    saturday: {
+      isOpen: false,
+      open: null,
+      close: null,
+    },
+    sunday: {
+      isOpen: false,
+      open: null,
+      close: null,
+    },
+  };
+}
+
+function cloneOpeningHours(
+  openingHours: OpeningHours | null,
+): OpeningHours | null {
+  if (!openingHours) {
+    return null;
+  }
+
+  return DAY_KEYS.reduce((result, day) => {
+    result[day] = {
+      isOpen: openingHours[day]?.isOpen ?? false,
+      open: openingHours[day]?.open ?? null,
+      close: openingHours[day]?.close ?? null,
+    };
+
+    return result;
+  }, {} as OpeningHours);
+}
+
 type RestaurantInformationCardProps = {
   restaurant: RestaurantSettings;
   onUpdated: (restaurant: RestaurantSettings) => void;
@@ -30,21 +109,23 @@ export function RestaurantInformationCard({
   restaurant,
   onUpdated,
 }: RestaurantInformationCardProps) {
-  const [form, setForm] = useState<UpdateSettingsRequest>({
-    name: restaurant.name,
-    restaurantEmail: restaurant.restaurantEmail,
-    phone: restaurant.phone,
-    address: restaurant.address,
+const [form, setForm] = useState<UpdateSettingsRequest>({
+  name: restaurant.name,
+  restaurantEmail: restaurant.restaurantEmail,
+  phone: restaurant.phone,
+  address: restaurant.address,
 
-    tagline: restaurant.tagline,
-    description: restaurant.description,
-    cuisineType: restaurant.cuisineType,
+  tagline: restaurant.tagline,
+  description: restaurant.description,
+  cuisineType: restaurant.cuisineType,
 
-    website: restaurant.website,
-    instagram: restaurant.instagram,
-    facebook: restaurant.facebook,
-    customLink: restaurant.customLink,
-  });
+  website: restaurant.website,
+  instagram: restaurant.instagram,
+  facebook: restaurant.facebook,
+  customLink: restaurant.customLink,
+
+  openingHours: cloneOpeningHours(restaurant.openingHours),
+});
 
   const [logoUrl, setLogoUrl] = useState(
     restaurant.logoUrl ?? ""
@@ -73,9 +154,12 @@ export function RestaurantInformationCard({
       form.cuisineType !== restaurant.cuisineType ||
 
       form.website !== restaurant.website ||
-      form.instagram !== restaurant.instagram ||
-      form.facebook !== restaurant.facebook ||
-      form.customLink !== restaurant.customLink
+form.instagram !== restaurant.instagram ||
+form.facebook !== restaurant.facebook ||
+form.customLink !== restaurant.customLink ||
+JSON.stringify(form.openingHours) !==
+  JSON.stringify(restaurant.openingHours)
+
     );
   }, [form, restaurant]);
 
@@ -101,6 +185,10 @@ export function RestaurantInformationCard({
         instagram: updated.restaurant.instagram,
         facebook: updated.restaurant.facebook,
         customLink: updated.restaurant.customLink,
+
+        openingHours: cloneOpeningHours(
+  updated.restaurant.openingHours,
+),
       });
 
       setLogoUrl(updated.restaurant.logoUrl ?? "");
@@ -131,23 +219,26 @@ export function RestaurantInformationCard({
 
       onUpdated(updated.restaurant);
 
-      setForm({
-        name: updated.restaurant.name,
-        restaurantEmail:
-          updated.restaurant.restaurantEmail,
-        phone: updated.restaurant.phone,
-        address: updated.restaurant.address,
+setForm({
+  name: updated.restaurant.name,
+  restaurantEmail:
+    updated.restaurant.restaurantEmail,
+  phone: updated.restaurant.phone,
+  address: updated.restaurant.address,
 
-        tagline: updated.restaurant.tagline,
-        description: updated.restaurant.description,
-        cuisineType: updated.restaurant.cuisineType,
+  tagline: updated.restaurant.tagline,
+  description: updated.restaurant.description,
+  cuisineType: updated.restaurant.cuisineType,
 
-        website: updated.restaurant.website,
-        instagram: updated.restaurant.instagram,
-        facebook: updated.restaurant.facebook,
-        customLink: updated.restaurant.customLink,
-      });
+  website: updated.restaurant.website,
+  instagram: updated.restaurant.instagram,
+  facebook: updated.restaurant.facebook,
+  customLink: updated.restaurant.customLink,
 
+  openingHours: cloneOpeningHours(
+    updated.restaurant.openingHours,
+  ),
+});
       toast.success("Restaurant logo updated.");
     } catch (error) {
       console.error(error);
@@ -175,22 +266,26 @@ export function RestaurantInformationCard({
 
       onUpdated(updated.restaurant);
 
-      setForm({
-        name: updated.restaurant.name,
-        restaurantEmail:
-          updated.restaurant.restaurantEmail,
-        phone: updated.restaurant.phone,
-        address: updated.restaurant.address,
+     setForm({
+  name: updated.restaurant.name,
+  restaurantEmail:
+    updated.restaurant.restaurantEmail,
+  phone: updated.restaurant.phone,
+  address: updated.restaurant.address,
 
-        tagline: updated.restaurant.tagline,
-        description: updated.restaurant.description,
-        cuisineType: updated.restaurant.cuisineType,
+  tagline: updated.restaurant.tagline,
+  description: updated.restaurant.description,
+  cuisineType: updated.restaurant.cuisineType,
 
-        website: updated.restaurant.website,
-        instagram: updated.restaurant.instagram,
-        facebook: updated.restaurant.facebook,
-        customLink: updated.restaurant.customLink,
-      });
+  website: updated.restaurant.website,
+  instagram: updated.restaurant.instagram,
+  facebook: updated.restaurant.facebook,
+  customLink: updated.restaurant.customLink,
+
+  openingHours: cloneOpeningHours(
+    updated.restaurant.openingHours,
+  ),
+});
 
       toast.success("Cover image updated.");
     } catch (error) {
@@ -461,6 +556,174 @@ export function RestaurantInformationCard({
         />
       </div>
     </div>
+  </div>
+
+  {/* Opening Hours */}
+
+  <div className="rounded-3xl border border-stone-200 bg-white p-6">
+    <div className="mb-6 flex items-start gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+        <Clock3 className="h-5 w-5" />
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold text-stone-900">
+          Opening Hours
+        </h3>
+
+        <p className="text-sm text-stone-500">
+          Set the weekly hours customers will see on your QR menu.
+        </p>
+      </div>
+    </div>
+
+    <div className="space-y-3">
+      {DAY_KEYS.map((day) => {
+        const dayHours =
+          form.openingHours?.[day] ?? {
+            isOpen: false,
+            open: null,
+            close: null,
+          };
+
+        return (
+          <div
+            key={day}
+            className="rounded-2xl border border-stone-200 bg-stone-50 p-4"
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center justify-between sm:w-36">
+                <span className="font-medium text-stone-900">
+                  {DAY_LABELS[day]}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentHours =
+                      form.openingHours ??
+                      createDefaultOpeningHours();
+
+                    setForm((prev) => ({
+                      ...prev,
+                      openingHours: {
+                        ...currentHours,
+                        [day]: dayHours.isOpen
+                          ? {
+                              isOpen: false,
+                              open: null,
+                              close: null,
+                            }
+                          : {
+                              isOpen: true,
+                              open: dayHours.open ?? "09:00",
+                              close: dayHours.close ?? "23:00",
+                            },
+                      },
+                    }));
+                  }}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${
+                    dayHours.isOpen
+                      ? "bg-amber-500"
+                      : "bg-stone-300"
+                  }`}
+                  aria-label={`Toggle ${DAY_LABELS[day]} opening status`}
+                >
+                  <span
+                    className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                      dayHours.isOpen
+                        ? "translate-x-6"
+                        : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="flex flex-1 items-center gap-3">
+                  <div className="flex-1">
+                    <Label className="mb-1 block text-xs text-stone-500">
+                      Opens
+                    </Label>
+
+                    <Input
+                      type="time"
+                      value={dayHours.open ?? ""}
+                      disabled={!dayHours.isOpen}
+                      onChange={(e) => {
+                        const currentHours =
+                          form.openingHours ??
+                          createDefaultOpeningHours();
+
+                        setForm((prev) => ({
+                          ...prev,
+                          openingHours: {
+                            ...currentHours,
+                            [day]: {
+                              ...dayHours,
+                              isOpen: true,
+                              open: e.target.value,
+                            },
+                          },
+                        }));
+                      }}
+                    />
+                  </div>
+
+                  <span className="mt-5 text-sm text-stone-400">
+                    →
+                  </span>
+
+                  <div className="flex-1">
+                    <Label className="mb-1 block text-xs text-stone-500">
+                      Closes
+                    </Label>
+
+                    <Input
+                      type="time"
+                      value={dayHours.close ?? ""}
+                      disabled={!dayHours.isOpen}
+                      onChange={(e) => {
+                        const currentHours =
+                          form.openingHours ??
+                          createDefaultOpeningHours();
+
+                        setForm((prev) => ({
+                          ...prev,
+                          openingHours: {
+                            ...currentHours,
+                            [day]: {
+                              ...dayHours,
+                              isOpen: true,
+                              close: e.target.value,
+                            },
+                          },
+                        }));
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <span
+                  className={`text-sm font-medium sm:w-20 sm:text-right ${
+                    dayHours.isOpen
+                      ? "text-emerald-600"
+                      : "text-stone-400"
+                  }`}
+                >
+                  {dayHours.isOpen ? "Open" : "Closed"}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    <p className="mt-4 text-xs leading-5 text-stone-500">
+      You can set different hours for every day. Overnight hours such as
+      6:00 PM → 2:00 AM are supported.
+    </p>
   </div>
 
   {/* Social Links */}

@@ -8,7 +8,7 @@ import {
   Info,
 } from "lucide-react";
 
-
+import type { OpeningHours } from "@/types/opening-hours";
 import CurrentOrderButton from "./CurrentOrderButton";
 import type { CurrentOrder } from "./CurrentOrderDrawer";
 
@@ -30,7 +30,7 @@ type RestaurantHeaderProps = {
     email?: string | null;
     instagramUrl?: string | null;
     mapsUrl?: string | null;
-    openingHours?: string | null;
+openingHours?: OpeningHours | null;
   };
   tableName: string;
   cartItemCount: number;

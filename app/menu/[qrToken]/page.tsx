@@ -22,6 +22,7 @@ import {
 
 import RestaurantHeader from "./components/RestaurantHeader";
 import { io } from "socket.io-client";
+import type { OpeningHours } from "@/types/opening-hours";
 
 import MenuCard, { type MenuItem } from "./components/MenuCard";
 import CartBar from "./components/CartBar";
@@ -81,7 +82,7 @@ restaurant: {
   whatsapp?: string |null;
   instagramUrl?: string | null;
   mapsUrl?: string | null;
-  openingHours?: string | null;
+openingHours?: OpeningHours | null;
 };
 
   categories: Category[];
