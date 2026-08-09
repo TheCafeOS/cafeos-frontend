@@ -15,6 +15,9 @@ export type MenuItem = {
   imageUrl: string | null;
   categoryId: string | null;
   isAvailable?: boolean;
+  foodType?: "VEG" | "NON_VEG" | "EGG";
+
+  
 
   // Image positioning — mirrors what the owner configured in the
   // dashboard image editor. Stored NORMALIZED (see lib/image-framing.ts),

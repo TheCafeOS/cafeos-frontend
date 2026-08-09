@@ -110,29 +110,42 @@ type OrderUpdatedPayload = {
   timestamp: string;
 };
 
-type SortOption = "popular" | "price-asc" | "price-desc" | "az" | "za";
+type SortOption = "popular" | "price-asc" | "price-desc";
+
+type FoodTypeFilter = "ALL" | "VEG" | "NON_VEG" | "EGG";
 
 type MenuFilters = {
   availableOnly: boolean;
+  foodType: FoodTypeFilter;
   sortBy: SortOption;
 };
 
+
 const DEFAULT_FILTERS: MenuFilters = {
   availableOnly: false,
+  foodType: "ALL",
   sortBy: "popular",
 };
-
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "popular", label: "Popular" },
+  { value: "popular", label: "Recommended" },
   { value: "price-asc", label: "Price: Low → High" },
   { value: "price-desc", label: "Price: High → Low" },
-  { value: "az", label: "A → Z" },
-  { value: "za", label: "Z → A" },
+];
+
+const FOOD_TYPE_OPTIONS: {
+  value: FoodTypeFilter;
+  label: string;
+}[] = [
+  { value: "ALL", label: "All" },
+  { value: "VEG", label: "Veg" },
+  { value: "NON_VEG", label: "Non-Veg" },
+  { value: "EGG", label: "Egg" },
 ];
 
 function isDefaultFilters(filters: MenuFilters): boolean {
   return (
     filters.availableOnly === DEFAULT_FILTERS.availableOnly &&
+    filters.foodType === DEFAULT_FILTERS.foodType &&
     filters.sortBy === DEFAULT_FILTERS.sortBy
   );
 }
@@ -222,7 +235,8 @@ function useIsDesktopViewport(breakpointPx = 768): boolean {
 // Shared body of the filter UI — identical whether it's rendered inside
 // the mobile Sheet or the desktop Popover. Purely controlled: it holds no
 // state of its own, it just reflects `draftFilters` and reports changes
-// upward via `onChange`. Nothing here touches the applied filters.
+//
+
 function MenuFilterForm({
   draftFilters,
   onChange,
@@ -231,11 +245,12 @@ function MenuFilterForm({
   onChange: (next: MenuFilters) => void;
 }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
+      {/* Availability */}
       <div>
-        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-500">
-          Availability
-        </p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+  Availability
+</p>
 
         <div
           role="button"
@@ -249,6 +264,7 @@ function MenuFilterForm({
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
+
               onChange({
                 ...draftFilters,
                 availableOnly: !draftFilters.availableOnly,
@@ -261,39 +277,101 @@ function MenuFilterForm({
               : "border-white/5 bg-[#0F1115] hover:bg-white/5"
           }`}
         >
-          {/* pointer-events-none: clicks are handled by the row above so
-              a single tap can't fire both the row handler and Radix's
-              own click handling and cancel itself out. */}
-          <Checkbox
-            checked={draftFilters.availableOnly}
-            className="pointer-events-none border-white/20 data-[state=checked]:border-orange-500 data-[state=checked]:bg-orange-500"
-          />
+         <Checkbox
+  checked={draftFilters.availableOnly}
+  className="pointer-events-none h-4 w-4 border-white/20 data-[state=checked]:border-orange-500 data-[state=checked]:bg-orange-500"
+/>
+
+
           <span className="text-sm font-medium text-neutral-200">
             Available Only
           </span>
         </div>
       </div>
 
+      {/* Food Type */}
       <div>
-        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-500">
-          Sorting
-        </p>
+       <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+  Food Type
+</p>
 
-        <RadioGroup value={draftFilters.sortBy} className="flex flex-col gap-2">
+        <RadioGroup
+          value={draftFilters.foodType}
+          className="grid grid-cols-2 gap-2"
+        >
+          {FOOD_TYPE_OPTIONS.map((option) => (
+            <div
+              key={option.value}
+              role="button"
+              tabIndex={0}
+              onClick={() =>
+                onChange({
+                  ...draftFilters,
+                  foodType: option.value,
+                })
+              }
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+
+                  onChange({
+                    ...draftFilters,
+                    foodType: option.value,
+                  });
+                }
+              }}
+              className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3.5 py-2.5 transition ${
+                draftFilters.foodType === option.value
+                  ? "border-orange-500/40 bg-orange-500/10"
+                  : "border-white/5 bg-[#0F1115] hover:bg-white/5"
+              }`}
+            >
+              <RadioGroupItem
+  value={option.value}
+  className="pointer-events-none h-4 w-4 border-white/20 text-orange-500"
+/>
+
+<span className="text-[13px] font-medium text-neutral-200">
+                  {option.label}
+              </span>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
+
+      {/* Sorting */}
+      <div>
+    <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+  Sort By
+</p>
+
+        <RadioGroup
+          value={draftFilters.sortBy}
+          className="flex flex-col gap-2"
+        >
           {SORT_OPTIONS.map((option) => (
             <div
               key={option.value}
               role="button"
               tabIndex={0}
-              onClick={() => onChange({ ...draftFilters, sortBy: option.value })}
+              onClick={() =>
+                onChange({
+                  ...draftFilters,
+                  sortBy: option.value,
+                })
+              }
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  onChange({ ...draftFilters, sortBy: option.value });
+
+                  onChange({
+                    ...draftFilters,
+                    sortBy: option.value,
+                  });
                 }
               }}
-              className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition ${
-                draftFilters.sortBy === option.value
+className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3.5 py-2.5 transition ${
+                  draftFilters.sortBy === option.value
                   ? "border-orange-500/40 bg-orange-500/10"
                   : "border-white/5 bg-[#0F1115] hover:bg-white/5"
               }`}
@@ -302,8 +380,9 @@ function MenuFilterForm({
                 value={option.value}
                 className="pointer-events-none border-white/20 text-orange-500"
               />
-              <span className="text-sm font-medium text-neutral-200">
-                {option.label}
+
+<span className="text-[13px] font-medium text-neutral-200">
+                  {option.label}
               </span>
             </div>
           ))}
@@ -325,14 +404,14 @@ function MenuFilterFooter({
       <button
         type="button"
         onClick={onReset}
-        className="flex-1 rounded-xl border border-white/10 bg-[#0F1115] py-3 text-sm font-semibold text-neutral-200 transition hover:bg-white/10 active:scale-95"
+className="flex-1 rounded-xl border border-white/10 bg-[#0F1115] py-2.5 text-[13px] font-semibold text-neutral-200 transition hover:bg-white/10 active:scale-95"
       >
         Reset
       </button>
       <button
         type="button"
         onClick={onApply}
-        className="flex-1 rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white transition hover:bg-orange-400 active:scale-95"
+className="flex-1 rounded-xl bg-orange-500 py-2.5 text-[13px] font-semibold text-white transition hover:bg-orange-400 active:scale-95"
       >
         Apply
       </button>
@@ -725,31 +804,33 @@ setCurrentOrder(updatedOrder);      } catch (caughtError) {
       );
     });
 
-    const availabilityFiltered = appliedFilters.availableOnly
-      ? searched.filter((item) => item.isAvailable !== false)
-      : searched;
+   const availabilityFiltered = appliedFilters.availableOnly
+  ? searched.filter((item) => item.isAvailable !== false)
+  : searched;
 
-    const sorted = [...availabilityFiltered];
+const foodTypeFiltered =
+  appliedFilters.foodType === "ALL"
+    ? availabilityFiltered
+    : availabilityFiltered.filter(
+        (item) => item.foodType === appliedFilters.foodType,
+      );
 
-    switch (appliedFilters.sortBy) {
-      case "price-asc":
-        sorted.sort((a, b) => Number(a.price) - Number(b.price));
-        break;
-      case "price-desc":
-        sorted.sort((a, b) => Number(b.price) - Number(a.price));
-        break;
-      case "az":
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "za":
-        sorted.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case "popular":
-      default:
-        // "Popular" is the natural order the backend already returns —
-        // no client-side reordering needed.
-        break;
-    }
+const sorted = [...foodTypeFiltered];
+
+switch (appliedFilters.sortBy) {
+  case "price-asc":
+    sorted.sort((a, b) => Number(a.price) - Number(b.price));
+    break;
+
+  case "price-desc":
+    sorted.sort((a, b) => Number(b.price) - Number(a.price));
+    break;
+
+  case "popular":
+  default:
+    // Keep the backend's default order.
+    break;
+}
 
     return sorted;
   }, [menuItems, categories, searchQuery, appliedFilters]);
@@ -982,18 +1063,17 @@ onOpenLoyalty={
                   <PopoverContent
                     align="end"
                     sideOffset={12}
-                    className="w-80 rounded-2xl border-white/10 bg-[#171A20] p-5 text-neutral-100 shadow-xl"
+className="w-72 rounded-2xl border-white/10 bg-[#171A20] p-4 text-neutral-100 shadow-xl"
                   >
-                    <p className="mb-4 text-sm font-semibold text-neutral-100">
-                      Filter &amp; Sort
-                    </p>
-
+                 <p className="mb-3 text-[13px] font-semibold text-neutral-100">
+  Filter &amp; Sort
+</p>
                     <MenuFilterForm
                       draftFilters={draftFilters}
                       onChange={setDraftFilters}
                     />
 
-                    <div className="mt-6">
+                    <div className="mt-5">
                       <MenuFilterFooter
                         onReset={handleResetFilters}
                         onApply={handleApplyFilters}
@@ -1021,12 +1101,13 @@ onOpenLoyalty={
                     className="max-h-[85vh] overflow-y-auto rounded-t-3xl border-white/10 bg-[#171A20] text-neutral-100"
                   >
                     <SheetHeader className="text-left">
-<SheetTitle className="text-xl font-semibold text-neutral-100 sm:text-2xl">
-                        Filter &amp; Sort
-                      </SheetTitle>
+<SheetTitle className="text-lg font-semibold text-neutral-100 sm:text-xl">
+  Filter &amp; Sort
+</SheetTitle>
+
                     </SheetHeader>
 
-                    <div className="mt-4">
+                    <div className="mt-3">
                       <MenuFilterForm
                         draftFilters={draftFilters}
                         onChange={setDraftFilters}
