@@ -100,6 +100,30 @@ function cloneOpeningHours(
   }, {} as OpeningHours);
 }
 
+function createFormFromRestaurant(
+  restaurant: RestaurantSettings,
+): UpdateSettingsRequest {
+  return {
+    name: restaurant.name,
+    restaurantEmail: restaurant.restaurantEmail,
+    phone: restaurant.phone,
+    address: restaurant.address,
+
+    tagline: restaurant.tagline,
+    description: restaurant.description,
+    cuisineType: restaurant.cuisineType,
+
+    website: restaurant.website,
+    instagram: restaurant.instagram,
+    facebook: restaurant.facebook,
+    customLink: restaurant.customLink,
+
+    openingHours: cloneOpeningHours(
+      restaurant.openingHours,
+    ),
+  };
+}
+
 type RestaurantInformationCardProps = {
   restaurant: RestaurantSettings;
   onUpdated: (restaurant: RestaurantSettings) => void;
@@ -109,24 +133,15 @@ export function RestaurantInformationCard({
   restaurant,
   onUpdated,
 }: RestaurantInformationCardProps) {
-const [form, setForm] = useState<UpdateSettingsRequest>({
-  name: restaurant.name,
-  restaurantEmail: restaurant.restaurantEmail,
-  phone: restaurant.phone,
-  address: restaurant.address,
+const [form, setForm] =
+  useState<UpdateSettingsRequest>(
+    createFormFromRestaurant(restaurant),
+  );
 
-  tagline: restaurant.tagline,
-  description: restaurant.description,
-  cuisineType: restaurant.cuisineType,
-
-  website: restaurant.website,
-  instagram: restaurant.instagram,
-  facebook: restaurant.facebook,
-  customLink: restaurant.customLink,
-
-  openingHours: cloneOpeningHours(restaurant.openingHours),
-});
-
+const [savedForm, setSavedForm] =
+  useState<UpdateSettingsRequest>(
+    createFormFromRestaurant(restaurant),
+  );
   const [logoUrl, setLogoUrl] = useState(
     restaurant.logoUrl ?? ""
   );
@@ -142,66 +157,54 @@ const [form, setForm] = useState<UpdateSettingsRequest>({
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  const hasChanges = useMemo(() => {
-    return (
-      form.name !== restaurant.name ||
-      form.restaurantEmail !== restaurant.restaurantEmail ||
-      form.phone !== restaurant.phone ||
-      form.address !== restaurant.address ||
+ const hasChanges = useMemo(() => {
+  return (
+    JSON.stringify(form) !==
+    JSON.stringify(savedForm)
+  );
+}, [form, savedForm]);
 
-      form.tagline !== restaurant.tagline ||
-      form.description !== restaurant.description ||
-      form.cuisineType !== restaurant.cuisineType ||
+ 
+async function handleSave() {
+  try {
+    setSaving(true);
 
-      form.website !== restaurant.website ||
-form.instagram !== restaurant.instagram ||
-form.facebook !== restaurant.facebook ||
-form.customLink !== restaurant.customLink ||
-JSON.stringify(form.openingHours) !==
-  JSON.stringify(restaurant.openingHours)
+    const updated = await updateSettings(form);
 
+    const updatedForm =
+      createFormFromRestaurant(
+        updated.restaurant,
+      );
+
+    setForm(updatedForm);
+    setSavedForm(updatedForm);
+
+    onUpdated(updated.restaurant);
+
+    setLogoUrl(
+      updated.restaurant.logoUrl ?? "",
     );
-  }, [form, restaurant]);
 
-  async function handleSave() {
-    try {
-      setSaving(true);
+    setCoverUrl(
+      updated.restaurant.coverImageUrl ?? "",
+    );
 
-      const updated = await updateSettings(form);
+    toast.success(
+      "Settings updated successfully.",
+    );
+  } catch (error) {
+    console.error(error);
 
-      onUpdated(updated.restaurant);
-
-      setForm({
-        name: updated.restaurant.name,
-        restaurantEmail: updated.restaurant.restaurantEmail,
-        phone: updated.restaurant.phone,
-        address: updated.restaurant.address,
-
-        tagline: updated.restaurant.tagline,
-        description: updated.restaurant.description,
-        cuisineType: updated.restaurant.cuisineType,
-
-        website: updated.restaurant.website,
-        instagram: updated.restaurant.instagram,
-        facebook: updated.restaurant.facebook,
-        customLink: updated.restaurant.customLink,
-
-        openingHours: cloneOpeningHours(
-  updated.restaurant.openingHours,
-),
-      });
-
-      setLogoUrl(updated.restaurant.logoUrl ?? "");
-      setCoverUrl(updated.restaurant.coverImageUrl ?? "");
-
-      toast.success("Settings updated successfully.");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to update settings.");
-    } finally {
-      setSaving(false);
-    }
+    toast.error(
+      "Failed to update settings.",
+    );
+  } finally {
+    setSaving(false);
   }
+}
+
+
+    
 
   async function handleLogoUpload(
     e: ChangeEvent<HTMLInputElement>
@@ -219,26 +222,15 @@ JSON.stringify(form.openingHours) !==
 
       onUpdated(updated.restaurant);
 
-setForm({
-  name: updated.restaurant.name,
-  restaurantEmail:
-    updated.restaurant.restaurantEmail,
-  phone: updated.restaurant.phone,
-  address: updated.restaurant.address,
 
-  tagline: updated.restaurant.tagline,
-  description: updated.restaurant.description,
-  cuisineType: updated.restaurant.cuisineType,
+      const updatedForm =
+  createFormFromRestaurant(
+    updated.restaurant,
+  );
 
-  website: updated.restaurant.website,
-  instagram: updated.restaurant.instagram,
-  facebook: updated.restaurant.facebook,
-  customLink: updated.restaurant.customLink,
+setForm(updatedForm);
+setSavedForm(updatedForm);
 
-  openingHours: cloneOpeningHours(
-    updated.restaurant.openingHours,
-  ),
-});
       toast.success("Restaurant logo updated.");
     } catch (error) {
       console.error(error);
@@ -266,26 +258,13 @@ setForm({
 
       onUpdated(updated.restaurant);
 
-     setForm({
-  name: updated.restaurant.name,
-  restaurantEmail:
-    updated.restaurant.restaurantEmail,
-  phone: updated.restaurant.phone,
-  address: updated.restaurant.address,
+  const updatedForm =
+  createFormFromRestaurant(
+    updated.restaurant,
+  );
 
-  tagline: updated.restaurant.tagline,
-  description: updated.restaurant.description,
-  cuisineType: updated.restaurant.cuisineType,
-
-  website: updated.restaurant.website,
-  instagram: updated.restaurant.instagram,
-  facebook: updated.restaurant.facebook,
-  customLink: updated.restaurant.customLink,
-
-  openingHours: cloneOpeningHours(
-    updated.restaurant.openingHours,
-  ),
-});
+setForm(updatedForm);
+setSavedForm(updatedForm);
 
       toast.success("Cover image updated.");
     } catch (error) {
@@ -592,57 +571,58 @@ setForm({
             className="rounded-2xl border border-stone-200 bg-stone-50 p-4"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center justify-between sm:w-36">
-                <span className="font-medium text-stone-900">
+<div className="flex items-center justify-between sm:w-40">
+                  <span className="font-medium text-stone-900">
                   {DAY_LABELS[day]}
                 </span>
 
                 <button
-                  type="button"
-                  onClick={() => {
-                    const currentHours =
-                      form.openingHours ??
-                      createDefaultOpeningHours();
+  type="button"
+  onClick={() => {
+    const currentHours =
+      form.openingHours ??
+      createDefaultOpeningHours();
 
-                    setForm((prev) => ({
-                      ...prev,
-                      openingHours: {
-                        ...currentHours,
-                        [day]: dayHours.isOpen
-                          ? {
-                              isOpen: false,
-                              open: null,
-                              close: null,
-                            }
-                          : {
-                              isOpen: true,
-                              open: dayHours.open ?? "09:00",
-                              close: dayHours.close ?? "23:00",
-                            },
-                      },
-                    }));
-                  }}
-                  className={`relative h-6 w-11 rounded-full transition-colors ${
-                    dayHours.isOpen
-                      ? "bg-amber-500"
-                      : "bg-stone-300"
-                  }`}
-                  aria-label={`Toggle ${DAY_LABELS[day]} opening status`}
-                >
-                  <span
-                    className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                      dayHours.isOpen
-                        ? "translate-x-6"
-                        : "translate-x-1"
-                    }`}
-                  />
-                </button>
+    setForm((prev) => ({
+      ...prev,
+      openingHours: {
+        ...currentHours,
+        [day]: dayHours.isOpen
+          ? {
+              isOpen: false,
+              open: null,
+              close: null,
+            }
+          : {
+              isOpen: true,
+              open: dayHours.open ?? "09:00",
+              close: dayHours.close ?? "23:00",
+            },
+      },
+    }));
+  }}
+  className={`relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ${
+    dayHours.isOpen
+      ? "bg-amber-500"
+      : "bg-stone-300"
+  }`}
+  aria-label={`Toggle ${DAY_LABELS[day]} opening status`}
+>
+  <span
+    className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+      dayHours.isOpen
+        ? "translate-x-4"
+        : "translate-x-0"
+    }`}
+  />
+</button>
+
               </div>
 
               <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="flex flex-1 items-center gap-3">
-                  <div className="flex-1">
-                    <Label className="mb-1 block text-xs text-stone-500">
+<div className="flex w-full flex-1 items-center gap-2 sm:max-w-md">
+<div className="min-w-0 flex-1">
+                      <Label className="mb-1 block text-xs text-stone-500">
                       Opens
                     </Label>
 
@@ -674,8 +654,8 @@ setForm({
                     →
                   </span>
 
-                  <div className="flex-1">
-                    <Label className="mb-1 block text-xs text-stone-500">
+<div className="min-w-0 flex-1">
+                      <Label className="mb-1 block text-xs text-stone-500">
                       Closes
                     </Label>
 
