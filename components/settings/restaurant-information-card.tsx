@@ -7,6 +7,7 @@ import {
   Camera,
   ImageIcon,
   Clock3,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -133,81 +134,82 @@ export function RestaurantInformationCard({
   restaurant,
   onUpdated,
 }: RestaurantInformationCardProps) {
-const [form, setForm] =
-  useState<UpdateSettingsRequest>(
-    createFormFromRestaurant(restaurant),
-  );
+  const [form, setForm] =
+    useState<UpdateSettingsRequest>(
+      createFormFromRestaurant(restaurant),
+    );
 
-const [savedForm, setSavedForm] =
-  useState<UpdateSettingsRequest>(
-    createFormFromRestaurant(restaurant),
-  );
+  const [savedForm, setSavedForm] =
+    useState<UpdateSettingsRequest>(
+      createFormFromRestaurant(restaurant),
+    );
+
   const [logoUrl, setLogoUrl] = useState(
-    restaurant.logoUrl ?? ""
+    restaurant.logoUrl ?? "",
   );
 
   const [coverUrl, setCoverUrl] = useState(
-    restaurant.coverImageUrl ?? ""
+    restaurant.coverImageUrl ?? "",
   );
 
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
 
+  // Opening Hours accordion
+  const [showOpeningHours, setShowOpeningHours] =
+    useState(false);
+
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
- const hasChanges = useMemo(() => {
-  return (
-    JSON.stringify(form) !==
-    JSON.stringify(savedForm)
-  );
-}, [form, savedForm]);
+  const hasChanges = useMemo(() => {
+    return (
+      JSON.stringify(form) !==
+      JSON.stringify(savedForm)
+    );
+  }, [form, savedForm]);
 
- 
-async function handleSave() {
-  try {
-    setSaving(true);
+  async function handleSave() {
+    try {
+      setSaving(true);
 
-    const updated = await updateSettings(form);
+      const updated = await updateSettings(form);
 
-    const updatedForm =
-      createFormFromRestaurant(
-        updated.restaurant,
+      const updatedForm =
+        createFormFromRestaurant(
+          updated.restaurant,
+        );
+
+      setForm(updatedForm);
+      setSavedForm(updatedForm);
+
+      onUpdated(updated.restaurant);
+
+      setLogoUrl(
+        updated.restaurant.logoUrl ?? "",
       );
 
-    setForm(updatedForm);
-    setSavedForm(updatedForm);
+      setCoverUrl(
+        updated.restaurant.coverImageUrl ?? "",
+      );
 
-    onUpdated(updated.restaurant);
+      toast.success(
+        "Settings updated successfully.",
+      );
+    } catch (error) {
+      console.error(error);
 
-    setLogoUrl(
-      updated.restaurant.logoUrl ?? "",
-    );
-
-    setCoverUrl(
-      updated.restaurant.coverImageUrl ?? "",
-    );
-
-    toast.success(
-      "Settings updated successfully.",
-    );
-  } catch (error) {
-    console.error(error);
-
-    toast.error(
-      "Failed to update settings.",
-    );
-  } finally {
-    setSaving(false);
+      toast.error(
+        "Failed to update settings.",
+      );
+    } finally {
+      setSaving(false);
+    }
   }
-}
-
-
-    
 
   async function handleLogoUpload(
-    e: ChangeEvent<HTMLInputElement>
+    e: ChangeEvent<HTMLInputElement>,
   ) {
     const file = e.target.files?.[0];
 
@@ -216,32 +218,38 @@ async function handleSave() {
     try {
       setUploadingLogo(true);
 
-      const updated = await uploadRestaurantLogo(file);
+      const updated =
+        await uploadRestaurantLogo(file);
 
-      setLogoUrl(updated.restaurant.logoUrl ?? "");
+      setLogoUrl(
+        updated.restaurant.logoUrl ?? "",
+      );
 
       onUpdated(updated.restaurant);
 
-
       const updatedForm =
-  createFormFromRestaurant(
-    updated.restaurant,
-  );
+        createFormFromRestaurant(
+          updated.restaurant,
+        );
 
-setForm(updatedForm);
-setSavedForm(updatedForm);
+      setForm(updatedForm);
+      setSavedForm(updatedForm);
 
-      toast.success("Restaurant logo updated.");
+      toast.success(
+        "Restaurant logo updated.",
+      );
     } catch (error) {
       console.error(error);
-      toast.error("Failed to upload logo.");
+      toast.error(
+        "Failed to upload logo.",
+      );
     } finally {
       setUploadingLogo(false);
     }
   }
 
   async function handleCoverUpload(
-    e: ChangeEvent<HTMLInputElement>
+    e: ChangeEvent<HTMLInputElement>,
   ) {
     const file = e.target.files?.[0];
 
@@ -250,26 +258,31 @@ setSavedForm(updatedForm);
     try {
       setUploadingCover(true);
 
-      const updated = await uploadRestaurantCover(file);
+      const updated =
+        await uploadRestaurantCover(file);
 
       setCoverUrl(
-        updated.restaurant.coverImageUrl ?? ""
+        updated.restaurant.coverImageUrl ?? "",
       );
 
       onUpdated(updated.restaurant);
 
-  const updatedForm =
-  createFormFromRestaurant(
-    updated.restaurant,
-  );
+      const updatedForm =
+        createFormFromRestaurant(
+          updated.restaurant,
+        );
 
-setForm(updatedForm);
-setSavedForm(updatedForm);
+      setForm(updatedForm);
+      setSavedForm(updatedForm);
 
-      toast.success("Cover image updated.");
+      toast.success(
+        "Cover image updated.",
+      );
     } catch (error) {
       console.error(error);
-      toast.error("Failed to upload cover image.");
+      toast.error(
+        "Failed to upload cover image.",
+      );
     } finally {
       setUploadingCover(false);
     }
@@ -277,533 +290,563 @@ setSavedForm(updatedForm);
 
   return (
     <section className="space-y-8">
-  <div className="flex items-center gap-3">
-    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
-      <Building2 className="h-6 w-6" />
-    </div>
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+          <Building2 className="h-6 w-6" />
+        </div>
 
-    <div>
-      <h2 className="text-xl font-semibold text-stone-900">
-        Restaurant Branding
-      </h2>
+        <div>
+          <h2 className="text-xl font-semibold text-stone-900">
+            Restaurant Branding
+          </h2>
 
-      <p className="text-sm text-stone-500">
-        Customize how your restaurant appears across CafeOS.
-      </p>
-    </div>
-  </div>
-
-  {/* Cover Image */}
-
-  <div className="space-y-3">
-    <Label className="text-sm font-medium">
-      Cover Image
-    </Label>
-
-    <div className="relative aspect-[16/7] overflow-hidden rounded-3xl border border-stone-200 bg-stone-100">
-  {coverUrl ? (
-   <Image
-  src={coverUrl}
-  alt="Restaurant Cover"
-  fill
-  priority
-  sizes="(max-width: 768px) 100vw, 70vw"
-  className="object-cover object-[15%_center]"
-/>
-  ) : (
-        <div className="flex h-56 w-full flex-col items-center justify-center gap-3 text-stone-400">
-          <ImageIcon className="h-10 w-10" />
-
-          <p className="text-sm">
-            No cover image uploaded
+          <p className="text-sm text-stone-500">
+            Customize how your restaurant appears across CafeOS.
           </p>
         </div>
-      )}
-
-      <div className="absolute bottom-5 right-5">
-        <>
-          <input
-            ref={coverInputRef}
-            hidden
-            type="file"
-            accept="image/*"
-            onChange={handleCoverUpload}
-          />
-
-          <Button
-            type="button"
-            disabled={uploadingCover}
-            onClick={() =>
-              coverInputRef.current?.click()
-            }
-          >
-            <Camera className="mr-2 h-4 w-4" />
-            {uploadingCover
-              ? "Uploading..."
-              : "Change Cover"}
-          </Button>
-        </>
       </div>
-    </div>
-  </div>
 
-  {/* Logo */}
+      {/* Cover Image */}
 
-  <div className="flex flex-col gap-6 rounded-3xl border border-stone-200 bg-stone-50 p-6 lg:flex-row lg:items-center">
-    <div>
-      {logoUrl ? (
-       <Image
-  src={logoUrl}
-  alt="Restaurant Logo"
-  width={96}
-  height={96}
-  className="h-24 w-24 rounded-full border border-stone-200 bg-white object-contain p-2 shadow-sm"
-/>
-      ) : (
-<div className="flex h-28 w-28 items-center justify-center rounded-3xl border bg-white">   
-         <Building2 className="h-10 w-10 text-stone-400" />
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">
+          Cover Image
+        </Label>
+
+        <div className="relative aspect-[16/7] overflow-hidden rounded-3xl border border-stone-200 bg-stone-100">
+          {coverUrl ? (
+            <Image
+              src={coverUrl}
+              alt="Restaurant Cover"
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 70vw"
+              className="object-cover object-[15%_center]"
+            />
+          ) : (
+            <div className="flex h-56 w-full flex-col items-center justify-center gap-3 text-stone-400">
+              <ImageIcon className="h-10 w-10" />
+
+              <p className="text-sm">
+                No cover image uploaded
+              </p>
+            </div>
+          )}
+
+          <div className="absolute bottom-5 right-5">
+            <>
+              <input
+                ref={coverInputRef}
+                hidden
+                type="file"
+                accept="image/*"
+                onChange={handleCoverUpload}
+              />
+
+              <Button
+                type="button"
+                disabled={uploadingCover}
+                onClick={() =>
+                  coverInputRef.current?.click()
+                }
+              >
+                <Camera className="mr-2 h-4 w-4" />
+
+                {uploadingCover
+                  ? "Uploading..."
+                  : "Change Cover"}
+              </Button>
+            </>
+          </div>
         </div>
-      )}
-    </div>
-
-    <div className="flex-1 space-y-3">
-      <div>
-        <h3 className="text-lg font-semibold">
-          Restaurant Logo
-        </h3>
-
-        <p className="text-sm text-stone-500">
-         Displayed across your dashboard, QR menu and customer ordering experience.
-        </p>
       </div>
 
-      <>
-        <input
-          ref={logoInputRef}
-          hidden
-          type="file"
-          accept="image/*"
-          onChange={handleLogoUpload}
-        />
+      {/* Logo */}
+
+      <div className="flex flex-col gap-6 rounded-3xl border border-stone-200 bg-stone-50 p-6 lg:flex-row lg:items-center">
+        <div>
+          {logoUrl ? (
+            <Image
+              src={logoUrl}
+              alt="Restaurant Logo"
+              width={96}
+              height={96}
+              className="h-24 w-24 rounded-full border border-stone-200 bg-white object-contain p-2 shadow-sm"
+            />
+          ) : (
+            <div className="flex h-28 w-28 items-center justify-center rounded-3xl border bg-white">
+              <Building2 className="h-10 w-10 text-stone-400" />
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 space-y-3">
+          <div>
+            <h3 className="text-lg font-semibold">
+              Restaurant Logo
+            </h3>
+
+            <p className="text-sm text-stone-500">
+              Displayed across your dashboard, QR menu and customer ordering experience.
+            </p>
+          </div>
+
+          <>
+            <input
+              ref={logoInputRef}
+              hidden
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+            />
+
+            <Button
+              type="button"
+              disabled={uploadingLogo}
+              onClick={() =>
+                logoInputRef.current?.click()
+              }
+            >
+              <Camera className="mr-2 h-4 w-4" />
+
+              {uploadingLogo
+                ? "Uploading..."
+                : "Change Logo"}
+            </Button>
+          </>
+        </div>
+      </div>
+
+      {/* Restaurant Information */}
+
+      <div className="rounded-3xl border border-stone-200 bg-white p-6">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold">
+            Restaurant Information
+          </h3>
+
+          <p className="text-sm text-stone-500">
+            Basic details displayed throughout CafeOS.
+          </p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <div>
+            <Label>Restaurant Name</Label>
+
+            <Input
+              value={form.name}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Restaurant Email</Label>
+
+            <Input
+              type="email"
+              value={form.restaurantEmail}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  restaurantEmail: e.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Phone</Label>
+
+            <Input
+              value={form.phone ?? ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  phone: e.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Cuisine Type</Label>
+
+            <Input
+              placeholder="Cafe"
+              value={form.cuisineType ?? ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  cuisineType: e.target.value,
+                }))
+              }
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Restaurant Profile */}
+
+      <div className="rounded-3xl border border-stone-200 bg-white p-6">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-stone-900">
+            Restaurant Profile
+          </h3>
+
+          <p className="text-sm text-stone-500">
+            Tell customers more about your restaurant.
+          </p>
+        </div>
+
+        <div className="space-y-5">
+          <div>
+            <Label>Tagline</Label>
+
+            <Input
+              placeholder="Fresh Coffee Everyday"
+              value={form.tagline ?? ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  tagline: e.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Description</Label>
+
+            <Textarea
+              rows={5}
+              placeholder="Describe your restaurant..."
+              value={form.description ?? ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Address</Label>
+
+            <Textarea
+              rows={3}
+              value={form.address ?? ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  address: e.target.value,
+                }))
+              }
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Opening Hours */}
+
+      <div className="rounded-3xl border border-stone-200 bg-white p-6">
+        <button
+          type="button"
+          onClick={() =>
+            setShowOpeningHours((prev) => !prev)
+          }
+          className="flex w-full items-start gap-3 text-left"
+          aria-expanded={showOpeningHours}
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+            <Clock3 className="h-5 w-5" />
+          </div>
+
+          <div className="flex flex-1 items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-stone-900">
+                Opening Hours
+              </h3>
+
+              <p className="text-sm text-stone-500">
+                Set the weekly hours customers will see on your QR menu.
+              </p>
+            </div>
+
+            <ChevronDown
+              className={`mt-1 h-5 w-5 shrink-0 text-stone-500 transition-transform ${
+                showOpeningHours
+                  ? "rotate-180"
+                  : ""
+              }`}
+            />
+          </div>
+        </button>
+
+        {showOpeningHours ? (
+          <div className="mt-6">
+            <div className="space-y-3">
+              {DAY_KEYS.map((day) => {
+                const dayHours =
+                  form.openingHours?.[day] ?? {
+                    isOpen: false,
+                    open: null,
+                    close: null,
+                  };
+
+                return (
+                  <div
+                    key={day}
+                    className="rounded-2xl border border-stone-200 bg-stone-50 p-4"
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center justify-between sm:w-40">
+                        <span className="font-medium text-stone-900">
+                          {DAY_LABELS[day]}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentHours =
+                              form.openingHours ??
+                              createDefaultOpeningHours();
+
+                            setForm((prev) => ({
+                              ...prev,
+                              openingHours: {
+                                ...currentHours,
+                                [day]: dayHours.isOpen
+                                  ? {
+                                      isOpen: false,
+                                      open: null,
+                                      close: null,
+                                    }
+                                  : {
+                                      isOpen: true,
+                                      open:
+                                        dayHours.open ??
+                                        "09:00",
+                                      close:
+                                        dayHours.close ??
+                                        "23:00",
+                                    },
+                              },
+                            }));
+                          }}
+                          className={`relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ${
+                            dayHours.isOpen
+                              ? "bg-amber-500"
+                              : "bg-stone-300"
+                          }`}
+                          aria-label={`Toggle ${DAY_LABELS[day]} opening status`}
+                        >
+                          <span
+                            className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                              dayHours.isOpen
+                                ? "translate-x-4"
+                                : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                        <div className="flex w-full flex-1 items-center gap-2 sm:max-w-md">
+                          <div className="min-w-0 flex-1">
+                            <Label className="mb-1 block text-xs text-stone-500">
+                              Opens
+                            </Label>
+
+                            <Input
+                              type="time"
+                              value={dayHours.open ?? ""}
+                              disabled={!dayHours.isOpen}
+                              onChange={(e) => {
+                                const currentHours =
+                                  form.openingHours ??
+                                  createDefaultOpeningHours();
+
+                                setForm((prev) => ({
+                                  ...prev,
+                                  openingHours: {
+                                    ...currentHours,
+                                    [day]: {
+                                      ...dayHours,
+                                      isOpen: true,
+                                      open: e.target.value,
+                                    },
+                                  },
+                                }));
+                              }}
+                            />
+                          </div>
+
+                          <span className="mt-5 text-sm text-stone-400">
+                            →
+                          </span>
+
+                          <div className="min-w-0 flex-1">
+                            <Label className="mb-1 block text-xs text-stone-500">
+                              Closes
+                            </Label>
+
+                            <Input
+                              type="time"
+                              value={dayHours.close ?? ""}
+                              disabled={!dayHours.isOpen}
+                              onChange={(e) => {
+                                const currentHours =
+                                  form.openingHours ??
+                                  createDefaultOpeningHours();
+
+                                setForm((prev) => ({
+                                  ...prev,
+                                  openingHours: {
+                                    ...currentHours,
+                                    [day]: {
+                                      ...dayHours,
+                                      isOpen: true,
+                                      close: e.target.value,
+                                    },
+                                  },
+                                }));
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <span
+                          className={`text-sm font-medium sm:w-20 sm:text-right ${
+                            dayHours.isOpen
+                              ? "text-emerald-600"
+                              : "text-stone-400"
+                          }`}
+                        >
+                          {dayHours.isOpen
+                            ? "Open"
+                            : "Closed"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="mt-4 text-xs leading-5 text-stone-500">
+              You can set different hours for every day. Overnight hours such as
+              6:00 PM → 2:00 AM are supported.
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Social Links */}
+
+      <div className="rounded-3xl border border-stone-200 bg-white p-6">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-stone-900">
+            Social Links
+          </h3>
+
+          <p className="text-sm text-stone-500">
+            Help customers discover your restaurant online.
+          </p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <div>
+            <Label>Website</Label>
+
+            <Input
+              placeholder="https://..."
+              value={form.website ?? ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  website: e.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Instagram</Label>
+
+            <Input
+              placeholder="https://instagram.com/..."
+              value={form.instagram ?? ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  instagram: e.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Facebook</Label>
+
+            <Input
+              placeholder="https://facebook.com/..."
+              value={form.facebook ?? ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  facebook: e.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Custom Link</Label>
+
+            <Input
+              placeholder="https://..."
+              value={form.customLink ?? ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  customLink: e.target.value,
+                }))
+              }
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Save Changes */}
+
+      <div className="flex items-center justify-between rounded-3xl border border-stone-200 bg-white p-6">
+        <div>
+          {hasChanges ? (
+            <p className="text-sm font-medium text-amber-600">
+              You have unsaved changes.
+            </p>
+          ) : (
+            <p className="text-sm text-stone-500">
+              Everything is up to date.
+            </p>
+          )}
+        </div>
 
         <Button
-          type="button"
-          disabled={uploadingLogo}
-          onClick={() =>
-            logoInputRef.current?.click()
-          }
+          onClick={handleSave}
+          disabled={!hasChanges || saving}
+          className="min-w-40"
         >
-          <Camera className="mr-2 h-4 w-4" />
-          {uploadingLogo
-            ? "Uploading..."
-            : "Change Logo"}
+          {saving ? "Saving..." : "Save Changes"}
         </Button>
-      </>
-    </div>
-  </div>
-
-  {/* Restaurant Information */}
-
-  <div className="rounded-3xl border border-stone-200 bg-white p-6">
-    <div className="mb-6">
-      <h3 className="text-lg font-semibold">
-        Restaurant Information
-      </h3>
-
-      <p className="text-sm text-stone-500">
-        Basic details displayed throughout CafeOS.
-      </p>
-    </div>
-
-    <div className="grid gap-5 md:grid-cols-2">
-      <div>
-        <Label>Restaurant Name</Label>
-
-        <Input
-          value={form.name}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              name: e.target.value,
-            }))
-          }
-        />
       </div>
-
-      <div>
-        <Label>Restaurant Email</Label>
-
-        <Input
-          type="email"
-          value={form.restaurantEmail}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              restaurantEmail: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      <div>
-        <Label>Phone</Label>
-
-        <Input
-          value={form.phone ?? ""}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              phone: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      <div>
-        <Label>Cuisine Type</Label>
-
-        <Input
-          placeholder="Cafe"
-          value={form.cuisineType ?? ""}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              cuisineType: e.target.value,
-            }))
-          }
-        />
-      </div>
-    </div>
-  </div> 
-    {/* Restaurant Profile */}
-
-  <div className="rounded-3xl border border-stone-200 bg-white p-6">
-    <div className="mb-6">
-      <h3 className="text-lg font-semibold text-stone-900">
-        Restaurant Profile
-      </h3>
-
-      <p className="text-sm text-stone-500">
-        Tell customers more about your restaurant.
-      </p>
-    </div>
-
-    <div className="space-y-5">
-      <div>
-        <Label>Tagline</Label>
-
-        <Input
-          placeholder="Fresh Coffee Everyday"
-          value={form.tagline ?? ""}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              tagline: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      <div>
-        <Label>Description</Label>
-
-        <Textarea
-          rows={5}
-          placeholder="Describe your restaurant..."
-          value={form.description ?? ""}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              description: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      <div>
-        <Label>Address</Label>
-
-        <Textarea
-          rows={3}
-          value={form.address ?? ""}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              address: e.target.value,
-            }))
-          }
-        />
-      </div>
-    </div>
-  </div>
-
-  {/* Opening Hours */}
-
-  <div className="rounded-3xl border border-stone-200 bg-white p-6">
-    <div className="mb-6 flex items-start gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-        <Clock3 className="h-5 w-5" />
-      </div>
-
-      <div>
-        <h3 className="text-lg font-semibold text-stone-900">
-          Opening Hours
-        </h3>
-
-        <p className="text-sm text-stone-500">
-          Set the weekly hours customers will see on your QR menu.
-        </p>
-      </div>
-    </div>
-
-    <div className="space-y-3">
-      {DAY_KEYS.map((day) => {
-        const dayHours =
-          form.openingHours?.[day] ?? {
-            isOpen: false,
-            open: null,
-            close: null,
-          };
-
-        return (
-          <div
-            key={day}
-            className="rounded-2xl border border-stone-200 bg-stone-50 p-4"
-          >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-<div className="flex items-center justify-between sm:w-40">
-                  <span className="font-medium text-stone-900">
-                  {DAY_LABELS[day]}
-                </span>
-
-                <button
-  type="button"
-  onClick={() => {
-    const currentHours =
-      form.openingHours ??
-      createDefaultOpeningHours();
-
-    setForm((prev) => ({
-      ...prev,
-      openingHours: {
-        ...currentHours,
-        [day]: dayHours.isOpen
-          ? {
-              isOpen: false,
-              open: null,
-              close: null,
-            }
-          : {
-              isOpen: true,
-              open: dayHours.open ?? "09:00",
-              close: dayHours.close ?? "23:00",
-            },
-      },
-    }));
-  }}
-  className={`relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ${
-    dayHours.isOpen
-      ? "bg-amber-500"
-      : "bg-stone-300"
-  }`}
-  aria-label={`Toggle ${DAY_LABELS[day]} opening status`}
->
-  <span
-    className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-      dayHours.isOpen
-        ? "translate-x-4"
-        : "translate-x-0"
-    }`}
-  />
-</button>
-
-              </div>
-
-              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-<div className="flex w-full flex-1 items-center gap-2 sm:max-w-md">
-<div className="min-w-0 flex-1">
-                      <Label className="mb-1 block text-xs text-stone-500">
-                      Opens
-                    </Label>
-
-                    <Input
-                      type="time"
-                      value={dayHours.open ?? ""}
-                      disabled={!dayHours.isOpen}
-                      onChange={(e) => {
-                        const currentHours =
-                          form.openingHours ??
-                          createDefaultOpeningHours();
-
-                        setForm((prev) => ({
-                          ...prev,
-                          openingHours: {
-                            ...currentHours,
-                            [day]: {
-                              ...dayHours,
-                              isOpen: true,
-                              open: e.target.value,
-                            },
-                          },
-                        }));
-                      }}
-                    />
-                  </div>
-
-                  <span className="mt-5 text-sm text-stone-400">
-                    →
-                  </span>
-
-<div className="min-w-0 flex-1">
-                      <Label className="mb-1 block text-xs text-stone-500">
-                      Closes
-                    </Label>
-
-                    <Input
-                      type="time"
-                      value={dayHours.close ?? ""}
-                      disabled={!dayHours.isOpen}
-                      onChange={(e) => {
-                        const currentHours =
-                          form.openingHours ??
-                          createDefaultOpeningHours();
-
-                        setForm((prev) => ({
-                          ...prev,
-                          openingHours: {
-                            ...currentHours,
-                            [day]: {
-                              ...dayHours,
-                              isOpen: true,
-                              close: e.target.value,
-                            },
-                          },
-                        }));
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <span
-                  className={`text-sm font-medium sm:w-20 sm:text-right ${
-                    dayHours.isOpen
-                      ? "text-emerald-600"
-                      : "text-stone-400"
-                  }`}
-                >
-                  {dayHours.isOpen ? "Open" : "Closed"}
-                </span>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-
-    <p className="mt-4 text-xs leading-5 text-stone-500">
-      You can set different hours for every day. Overnight hours such as
-      6:00 PM → 2:00 AM are supported.
-    </p>
-  </div>
-
-  {/* Social Links */}
-
-  <div className="rounded-3xl border border-stone-200 bg-white p-6">
-    <div className="mb-6">
-      <h3 className="text-lg font-semibold text-stone-900">
-        Social Links
-      </h3>
-
-      <p className="text-sm text-stone-500">
-        Help customers discover your restaurant online.
-      </p>
-    </div>
-
-    <div className="grid gap-5 md:grid-cols-2">
-      <div>
-        <Label>Website</Label>
-
-        <Input
-          placeholder="https://..."
-          value={form.website ?? ""}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              website: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      <div>
-        <Label>Instagram</Label>
-
-        <Input
-          placeholder="https://instagram.com/..."
-          value={form.instagram ?? ""}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              instagram: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      <div>
-        <Label>Facebook</Label>
-
-        <Input
-          placeholder="https://facebook.com/..."
-          value={form.facebook ?? ""}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              facebook: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      <div>
-        <Label>Custom Link</Label>
-
-        <Input
-          placeholder="https://..."
-          value={form.customLink ?? ""}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              customLink: e.target.value,
-            }))
-          }
-        />
-      </div>
-    </div>
-  </div>
-
-  <div className="flex items-center justify-between rounded-3xl border border-stone-200 bg-white p-6">
-    <div>
-      {hasChanges ? (
-        <p className="text-sm font-medium text-amber-600">
-          You have unsaved changes.
-        </p>
-      ) : (
-        <p className="text-sm text-stone-500">
-          Everything is up to date.
-        </p>
-      )}
-    </div>
-
-    <Button
-      onClick={handleSave}
-      disabled={!hasChanges || saving}
-      className="min-w-40"
-    >
-      {saving ? "Saving..." : "Save Changes"}
-    </Button>
-  </div>
-</section>
+    </section>
   );
 }
-  
