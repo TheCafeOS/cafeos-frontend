@@ -1496,21 +1496,21 @@ onOpenLoyalty={
         onOpenCart={() => setIsCartOpen(true)}
       />
 
-      <CartDrawer
-        isOpen={isCartOpen}
-        cart={cart}
-        tableName={menu.table.name}
-        customerPhone={customerPhone}
-        isPlacingOrder={isPlacingOrder}
-        total={cartTotal}
-        loyaltyEnabled={Boolean(loyaltyProgram)}
-        formatPrice={formatPrice}
-        onClose={() => setIsCartOpen(false)}
-        onPhoneChange={setCustomerPhone}
-        onQuantityChange={updateQuantity}
-        onRemove={removeFromCart}
-        onPlaceOrder={handlePlaceOrder}
-      />
+     <CartDrawer
+  isOpen={isCartOpen}
+  cart={cart}
+  tableName={menu.table.name}
+  customerPhone={customerPhone}
+  isPlacingOrder={isPlacingOrder}
+  total={cartTotal}
+  loyaltyEnabled={Boolean(loyaltyProgram)}
+  formatPrice={formatPrice}
+  onClose={() => setIsCartOpen(false)}
+  onPhoneChange={setCustomerPhone}
+  onQuantityChange={updateQuantity}
+  onRemove={removeFromCart}
+  onPlaceOrder={handlePlaceOrder}
+/>
 
       <CurrentOrderDrawer
         isOpen={isOrderDrawerOpen}

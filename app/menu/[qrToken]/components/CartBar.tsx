@@ -1,9 +1,11 @@
+"use client";
+
 import { ArrowRight, ShoppingBag } from "lucide-react";
 
 type CartBarProps = {
   itemCount: number;
   total: number;
-  formatPrice: (price: number) => string;
+  formatPrice: (price: string | number) => string;
   onOpenCart: () => void;
 };
 
@@ -18,60 +20,101 @@ export default function CartBar({
   }
 
   return (
-<div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4">      <button
+    <div
+      className="
+        fixed
+        inset-x-0
+        bottom-0
+        z-[99990]
+        px-3
+        pb-[max(12px,env(safe-area-inset-bottom))]
+        sm:px-4
+      "
+    >
+      <button
         type="button"
         onClick={onOpenCart}
-        aria-label="View cart and place order"
+        aria-label="Open cart"
         className="
-mx-auto
-flex
-w-full
-max-w-xl
-items-center
-justify-between
-rounded-2xl
-border
-border-orange-200
-bg-white/95
-px-4
-py-3
-shadow-xl
-backdrop-blur-md
-transition-all
-duration-300
-hover:-translate-y-0.5
-active:scale-[0.98]
-"
+          mx-auto
+          flex
+          w-full
+          max-w-5xl
+          items-center
+          justify-between
+          gap-3
+          rounded-2xl
+          border
+          border-stone-200
+          bg-white
+          px-4
+          py-3
+          text-left
+          shadow-[0_8px_30px_rgba(0,0,0,0.18)]
+          transition-all
+          duration-200
+          hover:-translate-y-0.5
+          hover:shadow-[0_12px_35px_rgba(0,0,0,0.22)]
+          active:scale-[0.99]
+          sm:px-5
+          sm:py-3.5
+        "
       >
         {/* Left */}
-        <div className="flex items-center gap-3">
-<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white">    
-          <ShoppingBag className="h-5 w-5" />
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className="
+              flex
+              h-10
+              w-10
+              shrink-0
+              items-center
+              justify-center
+              rounded-full
+              bg-orange-100
+              text-orange-600
+            "
+          >
+            <ShoppingBag className="h-5 w-5" />
           </div>
 
-         <div className="min-w-0">
-<p className="truncate text-sm font-semibold text-stone-900 sm:text-base">              {itemCount} {itemCount === 1 ? "Item" : "Items"}
+          <div className="min-w-0 text-left">
+            <p className="truncate text-sm font-semibold text-stone-900 sm:text-base">
+              {itemCount} {itemCount === 1 ? "Item" : "Items"}
             </p>
 
-            <p className="mt-1 text-sm text-stone-500">
+            <p className="mt-0.5 truncate text-xs text-stone-500 sm:text-sm">
               Ready to place your order
             </p>
           </div>
         </div>
 
         {/* Right */}
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
           <div className="text-right">
-            <p className="text-xs uppercase tracking-wider text-stone-400">
+            <p className="text-[10px] uppercase tracking-wider text-stone-400 sm:text-xs">
               Total
             </p>
-<p className="text-lg font-bold text-orange-600 sm:text-xl">
+
+            <p className="text-base font-bold text-orange-600 sm:text-lg">
               {formatPrice(total)}
             </p>
           </div>
 
-<div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-orange-600">       
-       <ArrowRight className="h- 4w-4" />
+          <div
+            className="
+              flex
+              h-10
+              w-10
+              shrink-0
+              items-center
+              justify-center
+              rounded-full
+              bg-orange-100
+              text-orange-600
+            "
+          >
+            <ArrowRight className="h-5 w-5" />
           </div>
         </div>
       </button>
