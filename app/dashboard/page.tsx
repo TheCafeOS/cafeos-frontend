@@ -7,7 +7,6 @@ import {
   ClipboardList,
   Clock3,
   IndianRupee,
-  Loader2,
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";

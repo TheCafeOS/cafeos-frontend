@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
-  ImageOff,
   Loader2,
   Trash2,
   Pencil,
@@ -56,7 +55,6 @@ import type { CreateMenuItemPayload, FoodType, MenuItem } from "@/types/menu-ite
 
 import { useElementSize } from "@/lib/use-element-size";
 import { getImageTransform } from "@/lib/image-framing";
-import { FolderOpen } from "lucide-react";
 
 // Renders a menu item's image using its saved (normalized) framing,
 // converted to pixels for this card's own live container size via the
