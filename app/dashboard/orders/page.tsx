@@ -345,8 +345,8 @@ useEffect(() => {
           <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-3.5 sm:p-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-              <input
-                type="search"
+           <input
+  type="text"
                 value={searchQuery}
 onChange={(event) => {
   setPage(1);
