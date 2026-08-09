@@ -14,6 +14,8 @@ type ApiResponse<T> = {
   data: T | null;
 };
 
+/* ---------- Get Menu Items ---------- */
+
 export async function getMenuItems(
   params: MenuQueryParams = {},
 ): Promise<{
@@ -42,6 +44,8 @@ export async function getMenuItems(
   };
 }
 
+/* ---------- Create Menu Item ---------- */
+
 export async function createMenuItem(
   payload: CreateMenuItemPayload,
 ): Promise<MenuItem> {
@@ -52,12 +56,15 @@ export async function createMenuItem(
 
   if (!response.data.data) {
     throw new Error(
-      response.data.message || "Server did not return the created menu item.",
+      response.data.message ||
+        "Server did not return the created menu item.",
     );
   }
 
   return response.data.data;
 }
+
+/* ---------- Update Menu Item ---------- */
 
 export async function updateMenuItem(
   id: string,
@@ -70,12 +77,15 @@ export async function updateMenuItem(
 
   if (!response.data.data) {
     throw new Error(
-      response.data.message || "Server did not return the updated menu item.",
+      response.data.message ||
+        "Server did not return the updated menu item.",
     );
   }
 
   return response.data.data;
 }
+
+/* ---------- Delete / Disable Menu Item ---------- */
 
 export type DeleteMenuItemResult = {
   success: boolean;

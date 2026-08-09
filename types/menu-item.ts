@@ -28,6 +28,9 @@ export type MenuItem = {
   // Availability
   isAvailable: boolean;
 
+  // Whether this item has ever been used in a customer order
+  hasOrders: boolean;
+
   createdAt: string;
   updatedAt: string;
 };

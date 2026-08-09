@@ -13,6 +13,7 @@ import {
   UtensilsCrossed,
   SearchX,
   ChefHat,
+  Archive,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -115,15 +116,25 @@ const FOOD_TYPE_FILTERS: { value: "" | FoodType; label: string }[] = [
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
-    return (
-      error.response?.data?.message ??
-      error.message ??
-      fallback
-    );
+    const message = error.response?.data?.message;
+
+    if (typeof message === "string" && message.trim()) {
+      return message;
+    }
+
+    if (typeof error.message === "string" && error.message.trim()) {
+      return error.message;
+    }
+
+    return fallback;
   }
 
-  if (error instanceof Error) {
+  if (error instanceof Error && error.message.trim()) {
     return error.message;
+  }
+
+  if (typeof error === "string" && error.trim()) {
+    return error;
   }
 
   return fallback;
@@ -534,56 +545,41 @@ const [isDeletingCategory, setIsDeletingCategory] =
     }
   }
 
-  
   async function handleDeleteMenuItem() {
   if (!menuItemToDelete) return;
+
+  const item = menuItemToDelete;
 
   try {
     setIsDeletingMenuItem(true);
 
-    const result = await deleteMenuItem(menuItemToDelete.id);
+    const result = await deleteMenuItem(item.id);
 
-    /*
-     * The backend can either:
-     *
-     * 1. Permanently delete an unused item.
-     * 2. Disable an item that has already been used in an order.
-     *
-     * We use the backend message to show the correct result.
-     */
-
-    const wasDisabled = result.message
-      .toLowerCase()
-      .includes("disabled");
-
-    if (wasDisabled) {
-      // The item still exists in the dashboard,
-      // but is now unavailable.
+    // Item has already been used in customer orders.
+    // Backend disables it instead of permanently deleting it.
+    if (item.hasOrders) {
       setMenuItems((current) =>
-        current.map((item) =>
-          item.id === menuItemToDelete.id
+        current.map((menuItem) =>
+          menuItem.id === item.id
             ? {
-                ...item,
+                ...menuItem,
                 isAvailable: false,
               }
-            : item,
-        ),
+            : menuItem
+        )
       );
 
       toast.success(
-        result.message ||
-          "Menu item has been disabled because it has already been used in customer orders.",
+        "Menu item has been disabled because it has already been used in customer orders."
       );
     } else {
-      // Truly deleted by the backend.
+      // Item has never been used, so backend permanently deletes it.
       setMenuItems((current) =>
-        current.filter(
-          (item) => item.id !== menuItemToDelete.id,
-        ),
+        current.filter((menuItem) => menuItem.id !== item.id)
       );
 
       toast.success(
-        result.message || "Menu item deleted successfully.",
+        result.message || "Menu item deleted successfully."
       );
     }
 
@@ -591,14 +587,12 @@ const [isDeletingCategory, setIsDeletingCategory] =
     setMenuItemToDelete(null);
   } catch (error) {
     toast.error(
-      getErrorMessage(error, "Failed to delete menu item"),
+      getErrorMessage(error, "Failed to delete menu item")
     );
   } finally {
     setIsDeletingMenuItem(false);
   }
 }
-
-
 
   // Quick availability toggle — reuses the existing update endpoint,
   // no new API surface. Optimistic update with rollback on failure.
@@ -619,18 +613,24 @@ const [isDeletingCategory, setIsDeletingCategory] =
     try {
       const updatedItem = await updateMenuItem(item.id, {
         name: item.name,
-        description: item.description,
+description: item.description ?? undefined,
         price: Number(item.price),
         categoryId: item.categoryId || undefined,
         foodType: item.foodType,
         isAvailable: nextAvailable,
       });
 
-      setMenuItems((current) =>
-        current.map((menuItem) =>
-          menuItem.id === item.id ? updatedItem : menuItem,
-        ),
-      );
+   setMenuItems((current) =>
+  current.map((menuItem) =>
+    menuItem.id === item.id
+      ? {
+          ...menuItem,
+          ...updatedItem,
+          hasOrders: menuItem.hasOrders,
+        }
+      : menuItem,
+  ),
+);
 
       toast.success(
         nextAvailable
@@ -1398,22 +1398,37 @@ imagePositionY={activeMenuItem.imagePositionY ?? 0}
                               </Button>
                             )}
 
-                            {canDeleteMenu && (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                aria-label={`Delete ${item.name}`}
-                                className="gap-1.5 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700"
-onClick={() => {
-  setMenuItemToDelete(item);
-  setDeleteDialogOpen(true);
-}}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                Delete
-                              </Button>
-                            )}
+                          {canDeleteMenu && (
+  <Button
+    type="button"
+    size="sm"
+    variant="ghost"
+    aria-label={
+      item.hasOrders
+        ? `Disable ${item.name}`
+        : `Delete ${item.name}`
+    }
+    className={cn(
+      "gap-1.5 rounded-lg",
+      item.hasOrders
+        ? "text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+        : "text-red-600 hover:bg-red-50 hover:text-red-700",
+    )}
+    onClick={() => {
+      setMenuItemToDelete(item);
+      setDeleteDialogOpen(true);
+    }}
+  >
+    {item.hasOrders ? (
+      <Archive className="h-3.5 w-3.5" />
+    ) : (
+      <Trash2 className="h-3.5 w-3.5" />
+    )}
+
+    {item.hasOrders ? "Disable" : "Delete"}
+  </Button>
+)}
+
                           </div>
                         </div>
                       </div>
@@ -1449,12 +1464,24 @@ onClick={() => {
           </div>
         </section>
       </div>
-      <ConfirmDialog
+   <ConfirmDialog
   open={deleteDialogOpen}
   loading={isDeletingMenuItem}
-  title="Delete menu item?"
-  description={`"${menuItemToDelete?.name}" will be permanently deleted. This action cannot be undone.`}
-  confirmText="Delete"
+  title={
+    menuItemToDelete?.hasOrders
+      ? "Disable menu item?"
+      : "Delete menu item?"
+  }
+  description={
+    menuItemToDelete?.hasOrders
+      ? `"${menuItemToDelete?.name}" has already been used in customer orders, so it will be disabled instead of deleted. Historical orders will remain unchanged.`
+      : `"${menuItemToDelete?.name}" will be permanently deleted. This action cannot be undone.`
+  }
+  confirmText={
+    menuItemToDelete?.hasOrders
+      ? "Disable"
+      : "Delete"
+  }
   cancelText="Cancel"
   onCancel={() => {
     setDeleteDialogOpen(false);
