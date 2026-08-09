@@ -10,13 +10,16 @@ import type {
 
 type ApiResponse<T> = {
   success: boolean;
-  message: string;
-  data: T;
+  message: string | null;
+  data: T | null;
 };
 
 export async function getMenuItems(
   params: MenuQueryParams = {},
-): Promise<MenuListResponse> {
+): Promise<{
+  data: MenuItem[];
+  pagination: MenuListResponse["pagination"];
+}> {
   const response = await api.get<
     ApiResponse<MenuItem[]> & {
       pagination: MenuListResponse["pagination"];
@@ -25,20 +28,16 @@ export async function getMenuItems(
     params: {
       page: params.page ?? 1,
       limit: params.limit ?? 10,
-
       search: params.search?.trim() || undefined,
-
       categoryId: params.categoryId || undefined,
-
       isAvailable: params.isAvailable,
-
       sort: params.sort,
       order: params.order,
     },
   });
 
   return {
-    data: response.data.data,
+    data: response.data.data ?? [],
     pagination: response.data.pagination,
   };
 }
@@ -50,6 +49,12 @@ export async function createMenuItem(
     "/api/v1/menu",
     payload,
   );
+
+  if (!response.data.data) {
+    throw new Error(
+      response.data.message || "Server did not return the created menu item.",
+    );
+  }
 
   return response.data.data;
 }
@@ -63,11 +68,31 @@ export async function updateMenuItem(
     payload,
   );
 
+  if (!response.data.data) {
+    throw new Error(
+      response.data.message || "Server did not return the updated menu item.",
+    );
+  }
+
   return response.data.data;
 }
 
+export type DeleteMenuItemResult = {
+  success: boolean;
+  message: string;
+};
+
 export async function deleteMenuItem(
   id: string,
-): Promise<void> {
-  await api.delete(`/api/v1/menu/${id}`);
+): Promise<DeleteMenuItemResult> {
+  const response = await api.delete<ApiResponse<null>>(
+    `/api/v1/menu/${id}`,
+  );
+
+  return {
+    success: response.data.success,
+    message:
+      response.data.message ||
+      "Menu item operation completed successfully.",
+  };
 }

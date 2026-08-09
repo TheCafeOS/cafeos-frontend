@@ -541,15 +541,51 @@ const [isDeletingCategory, setIsDeletingCategory] =
   try {
     setIsDeletingMenuItem(true);
 
-    await deleteMenuItem(menuItemToDelete.id);
+    const result = await deleteMenuItem(menuItemToDelete.id);
 
-    setMenuItems((current) =>
-      current.filter(
-        (item) => item.id !== menuItemToDelete.id,
-      ),
-    );
+    /*
+     * The backend can either:
+     *
+     * 1. Permanently delete an unused item.
+     * 2. Disable an item that has already been used in an order.
+     *
+     * We use the backend message to show the correct result.
+     */
 
-    toast.success("Menu item deleted successfully.");
+    const wasDisabled = result.message
+      .toLowerCase()
+      .includes("disabled");
+
+    if (wasDisabled) {
+      // The item still exists in the dashboard,
+      // but is now unavailable.
+      setMenuItems((current) =>
+        current.map((item) =>
+          item.id === menuItemToDelete.id
+            ? {
+                ...item,
+                isAvailable: false,
+              }
+            : item,
+        ),
+      );
+
+      toast.success(
+        result.message ||
+          "Menu item has been disabled because it has already been used in customer orders.",
+      );
+    } else {
+      // Truly deleted by the backend.
+      setMenuItems((current) =>
+        current.filter(
+          (item) => item.id !== menuItemToDelete.id,
+        ),
+      );
+
+      toast.success(
+        result.message || "Menu item deleted successfully.",
+      );
+    }
 
     setDeleteDialogOpen(false);
     setMenuItemToDelete(null);
@@ -561,6 +597,8 @@ const [isDeletingCategory, setIsDeletingCategory] =
     setIsDeletingMenuItem(false);
   }
 }
+
+
 
   // Quick availability toggle — reuses the existing update endpoint,
   // no new API surface. Optimistic update with rollback on failure.
