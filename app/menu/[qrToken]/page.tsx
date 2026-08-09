@@ -153,12 +153,16 @@ function isDefaultFilters(filters: MenuFilters): boolean {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
+const PENDING_HIDE_AFTER_MS = 60 * 60 * 1000; // 1 hour
+const PENDING_CHECK_INTERVAL_MS = 30 * 1000; // 30 seconds
+
 if (!API_BASE_URL) {
   throw new Error("NEXT_PUBLIC_API_URL is not configured.");
 }
 
 // Best-effort icon per category name — purely cosmetic, falls back to
 // a generic utensils icon. Doesn't touch the API contract.
+
 
 
 function unwrapApiResponse<T>(body: ApiResponse<T> | T): T {
@@ -172,6 +176,26 @@ function unwrapApiResponse<T>(body: ApiResponse<T> | T): T {
   }
 
   return body as T;
+}
+
+function getOrderAgeMs(createdAt: string): number {
+  const createdTime = new Date(createdAt).getTime();
+
+  if (Number.isNaN(createdTime)) {
+    return 0;
+  }
+
+  return Math.max(0, Date.now() - createdTime);
+}
+
+function shouldHidePendingOrder(order: CurrentOrder): boolean {
+  if (order.status !== "PENDING") {
+    return false;
+  }
+
+  const age = getOrderAgeMs(order.createdAt);
+
+  return age >= PENDING_HIDE_AFTER_MS;
 }
 
 function normalizeMenu(data: PublicMenuResponse): PublicMenuResponse {
@@ -491,8 +515,10 @@ setLoyaltyProfile(profile);
   }, [qrToken]);
 
   useEffect(() => {
-    currentOrderIdRef.current = currentOrder?.id ?? null;
-  }, [currentOrder?.id]);
+  if (currentOrder?.id) {
+    currentOrderIdRef.current = currentOrder.id;
+  }
+}, [currentOrder?.id]);
 
   const fetchCurrentOrder = useCallback(
     async (orderId: string, showLoading = true) => {
@@ -529,7 +555,29 @@ const updatedOrder =
 
 console.log("Fetched latest order:", updatedOrder);
 
-setCurrentOrder(updatedOrder);      } catch (caughtError) {
+// Always remember the order ID, even if the order is temporarily hidden.
+currentOrderIdRef.current = updatedOrder.id;
+
+// If backend has cancelled the order, remove it from localStorage.
+if (updatedOrder.status === "CANCELLED") {
+  localStorage.removeItem(`cafeos-current-order-${qrToken}`);
+  currentOrderIdRef.current = null;
+  setCurrentOrder(updatedOrder);
+  return;
+}
+
+// Hide PENDING orders after 1 hour,
+// but keep the orderId so we can detect acceptance.
+if (shouldHidePendingOrder(updatedOrder)) {
+  setCurrentOrder(null);
+  return;
+}
+
+// CONFIRMED / PREPARING / COMPLETED
+// and PENDING orders under 1 hour are visible.
+setCurrentOrder(updatedOrder);  
+
+} catch (caughtError) {
         setCurrentOrderError(
           caughtError instanceof Error
             ? caughtError.message
@@ -628,12 +676,25 @@ setCurrentOrder(updatedOrder);      } catch (caughtError) {
               orderResponse,
             );
 
-          if (orderResponse.ok && orderBody) {
-            setCurrentOrder(unwrapApiResponse<CurrentOrder>(orderBody));
-          } else {
-            localStorage.removeItem(storageKey);
-            setCurrentOrder(null);
-          }
+         if (orderResponse.ok && orderBody) {
+  const restoredOrder = unwrapApiResponse<CurrentOrder>(orderBody);
+
+  currentOrderIdRef.current = restoredOrder.id;
+
+  if (restoredOrder.status === "CANCELLED") {
+    localStorage.removeItem(storageKey);
+    setCurrentOrder(null);
+  } else if (shouldHidePendingOrder(restoredOrder)) {
+    // Keep orderId in localStorage.
+    // Only hide the order from the customer UI.
+    setCurrentOrder(null);
+  } else {
+    setCurrentOrder(restoredOrder);
+  }
+} else {
+  localStorage.removeItem(storageKey);
+  setCurrentOrder(null);
+}
         } catch {
           localStorage.removeItem(storageKey);
           setCurrentOrder(null);
@@ -688,7 +749,7 @@ setCurrentOrder(updatedOrder);      } catch (caughtError) {
       socket.emit("join_qr", qrToken);
     });
 
-    socket.on("ORDER_UPDATED", (payload: OrderUpdatedPayload) => {
+  socket.on("ORDER_UPDATED", (payload: OrderUpdatedPayload) => {
   console.log("ORDER_UPDATED received:", payload);
 
   if (payload.orderId !== currentOrderIdRef.current) {
@@ -705,6 +766,26 @@ setCurrentOrder(updatedOrder);      } catch (caughtError) {
       socket.disconnect();
     };
   }, [qrToken, fetchCurrentOrder]);
+
+  useEffect(() => {
+  if (!qrToken) {
+    return;
+  }
+
+  const interval = window.setInterval(() => {
+    const orderId = currentOrderIdRef.current;
+
+    if (!orderId) {
+      return;
+    }
+
+    void fetchCurrentOrder(orderId, false);
+  }, PENDING_CHECK_INTERVAL_MS);
+
+  return () => {
+    window.clearInterval(interval);
+  };
+}, [qrToken, fetchCurrentOrder]);
 
   // Single source of truth for "go back to the unfiltered All view".
   //
@@ -909,6 +990,8 @@ switch (appliedFilters.sortBy) {
           orderId: createdOrder.id,
         }),
       );
+
+      currentOrderIdRef.current = createdOrder.id;
 
       setOrderMessage(
         "Order placed successfully. You can track or follow its progress below.",

@@ -59,6 +59,11 @@ const ORDER_STEPS = [
     description: "Your items are being prepared.",
   },
   {
+    status: "READY",
+    title: "Ready",
+    description: "Your order is ready to be served.",
+  },
+  {
     status: "COMPLETED",
     title: "Delivered",
     description: "Your order has been delivered. Enjoy your meal!",
