@@ -14,7 +14,15 @@ export interface LoyaltyProgram {
   rewardQuantity: number;
   minimumOrderValue: number;
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+
+  // Returned by GET /loyalty/programs
+  rewardCount?: number;
+  customerCount?: number;
 }
+
+/* -------------------- Customer -------------------- */
 
 export interface LoyaltyCustomer {
   id: string;
@@ -23,49 +31,82 @@ export interface LoyaltyCustomer {
   name: string | null;
   visitCount: number;
   totalSpend: number;
-  progressCount: number;
   lastOrderAt: string | null;
+  createdAt: string;
+  updatedAt?: string;
 }
+
+/* -------------------- Customer Program Progress -------------------- */
+
+export interface LoyaltyCustomerProgramProgress {
+  programId: string;
+  rewardName: string;
+  progressCount: number;
+  purchaseThreshold: number;
+  rewardQuantity: number;
+  isActive: boolean;
+}
+
+/* -------------------- Rewards -------------------- */
 
 export interface LoyaltyReward {
   id: string;
-  status: string;
+  programId: string | null;
+  status: "AVAILABLE" | "REDEEMED";
   createdAt: string;
+  redeemedAt?: string | null;
+  orderId?: string | null;
 }
 
-export interface LoyaltyProgress {
-  purchaseThreshold: number;
-  progressCount: number;
-}
+/* -------------------- Customer Profile -------------------- */
 
 export interface LoyaltyCustomerProfile {
   customer: LoyaltyCustomer;
+  progress: LoyaltyCustomerProgramProgress[];
   rewards: LoyaltyReward[];
-  progress: LoyaltyProgress;
 }
+
+/* -------------------- Public Loyalty -------------------- */
+
 export interface PublicLoyaltyCustomer {
   phone: string;
   visitCount: number;
+}
+
+export interface PublicLoyaltyProgramProgress {
+  programId: string;
+  rewardName: string;
   progressCount: number;
+  purchaseThreshold: number;
+  rewardQuantity: number;
+  isActive: boolean;
 }
 
 export interface PublicLoyaltyCustomerProfile {
   customer: PublicLoyaltyCustomer;
+  programs: PublicLoyaltyProgramProgress[];
   rewards: LoyaltyReward[];
-  progress: LoyaltyProgress;
 }
 
 /* -------------------- Loyalty Customers List -------------------- */
+
+export interface LoyaltyCustomerProgram {
+  programId: string;
+  progressCount: number;
+  purchaseThreshold: number;
+}
 
 export interface LoyaltyCustomerListItem {
   id: string;
   phone: string;
   name: string | null;
   visitCount: number;
-  progressCount: number;
   totalSpend: number;
   lastOrderAt: string | null;
   createdAt: string;
+
+  programs: LoyaltyCustomerProgram[];
+
   availableRewards: number;
   redeemedRewards: number;
 }
