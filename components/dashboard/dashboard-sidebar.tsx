@@ -84,14 +84,12 @@ export function DashboardSidebar({
             href: "/dashboard/inventory",
             label: "Inventory",
             icon: Package2,
-            disabled: true,
             badge: "Soon",
           },
           {
             href: "/dashboard/reports",
             label: "Reports",
             icon: BarChart3,
-            disabled: true,
             badge: "Soon",
           },
         ]
@@ -121,14 +119,12 @@ export function DashboardSidebar({
               href: "/dashboard/inventory",
               label: "Inventory",
               icon: Package2,
-              disabled: true,
               badge: "Soon",
             },
             {
               href: "/dashboard/reports",
               label: "Reports",
               icon: BarChart3,
-              disabled: true,
               badge: "Soon",
             },
           ]
@@ -153,11 +149,11 @@ export function DashboardSidebar({
   return (
     <aside
       className={cn(
-        "flex w-72 shrink-0 flex-col justify-between border-r border-stone-200 bg-stone-50/80",
+        "flex h-full min-h-screen w-72 shrink-0 flex-col justify-between overflow-y-auto border-r border-stone-200 bg-stone-50",
         !mobile && "hidden lg:flex",
       )}
     >
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-full flex-col">
         <div className="px-5 pt-8">
           <div className="flex items-center gap-4">
             {restaurant?.logoUrl ? (
