@@ -72,8 +72,14 @@ export default function LoyaltyCard({
     );
   }
 
-  const progressCount = profile.progress.progressCount;
-  const purchaseThreshold = profile.progress.purchaseThreshold;
+const programProgress = profile.programs.find(
+  (item) => item.programId === program.id,
+);
+
+const progressCount = programProgress?.progressCount ?? 0;
+const purchaseThreshold =
+  programProgress?.purchaseThreshold ??
+  program.purchaseThreshold;
 
   const progressPercentage = Math.min(
     100,
