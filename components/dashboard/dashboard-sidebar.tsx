@@ -13,13 +13,12 @@ import {
   Table2,
   Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { DashboardNavItem } from "@/components/dashboard/dashboard-nav-item";
 import { useRestaurantBranding } from "@/providers/restaurant-branding-provider";
 import { getEmployee } from "@/utils/auth";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
-
 
 type DashboardSidebarProps = {
   mobile?: boolean;
@@ -31,25 +30,26 @@ export function DashboardSidebar({
   const pathname = usePathname();
   const { restaurant } = useRestaurantBranding();
 
+  const [employee, setEmployee] = useState<ReturnType<typeof getEmployee>>(
+    null,
+  );
 
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setEmployee(getEmployee());
+    }, 0);
 
-const [employee, setEmployee] = useState<ReturnType<typeof getEmployee>>(null);
+    return () => clearTimeout(id);
+  }, []);
 
-useEffect(() => {
-  const id = setTimeout(() => {
-    setEmployee(getEmployee());
-  }, 0);
-
-  return () => clearTimeout(id);
-}, []);
   const navItems =
     employee?.role === "OWNER"
       ? [
           {
-  href: "/dashboard",
-  label: "Dashboard",
-  icon: LayoutGrid,
-},
+            href: "/dashboard",
+            label: "Dashboard",
+            icon: LayoutGrid,
+          },
           {
             href: "/dashboard/orders",
             label: "Orders",
@@ -66,16 +66,6 @@ useEffect(() => {
             icon: Table2,
           },
           {
-            href: "/dashboard/inventory",
-            label: "Inventory",
-            icon: Package2,
-          },
-          {
-            href: "/dashboard/reports",
-            label: "Reports",
-            icon: BarChart3,
-          },
-          {
             href: "/dashboard/employees",
             label: "Employees",
             icon: Users,
@@ -90,14 +80,28 @@ useEffect(() => {
             label: "Settings",
             icon: Settings,
           },
+          {
+            href: "/dashboard/inventory",
+            label: "Inventory",
+            icon: Package2,
+            disabled: true,
+            badge: "Soon",
+          },
+          {
+            href: "/dashboard/reports",
+            label: "Reports",
+            icon: BarChart3,
+            disabled: true,
+            badge: "Soon",
+          },
         ]
       : employee?.role === "MANAGER"
         ? [
             {
-  href: "/dashboard",
-  label: "Dashboard",
-  icon: LayoutGrid,
-},
+              href: "/dashboard",
+              label: "Dashboard",
+              icon: LayoutGrid,
+            },
             {
               href: "/dashboard/orders",
               label: "Orders",
@@ -117,11 +121,15 @@ useEffect(() => {
               href: "/dashboard/inventory",
               label: "Inventory",
               icon: Package2,
+              disabled: true,
+              badge: "Soon",
             },
             {
               href: "/dashboard/reports",
               label: "Reports",
               icon: BarChart3,
+              disabled: true,
+              badge: "Soon",
             },
           ]
         : [
@@ -149,53 +157,58 @@ useEffect(() => {
         !mobile && "hidden lg:flex",
       )}
     >
-      <div className="p-6">
-        <div className="mb-8 flex items-center gap-4">
-          <div
-className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"          >
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="px-5 pt-8">
+          <div className="flex items-center gap-4">
             {restaurant?.logoUrl ? (
-              <Image
-                src={restaurant.logoUrl}
-                alt={restaurant.name}
-                fill
-                sizes="56px"
-                className="object-contain p-1"
-              />
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+                <Image
+                  src={restaurant.logoUrl}
+                  alt={restaurant.name}
+                  fill
+                  className="object-cover"
+                  sizes="64px"
+                />
+              </div>
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-amber-600 text-white">
-                <Coffee className="h-6 w-6" />
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-stone-200 bg-white text-lg font-semibold text-stone-700 shadow-sm">
+                {restaurant?.name?.charAt(0) ?? "C"}
               </div>
             )}
+
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold leading-tight text-stone-900">
+                {restaurant?.name ?? "CafeOS"}
+              </h1>
+
+              {restaurant?.tagline ? (
+                <p className="mt-1 text-sm leading-5 text-stone-500">
+                  {restaurant.tagline}
+                </p>
+              ) : null}
+            </div>
           </div>
-
-         <div className="min-w-0 flex-1">
-  <p className="line-clamp-2 break-words text-xl font-bold tracking-tight text-stone-900">
-    {restaurant?.name || "CafeOS"}
-  </p>
-
-  <p className="mt-1 line-clamp-2 break-words text-sm leading-5 text-stone-500">
-    {restaurant?.tagline || "Restaurant Management"}
-  </p>
-</div>
         </div>
 
-        <nav className="space-y-1">
-          {navItems.map((item) => {
-            const active =
-              item.href === "/dashboard"
-                ? pathname === "/dashboard"
-                : pathname === item.href ||
-                  pathname.startsWith(`${item.href}/`);
+        <div className="min-w-0 flex-1 px-5 pt-10">
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const active =
+                item.href === "/dashboard"
+                  ? pathname === "/dashboard"
+                  : pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`);
 
-            return (
-              <DashboardNavItem
-                key={item.href}
-                {...item}
-                active={active}
-              />
-            );
-          })}
-        </nav>
+              return (
+                <DashboardNavItem
+                  key={item.href}
+                  {...item}
+                  active={active}
+                />
+              );
+            })}
+          </nav>
+        </div>
       </div>
     </aside>
   );
