@@ -1084,11 +1084,7 @@ const showPopular =
   // Instagram/phone/email, there's nothing useful to show, so we skip
   // rendering the entry point entirely rather than opening a dialog that
   // just says "nothing here yet".
-  const hasAnyContactInfo = Boolean(
-    menu.restaurant.instagramUrl ||
-    menu.restaurant.phone ||
-    menu.restaurant.email,
-  );
+  
 
   return (
    <main className="min-h-screen overflow-x-hidden bg-[#0F1115] pb-32">
