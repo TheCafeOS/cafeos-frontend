@@ -415,9 +415,11 @@ export default function CartDrawer({
                 disabled:opacity-60
               "
             >
-              {isPlacingOrder
-                ? "Placing order..."
-                : "Place Order"}
+             {isPlacingOrder
+  ? "Placing order..."
+  : orderError
+    ? "Try Again"
+    : "Place Order"}
             </button>
           </div>
         )}
