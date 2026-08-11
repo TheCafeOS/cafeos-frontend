@@ -16,7 +16,9 @@ type CartDrawerProps = {
   tableName: string;
   customerPhone: string;
   isPlacingOrder: boolean;
+  orderError: string;
   total: number;
+
   loyaltyEnabled: boolean;
   formatPrice: (price: string | number) => string;
   onClose: () => void;
@@ -32,6 +34,7 @@ export default function CartDrawer({
   tableName,
   customerPhone,
   isPlacingOrder,
+  orderError,
   total,
   loyaltyEnabled,
   formatPrice,
@@ -378,6 +381,12 @@ export default function CartDrawer({
                 {formatPrice(total)}
               </span>
             </div>
+
+{orderError ? (
+  <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+    {orderError}
+  </div>
+) : null}
 
             {/* PLACE ORDER */}
 

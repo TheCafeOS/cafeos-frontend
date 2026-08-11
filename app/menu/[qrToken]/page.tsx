@@ -971,12 +971,21 @@ switch (appliedFilters.sortBy) {
       const responseBody =
         await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(response);
 
-      if (!response.ok || !responseBody) {
-        throw new Error(
-          getApiMessage(responseBody) ||
-            "Failed to place order. Please ask the café staff for help.",
-        );
-      }
+     if (!response.ok || !responseBody) {
+  if (response.status === 409) {
+    const backendMessage = getApiMessage(responseBody);
+
+    throw new Error(
+      backendMessage ||
+        "This table is currently being used by another customer. Please wait until the current order is completed.",
+    );
+  }
+
+  throw new Error(
+    getApiMessage(responseBody) ||
+      "Failed to place order. Please ask the café staff for help.",
+  );
+}
 
       const createdOrder = unwrapApiResponse<CurrentOrder>(responseBody);
 
@@ -1657,12 +1666,13 @@ className="w-72 rounded-2xl border-white/10 bg-[#171A20] p-4 text-neutral-100 sh
         onOpenCart={() => setIsCartOpen(true)}
       />
 
-     <CartDrawer
+   <CartDrawer
   isOpen={isCartOpen}
   cart={cart}
   tableName={menu.table.name}
   customerPhone={customerPhone}
   isPlacingOrder={isPlacingOrder}
+  orderError={orderError}
   total={cartTotal}
   loyaltyEnabled={Boolean(loyaltyProgram)}
   formatPrice={formatPrice}
