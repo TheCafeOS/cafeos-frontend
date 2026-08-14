@@ -58,6 +58,16 @@ export default function RestaurantHeader({
   onOpenRestaurantInfo,
 }: RestaurantHeaderProps) {
   /*
+   * DEBUG:
+   * Check whether the current orders are actually reaching
+   * the RestaurantHeader component.
+   */
+  console.log(
+    "RestaurantHeader currentOrders:",
+    currentOrders,
+  );
+
+  /*
    * Opening status is calculated from the restaurant's weekly
    * opening hours.
    *
@@ -102,7 +112,9 @@ export default function RestaurantHeader({
                   {tableName}
                 </span>
 
-                <span className="text-neutral-700">•</span>
+                <span className="text-neutral-700">
+                  •
+                </span>
 
                 {/* Open / Closed status */}
                 <span
@@ -120,7 +132,9 @@ export default function RestaurantHeader({
                     }`}
                   />
 
-                  {openStatus.isOpen ? "Open Now" : "Closed"}
+                  {openStatus.isOpen
+                    ? "Open Now"
+                    : "Closed"}
                 </span>
 
                 {/* Opening-hours message */}
