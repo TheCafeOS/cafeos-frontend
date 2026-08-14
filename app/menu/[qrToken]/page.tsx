@@ -101,14 +101,22 @@ type MenuPageProps = {
   }>;
 };
 
-type StoredOrder = {
-  orderId: string;
-};
 
 type OrderUpdatedPayload = {
   orderId: string;
   status: CurrentOrder["status"];
   timestamp: string;
+};
+
+type ActiveOrdersResponse = {
+  table: {
+    id: string;
+    name: string;
+  };
+  type: "NONE" | "COMBINED" | "SEPARATE";
+  orderCount: number;
+  combinedTotal: number;
+  orders: CurrentOrder[];
 };
 
 type SortOption = "popular" | "price-asc" | "price-desc";
@@ -153,7 +161,6 @@ function isDefaultFilters(filters: MenuFilters): boolean {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-const PENDING_HIDE_AFTER_MS = 60 * 60 * 1000; // 1 hour
 const PENDING_CHECK_INTERVAL_MS = 30 * 1000; // 30 seconds
 
 if (!API_BASE_URL) {
@@ -178,25 +185,6 @@ function unwrapApiResponse<T>(body: ApiResponse<T> | T): T {
   return body as T;
 }
 
-function getOrderAgeMs(createdAt: string): number {
-  const createdTime = new Date(createdAt).getTime();
-
-  if (Number.isNaN(createdTime)) {
-    return 0;
-  }
-
-  return Math.max(0, Date.now() - createdTime);
-}
-
-function shouldHidePendingOrder(order: CurrentOrder): boolean {
-  if (order.status !== "PENDING") {
-    return false;
-  }
-
-  const age = getOrderAgeMs(order.createdAt);
-
-  return age >= PENDING_HIDE_AFTER_MS;
-}
 
 function normalizeMenu(data: PublicMenuResponse): PublicMenuResponse {
   return {
@@ -469,7 +457,11 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [orderMessage, setOrderMessage] = useState("");
   const [orderError, setOrderError] = useState("");
 
-  const [currentOrder, setCurrentOrder] = useState<CurrentOrder | null>(null);
+const [currentOrders, setCurrentOrders] = useState<CurrentOrder[]>([]);
+const [activeOrderType, setActiveOrderType] =
+  useState<"NONE" | "COMBINED" | "SEPARATE">("NONE");
+const [combinedTotal, setCombinedTotal] = useState(0);
+
   const [isOrderDrawerOpen, setIsOrderDrawerOpen] = useState(false);
   const [isRefreshingOrder, setIsRefreshingOrder] = useState(false);
   const [currentOrderError, setCurrentOrderError] = useState("");
@@ -486,7 +478,7 @@ const [isInfoOpen, setIsInfoOpen] = useState(false);
   const menuItems = useMemo(() => menu?.menuItems ?? [], [menu?.menuItems]);
   const isDesktopFilterViewport = useIsDesktopViewport();
 
-  const currentOrderIdRef = useRef<string | null>(null);
+
   const popularSectionRef = useRef<HTMLDivElement | null>(null);
   const menuSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -514,14 +506,8 @@ setLoyaltyProfile(profile);
     }
   }, [qrToken]);
 
-  useEffect(() => {
-  if (currentOrder?.id) {
-    currentOrderIdRef.current = currentOrder.id;
-  }
-}, [currentOrder?.id]);
-
-  const fetchCurrentOrder = useCallback(
-    async (orderId: string, showLoading = true) => {
+   const fetchActiveOrders = useCallback(
+    async (showLoading = false) => {
       if (!qrToken) {
         return;
       }
@@ -536,52 +522,43 @@ setLoyaltyProfile(profile);
         const response = await fetch(
           `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(
             qrToken,
-          )}/${encodeURIComponent(orderId)}`,
+          )}/active`,
+          {
+            credentials: "include",
+          },
         );
 
         const responseBody =
-          await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(
+          await safelyReadJson<ApiResponse<ActiveOrdersResponse>>(
             response,
           );
 
         if (!response.ok || !responseBody) {
           throw new Error(
-            getApiMessage(responseBody) || "Could not fetch order status.",
+            getApiMessage(responseBody) ||
+              "Could not fetch active orders.",
           );
         }
 
-const updatedOrder =
-  unwrapApiResponse<CurrentOrder>(responseBody);
+        const activeOrders =
+          unwrapApiResponse<ActiveOrdersResponse>(responseBody);
 
-console.log("Fetched latest order:", updatedOrder);
+        setCurrentOrders(
+          Array.isArray(activeOrders.orders)
+            ? activeOrders.orders
+            : [],
+        );
 
-// Always remember the order ID, even if the order is temporarily hidden.
-currentOrderIdRef.current = updatedOrder.id;
+        setActiveOrderType(activeOrders.type ?? "NONE");
 
-// If backend has cancelled the order, remove it from localStorage.
-if (updatedOrder.status === "CANCELLED") {
-  localStorage.removeItem(`cafeos-current-order-${qrToken}`);
-  currentOrderIdRef.current = null;
-  setCurrentOrder(updatedOrder);
-  return;
-}
-
-// Hide PENDING orders after 1 hour,
-// but keep the orderId so we can detect acceptance.
-if (shouldHidePendingOrder(updatedOrder)) {
-  setCurrentOrder(null);
-  return;
-}
-
-// CONFIRMED / PREPARING / COMPLETED
-// and PENDING orders under 1 hour are visible.
-setCurrentOrder(updatedOrder);  
-
-} catch (caughtError) {
+        setCombinedTotal(
+          Number(activeOrders.combinedTotal ?? 0),
+        );
+      } catch (caughtError) {
         setCurrentOrderError(
           caughtError instanceof Error
             ? caughtError.message
-            : "Could not fetch order status.",
+            : "Could not fetch active orders.",
         );
       } finally {
         if (showLoading) {
@@ -608,9 +585,12 @@ setCurrentOrder(updatedOrder);
 
         setQrToken(token);
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/v1/public/menu/${encodeURIComponent(token)}`,
-        );
+const response = await fetch(
+  `${API_BASE_URL}/api/v1/public/menu/${encodeURIComponent(token)}`,
+  {
+    credentials: "include",
+  },
+);
 
         const responseBody = await safelyReadJson<
           ApiResponse<PublicMenuResponse> | PublicMenuResponse
@@ -648,57 +628,7 @@ setCurrentOrder(updatedOrder);
 
         setMenu(normalizeMenu(menuData));
 
-        const storageKey = `cafeos-current-order-${token}`;
-        const savedOrder = localStorage.getItem(storageKey);
-
-        if (!savedOrder) {
-          setCurrentOrder(null);
-          return;
-        }
-
-        try {
-          const parsedOrder = JSON.parse(savedOrder) as StoredOrder;
-
-          if (!parsedOrder.orderId) {
-            localStorage.removeItem(storageKey);
-            setCurrentOrder(null);
-            return;
-          }
-
-          const orderResponse = await fetch(
-            `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(
-              token,
-            )}/${encodeURIComponent(parsedOrder.orderId)}`,
-          );
-
-          const orderBody =
-            await safelyReadJson<ApiResponse<CurrentOrder> | CurrentOrder>(
-              orderResponse,
-            );
-
-         if (orderResponse.ok && orderBody) {
-  const restoredOrder = unwrapApiResponse<CurrentOrder>(orderBody);
-
-  currentOrderIdRef.current = restoredOrder.id;
-
-  if (restoredOrder.status === "CANCELLED") {
-    localStorage.removeItem(storageKey);
-    setCurrentOrder(null);
-  } else if (shouldHidePendingOrder(restoredOrder)) {
-    // Keep orderId in localStorage.
-    // Only hide the order from the customer UI.
-    setCurrentOrder(null);
-  } else {
-    setCurrentOrder(restoredOrder);
-  }
-} else {
-  localStorage.removeItem(storageKey);
-  setCurrentOrder(null);
-}
-        } catch {
-          localStorage.removeItem(storageKey);
-          setCurrentOrder(null);
-        }
+       
       } catch (caughtError) {
         setMenu(null);
 
@@ -721,6 +651,16 @@ setCurrentOrder(updatedOrder);
     void loadMenu();
   }, [params]);
 
+  useEffect(() => {
+    if (!qrToken) {
+      return;
+    }
+
+  setTimeout(() => {
+  void fetchActiveOrders(false);
+}, 0);
+  }, [qrToken, fetchActiveOrders]);
+
  useEffect(() => {
   if (!qrToken) {
     return;
@@ -739,53 +679,44 @@ setCurrentOrder(updatedOrder);
 }, [loadLoyaltyData, qrToken]);
 
   useEffect(() => {
-    if (!qrToken) {
-      return;
-    }
-
-    const socket = io(API_BASE_URL);
-
-    socket.on("connect", () => {
-      socket.emit("join_qr", qrToken);
-    });
-
-  socket.on("ORDER_UPDATED", (payload: OrderUpdatedPayload) => {
-  console.log("ORDER_UPDATED received:", payload);
-
-  if (payload.orderId !== currentOrderIdRef.current) {
-    console.log("Ignoring different order");
+  if (!qrToken) {
     return;
   }
 
-  console.log("Fetching updated order...");
+  const socket = io(API_BASE_URL, {
+    withCredentials: true,
+  });
 
-  void fetchCurrentOrder(payload.orderId, false);
-});
+  socket.on("connect", () => {
+    socket.emit("join_qr", qrToken);
+  });
 
-    return () => {
-      socket.disconnect();
-    };
-  }, [qrToken, fetchCurrentOrder]);
+  socket.on("ORDER_UPDATED", (payload: OrderUpdatedPayload) => {
+    console.log("ORDER_UPDATED received:", payload);
 
-  useEffect(() => {
+    void fetchActiveOrders(false);
+  });
+
+  return () => {
+    socket.disconnect();
+  };
+}, [qrToken, fetchActiveOrders]);
+
+
+useEffect(() => {
   if (!qrToken) {
     return;
   }
 
   const interval = window.setInterval(() => {
-    const orderId = currentOrderIdRef.current;
-
-    if (!orderId) {
-      return;
-    }
-
-    void fetchCurrentOrder(orderId, false);
+    void fetchActiveOrders(false);
   }, PENDING_CHECK_INTERVAL_MS);
 
   return () => {
     window.clearInterval(interval);
   };
-}, [qrToken, fetchCurrentOrder]);
+}, [qrToken, fetchActiveOrders]);
+
 
   // Single source of truth for "go back to the unfiltered All view".
   //
@@ -952,12 +883,13 @@ switch (appliedFilters.sortBy) {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(qrToken)}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+  `${API_BASE_URL}/api/v1/public/orders/${encodeURIComponent(qrToken)}`,
+  {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
           body: JSON.stringify({
             customerPhone: customerPhone.trim() || undefined,
             items: cart.map((item) => ({
@@ -993,15 +925,7 @@ switch (appliedFilters.sortBy) {
         throw new Error("The café server returned an invalid order response.");
       }
 
-      localStorage.setItem(
-        `cafeos-current-order-${qrToken}`,
-        JSON.stringify({
-          orderId: createdOrder.id,
-        }),
-      );
-
-      currentOrderIdRef.current = createdOrder.id;
-
+    
       setOrderMessage(
         "Order placed successfully. You can track or follow its progress below.",
       );
@@ -1022,8 +946,9 @@ switch (appliedFilters.sortBy) {
         void loadLoyaltyData(savedPhone);
       }
 
-      await fetchCurrentOrder(createdOrder.id, false);
-      setIsOrderDrawerOpen(true);
+     await fetchActiveOrders(false);
+setIsOrderDrawerOpen(true);
+
     } catch (caughtError) {
       setOrderError(
         caughtError instanceof Error
@@ -1111,7 +1036,7 @@ const showPopular =
   restaurant={menu.restaurant}
   tableName={menu.table.name}
   cartItemCount={cartItemCount}
-  currentOrder={currentOrder}
+currentOrders={currentOrders}
   onOpenCart={() => setIsCartOpen(true)}
   onOpenOrder={() => setIsOrderDrawerOpen(true)}
 onOpenLoyalty={
@@ -1683,20 +1608,20 @@ className="w-72 rounded-2xl border-white/10 bg-[#171A20] p-4 text-neutral-100 sh
   onPlaceOrder={handlePlaceOrder}
 />
 
-      <CurrentOrderDrawer
-        isOpen={isOrderDrawerOpen}
-        order={currentOrder}
-        tableName={menu.table.name}
-        isRefreshing={isRefreshingOrder}
-        error={currentOrderError}
-        formatPrice={formatPrice}
-        onClose={() => setIsOrderDrawerOpen(false)}
-        onRefresh={() => {
-          if (currentOrder) {
-            void fetchCurrentOrder(currentOrder.id);
-          }
-        }}
-      />
+     <CurrentOrderDrawer
+  isOpen={isOrderDrawerOpen}
+  orders={currentOrders}
+  orderType={activeOrderType}
+  combinedTotal={combinedTotal}
+  tableName={menu.table.name}
+  isRefreshing={isRefreshingOrder}
+  error={currentOrderError}
+  formatPrice={formatPrice}
+  onClose={() => setIsOrderDrawerOpen(false)}
+  onRefresh={() => {
+    void fetchActiveOrders();
+  }}
+/>
     </main>
   );
 }

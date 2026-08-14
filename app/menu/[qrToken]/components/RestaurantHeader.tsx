@@ -39,7 +39,7 @@ type RestaurantHeaderProps = {
   tableName: string;
   cartItemCount: number;
 
-  currentOrder: CurrentOrder | null;
+  currentOrders: CurrentOrder[];
 
   onOpenCart: () => void;
   onOpenOrder: () => void;
@@ -51,7 +51,7 @@ export default function RestaurantHeader({
   restaurant,
   tableName,
   cartItemCount,
-  currentOrder,
+  currentOrders,
   onOpenCart,
   onOpenOrder,
   onOpenLoyalty,
@@ -144,10 +144,11 @@ export default function RestaurantHeader({
 
           {/* Actions */}
           <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
-            {/* Current order */}
-            {currentOrder && (
+            {/* Current orders */}
+            {currentOrders.length > 0 && (
               <CurrentOrderButton
-                status={currentOrder.status}
+                status={currentOrders[0]?.status}
+                orderCount={currentOrders.length}
                 onClick={onOpenOrder}
               />
             )}
