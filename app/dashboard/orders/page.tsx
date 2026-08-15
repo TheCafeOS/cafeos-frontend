@@ -219,7 +219,12 @@ useEffect(() => {
 }, [loadOrders]);
 
 const handleOrderCreated = useCallback(() => {
-  void loadOrders();
+  console.log("🟢 ORDER_CREATED received — waiting before reloading orders...");
+
+  window.setTimeout(() => {
+    console.log("🔄 Reloading orders after ORDER_CREATED");
+    void loadOrders();
+  }, 1500);
 }, [loadOrders]);
 
 const handleOrderUpdated = useCallback(() => {

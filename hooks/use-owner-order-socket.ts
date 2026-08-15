@@ -16,10 +16,12 @@ export function useOwnerOrderSocket({
     const socket = connectSocket();
 
     const handleOrderCreated = () => {
+      console.log(" ORDERS PAGE: ORDER_CREATED received");
       onOrderCreated();
     };
 
     const handleOrderUpdated = () => {
+      console.log(" ORDERS PAGE: ORDER_UPDATED received");
       onOrderUpdated();
     };
 
