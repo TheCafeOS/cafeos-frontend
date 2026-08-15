@@ -472,9 +472,9 @@ export default function CurrentOrderDrawer({
 }: CurrentOrderDrawerProps) {
   useRelativeTime();
 
-  if (!isOpen || orders.length === 0 || orderType === "NONE") {
-    return null;
-  }
+ if (!isOpen || orders.length === 0) {
+  return null;
+}
 
   const isCombined = orderType === "COMBINED";
 

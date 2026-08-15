@@ -458,6 +458,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [orderError, setOrderError] = useState("");
 
 const [currentOrders, setCurrentOrders] = useState<CurrentOrder[]>([]);
+const [sessionOrderIds, setSessionOrderIds] = useState<string[]>([]);
 const [activeOrderType, setActiveOrderType] =
   useState<"NONE" | "COMBINED" | "SEPARATE">("NONE");
 const [combinedTotal, setCombinedTotal] = useState(0);
@@ -543,17 +544,41 @@ setLoyaltyProfile(profile);
         const activeOrders =
           unwrapApiResponse<ActiveOrdersResponse>(responseBody);
 
-        setCurrentOrders(
-          Array.isArray(activeOrders.orders)
-            ? activeOrders.orders
-            : [],
-        );
+        const backendOrders = Array.isArray(activeOrders.orders)
+  ? activeOrders.orders
+  : [];
 
-        setActiveOrderType(activeOrders.type ?? "NONE");
+setCurrentOrders((previousOrders) => {
+  // Orders currently returned by the backend.
+  const activeOrderMap = new Map(
+    backendOrders.map((order) => [order.id, order]),
+  );
 
-        setCombinedTotal(
-          Number(activeOrders.combinedTotal ?? 0),
-        );
+  // Keep orders that were created during this customer session
+  // even after the backend removes them from /active.
+  const rememberedOrders = previousOrders.filter((order) =>
+    sessionOrderIds.includes(order.id),
+  );
+
+  // Backend data wins whenever the order is still active.
+  const mergedOrders = [
+    ...backendOrders,
+    ...rememberedOrders.filter(
+      (order) => !activeOrderMap.has(order.id),
+    ),
+  ];
+
+  return mergedOrders;
+});
+
+setActiveOrderType(
+  activeOrders.type ??
+    (backendOrders.length > 0 ? "SEPARATE" : "NONE"),
+);
+
+setCombinedTotal(
+  Number(activeOrders.combinedTotal ?? 0),
+);
       } catch (caughtError) {
         setCurrentOrderError(
           caughtError instanceof Error
@@ -566,7 +591,7 @@ setLoyaltyProfile(profile);
         }
       }
     },
-    [qrToken],
+       [qrToken, sessionOrderIds],
   );
 
   useEffect(() => {
@@ -693,6 +718,18 @@ const response = await fetch(
 
   socket.on("ORDER_UPDATED", (payload: OrderUpdatedPayload) => {
     console.log("ORDER_UPDATED received:", payload);
+
+    setCurrentOrders((previousOrders) =>
+      previousOrders.map((order) =>
+        order.id === payload.orderId
+          ? {
+              ...order,
+              status: payload.status,
+              updatedAt: payload.timestamp,
+            }
+          : order,
+      ),
+    );
 
     void fetchActiveOrders(false);
   });
@@ -925,7 +962,14 @@ switch (appliedFilters.sortBy) {
         throw new Error("The café server returned an invalid order response.");
       }
 
-    
+    setSessionOrderIds((previousIds) => {
+  if (previousIds.includes(createdOrder.id)) {
+    return previousIds;
+  }
+
+  return [...previousIds, createdOrder.id];
+});
+
       setOrderMessage(
         "Order placed successfully. You can track or follow its progress below.",
       );
