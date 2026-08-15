@@ -458,7 +458,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [orderError, setOrderError] = useState("");
 
 const [currentOrders, setCurrentOrders] = useState<CurrentOrder[]>([]);
-const [sessionOrderIds, setSessionOrderIds] = useState<string[]>([]);
+
 const [activeOrderType, setActiveOrderType] =
   useState<"NONE" | "COMBINED" | "SEPARATE">("NONE");
 const [combinedTotal, setCombinedTotal] = useState(0);
@@ -549,26 +549,18 @@ setLoyaltyProfile(profile);
   : [];
 
 setCurrentOrders((previousOrders) => {
-  // Orders currently returned by the backend.
-  const activeOrderMap = new Map(
+  const backendOrderMap = new Map(
     backendOrders.map((order) => [order.id, order]),
   );
 
-  // Keep orders that were created during this customer session
-  // even after the backend removes them from /active.
-  const rememberedOrders = previousOrders.filter((order) =>
-    sessionOrderIds.includes(order.id),
+  // Keep previously visible orders that have reached a final state.
+  const completedOrders = previousOrders.filter(
+    (order) =>
+      !backendOrderMap.has(order.id) &&
+      (order.status === "COMPLETED" || order.status === "CANCELLED"),
   );
 
-  // Backend data wins whenever the order is still active.
-  const mergedOrders = [
-    ...backendOrders,
-    ...rememberedOrders.filter(
-      (order) => !activeOrderMap.has(order.id),
-    ),
-  ];
-
-  return mergedOrders;
+  return [...backendOrders, ...completedOrders];
 });
 
 setActiveOrderType(
@@ -591,7 +583,7 @@ setCombinedTotal(
         }
       }
     },
-       [qrToken, sessionOrderIds],
+       [qrToken],
   );
 
   useEffect(() => {
@@ -962,13 +954,6 @@ switch (appliedFilters.sortBy) {
         throw new Error("The café server returned an invalid order response.");
       }
 
-    setSessionOrderIds((previousIds) => {
-  if (previousIds.includes(createdOrder.id)) {
-    return previousIds;
-  }
-
-  return [...previousIds, createdOrder.id];
-});
 
       setOrderMessage(
         "Order placed successfully. You can track or follow its progress below.",
