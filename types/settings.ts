@@ -71,5 +71,7 @@ export interface UpdateSettingsRequest {
 
   customLink: string | null;
 
+  themeColor: string | null;
+
   openingHours: OpeningHours | null;
 }

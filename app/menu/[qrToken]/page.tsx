@@ -59,6 +59,18 @@ type Category = {
   name: string;
 };
 
+type PublicOffer = {
+  id: string;
+  name: string;
+  description: string | null;
+  discountType: "PERCENTAGE" | "FIXED";
+  discountValue: number;
+  minimumOrderValue: number;
+  maximumDiscount: number | null;
+  startsAt: string | null;
+  endsAt: string | null;
+};
+
 type PublicMenuResponse = {
   table: {
     id: string;
@@ -66,27 +78,28 @@ type PublicMenuResponse = {
     status: string;
   };
 
-restaurant: {
-  id: string;
-  name: string;
-  slug: string;
-  logoUrl: string | null;
-  coverImageUrl: string | null;
-  tagline: string | null;
-  cuisineType: string | null;
-  themeColor: string | null;
+  restaurant: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+    coverImageUrl: string | null;
+    tagline: string | null;
+    cuisineType: string | null;
+    themeColor: string | null;
 
-  address?: string | null;
-  phone?: string | null;
-  email?: string | null;
-  whatsapp?: string |null;
-  instagramUrl?: string | null;
-  mapsUrl?: string | null;
-openingHours?: OpeningHours | null;
-};
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    whatsapp?: string | null;
+    instagramUrl?: string | null;
+    mapsUrl?: string | null;
+    openingHours?: OpeningHours | null;
+  };
 
   categories: Category[];
   menuItems: MenuItem[];
+  offers: PublicOffer[];
 };
 
 type ApiResponse<T> = {
@@ -192,6 +205,7 @@ function normalizeMenu(data: PublicMenuResponse): PublicMenuResponse {
     restaurant: data.restaurant,
     categories: Array.isArray(data.categories) ? data.categories : [],
     menuItems: Array.isArray(data.menuItems) ? data.menuItems : [],
+    offers: Array.isArray(data.offers) ? data.offers : [],
   };
 }
 
@@ -753,6 +767,45 @@ useEffect(() => {
       cart.reduce((total, item) => total + Number(item.price) * item.quantity, 0),
     [cart],
   );
+
+  const bestOfferPreview = useMemo(() => {
+    if (!Array.isArray(menu?.offers) || cartTotal <= 0) {
+      return null;
+    }
+
+    let bestOffer: (PublicOffer & { discountAmount: number }) | null = null;
+    let bestDiscount = 0;
+
+    for (const offer of menu.offers) {
+      if (cartTotal < offer.minimumOrderValue) {
+        continue;
+      }
+
+      let discount = 0;
+
+      if (offer.discountType === "PERCENTAGE") {
+        discount = (cartTotal * offer.discountValue) / 100;
+      } else {
+        discount = offer.discountValue;
+      }
+
+      if (offer.maximumDiscount !== null) {
+        discount = Math.min(discount, offer.maximumDiscount);
+      }
+
+      discount = Math.min(Math.max(discount, 0), cartTotal);
+
+      if (discount > bestDiscount) {
+        bestDiscount = discount;
+        bestOffer = {
+          ...offer,
+          discountAmount: discount,
+        };
+      }
+    }
+
+    return bestOffer;
+  }, [cartTotal, menu?.offers]);
 
   function addToCart(menuItem: MenuItem) {
     if (menuItem.isAvailable === false) {
@@ -1598,7 +1651,9 @@ className="w-72 rounded-2xl border-white/10 bg-[#171A20] p-4 text-neutral-100 sh
   customerPhone={customerPhone}
   isPlacingOrder={isPlacingOrder}
   orderError={orderError}
-  total={cartTotal}
+  subtotal={cartTotal}
+  discountAmount={bestOfferPreview?.discountAmount ?? 0}
+  offerName={bestOfferPreview?.name ?? null}
   loyaltyEnabled={Boolean(loyaltyProgram)}
   formatPrice={formatPrice}
   onClose={() => setIsCartOpen(false)}

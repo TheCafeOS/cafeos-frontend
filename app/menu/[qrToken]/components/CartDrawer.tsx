@@ -17,7 +17,9 @@ type CartDrawerProps = {
   customerPhone: string;
   isPlacingOrder: boolean;
   orderError: string;
-  total: number;
+  subtotal: number;
+  discountAmount?: number;
+  offerName?: string | null;
 
   loyaltyEnabled: boolean;
   formatPrice: (price: string | number) => string;
@@ -35,7 +37,9 @@ export default function CartDrawer({
   customerPhone,
   isPlacingOrder,
   orderError,
-  total,
+  subtotal,
+  discountAmount = 0,
+  offerName = null,
   loyaltyEnabled,
   formatPrice,
   onClose,
@@ -61,6 +65,8 @@ export default function CartDrawer({
   if (!isOpen || typeof document === "undefined") {
     return null;
   }
+
+  const estimatedTotal = Math.max(subtotal - discountAmount, 0);
 
   return createPortal(
     <div
@@ -342,6 +348,20 @@ export default function CartDrawer({
                   "
                 />
 
+                {offerName && discountAmount > 0 ? (
+                  <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                      Offer applied
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-emerald-900">
+                      {offerName}
+                    </p>
+                    <p className="mt-1 text-xs text-emerald-700">
+                      Save {formatPrice(discountAmount)} automatically at checkout.
+                    </p>
+                  </div>
+                ) : null}
+
                 <div className="h-6" />
               </div>
             </div>
@@ -370,15 +390,37 @@ export default function CartDrawer({
                 "0 -8px 20px rgba(0, 0, 0, 0.10)",
             }}
           >
-            {/* TOTAL */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm font-medium text-stone-600">
+                  Subtotal
+                </span>
 
-            <div className="flex items-center justify-between gap-4">
+                <span className="text-base font-semibold text-stone-700">
+                  {formatPrice(subtotal)}
+                </span>
+              </div>
+
+              {discountAmount > 0 ? (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm font-medium text-emerald-700">
+                    {offerName ?? "Offer"}
+                  </span>
+
+                  <span className="text-base font-semibold text-emerald-700">
+                    -{formatPrice(discountAmount)}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-4">
               <span className="text-lg font-semibold text-stone-700">
                 Total
               </span>
 
               <span className="text-2xl font-bold text-stone-900">
-                {formatPrice(total)}
+                {formatPrice(estimatedTotal)}
               </span>
             </div>
 

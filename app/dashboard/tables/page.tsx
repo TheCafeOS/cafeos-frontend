@@ -20,6 +20,8 @@ import {
   createTable,
   deleteTable,
   getTables,
+  mergeTables,
+  unmergeTables,
   updateTable,
 } from "@/services/table.service";
 import type {
@@ -80,6 +82,7 @@ export default function TablesPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedQrTable, setSelectedQrTable] =
     useState<RestaurantTable | null>(null);
+  const [selectedTableIds, setSelectedTableIds] = useState<string[]>([]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -98,6 +101,9 @@ export default function TablesPage() {
         : [];
 
       setTables(validTables);
+      setSelectedTableIds((current) =>
+        current.filter((id) => validTables.some((table) => table.id === id)),
+      );
     } catch (error) {
       const message = getErrorMessage(error, "Failed to load tables.");
       setError(message);
@@ -224,6 +230,9 @@ export default function TablesPage() {
       setTables((currentTables) =>
         currentTables.filter((table) => table.id !== tableId),
       );
+      setSelectedTableIds((current) =>
+        current.filter((id) => id !== tableId),
+      );
 
       if (editingId === tableId) {
         handleCancelEdit();
@@ -233,6 +242,59 @@ export default function TablesPage() {
     } catch (error) {
       toast.error(
         getErrorMessage(error, "Failed to delete table."),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function toggleTableSelection(tableId: string) {
+    setSelectedTableIds((current) => {
+      if (current.includes(tableId)) {
+        return current.filter((id) => id !== tableId);
+      }
+
+      return [...current, tableId];
+    });
+  }
+
+  async function handleMergeSelectedTables() {
+    if (selectedTableIds.length < 2) {
+      toast.error("Select at least 2 tables to merge.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await mergeTables({ tableIds: selectedTableIds });
+      setSelectedTableIds([]);
+      await fetchTables();
+      toast.success("Tables merged successfully.");
+    } catch (error) {
+      toast.error(
+        getErrorMessage(error, "Failed to merge tables."),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleUnmergeTable(table: RestaurantTable) {
+    if (!table.activeMerge?.id) {
+      toast.error("This table is not part of an active merge.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await unmergeTables(table.activeMerge.id);
+      await fetchTables();
+      toast.success("Table merge removed successfully.");
+    } catch (error) {
+      toast.error(
+        getErrorMessage(error, "Failed to unmerge tables."),
       );
     } finally {
       setIsSubmitting(false);
@@ -392,40 +454,56 @@ export default function TablesPage() {
     >
       <div className="space-y-6">
         <section className="rounded-lg border border-stone-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-stone-900">
-            Add New Table
-          </h2>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex-1">
+              <h2 className="mb-4 text-lg font-semibold text-stone-900">
+                Add New Table
+              </h2>
 
-          <form
-            onSubmit={handleAddTable}
-            className="flex flex-col gap-3 sm:flex-row"
-          >
-            <input
-              type="text"
-              value={newTableName}
-              onChange={(event) =>
-                setNewTableName(event.target.value)
-              }
-              placeholder="Enter table name (e.g., Table 1, Window Seat)"
-              disabled={isSubmitting}
-className="min-w-0 flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm outline-none placeholder:text-stone-500"
-            />
+              <form
+                onSubmit={handleAddTable}
+                className="flex flex-col gap-3 sm:flex-row"
+              >
+                <input
+                  type="text"
+                  value={newTableName}
+                  onChange={(event) =>
+                    setNewTableName(event.target.value)
+                  }
+                  placeholder="Enter table name (e.g., Table 1, Window Seat)"
+                  disabled={isSubmitting}
+                  className="min-w-0 flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm outline-none placeholder:text-stone-500"
+                />
 
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover:bg-amber-700 sm:w-auto sm:self-auto"
->
-              {isSubmitting ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Adding...
-                </span>
-              ) : (
-                "Add Table"
-              )}
-            </Button>
-          </form>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover:bg-amber-700 sm:w-auto sm:self-auto"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Adding...
+                    </span>
+                  ) : (
+                    "Add Table"
+                  )}
+                </Button>
+              </form>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={selectedTableIds.length < 2 || isSubmitting}
+                onClick={() => void handleMergeSelectedTables()}
+                className="min-w-[140px]"
+              >
+                Merge selected
+              </Button>
+            </div>
+          </div>
         </section>
 
         {isLoading ? (
@@ -558,19 +636,51 @@ className="w-full shrink-0 self-stretch rounded-lg bg-amber-600 text-white hover
                     </div>
                   ) : (
                     <div className="space-y-3 p-4">
-                      <div>
-                        <p className="font-semibold text-stone-900">
-                          {table.name}
-                        </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-stone-900">
+                            {table.name}
+                          </p>
 
-                        <span
-                          className={`mt-2 inline-block rounded-full border px-3 py-1 text-xs font-medium ${getStatusColor(
-                            table.status,
-                          )}`}
-                        >
-                          {table.status}
-                        </span>
+                          <span
+                            className={`mt-2 inline-block rounded-full border px-3 py-1 text-xs font-medium ${getStatusColor(
+                              table.status,
+                            )}`}
+                          >
+                            {table.status}
+                          </span>
+                        </div>
+
+                        {table.activeMerge?.id ? (
+                          <div className="rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-violet-700">
+                            Merge
+                          </div>
+                        ) : null}
                       </div>
+
+                      {table.activeMerge?.id ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={isSubmitting}
+                          onClick={() => void handleUnmergeTable(table)}
+                          className="w-full border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+                        >
+                          Unmerge table
+                        </Button>
+                      ) : (
+                        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
+                          <input
+                            type="checkbox"
+                            checked={selectedTableIds.includes(table.id)}
+                            onChange={() => toggleTableSelection(table.id)}
+                            disabled={isSubmitting}
+                            className="h-4 w-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          Select for merge
+                        </label>
+                      )}
 
                       <div className="space-y-2">
                         <p className="text-xs font-medium text-stone-600">

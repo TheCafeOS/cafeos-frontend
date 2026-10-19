@@ -118,6 +118,7 @@ function createFormFromRestaurant(
     instagram: restaurant.instagram,
     facebook: restaurant.facebook,
     customLink: restaurant.customLink,
+    themeColor: restaurant.themeColor ?? "#f59e0b",
 
     openingHours: cloneOpeningHours(
       restaurant.openingHours,
@@ -762,6 +763,29 @@ export function RestaurantInformationCard({
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
+          <div>
+            <Label>Brand Color</Label>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={form.themeColor ?? "#f59e0b"}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    themeColor: e.target.value,
+                  }))
+                }
+                className="h-11 w-16 cursor-pointer rounded-md border border-stone-200 bg-white p-1"
+                aria-label="Brand color"
+              />
+
+              <span className="text-sm font-medium text-stone-600">
+                {form.themeColor ?? "#f59e0b"}
+              </span>
+            </div>
+          </div>
+
           <div>
             <Label>Website</Label>
 
