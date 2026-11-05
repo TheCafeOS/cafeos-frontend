@@ -49,6 +49,7 @@ import {
   getPublicCustomerLoyaltyProfile,
   getPublicLoyaltyProgram,
 } from "@/services/public-loyalty.service";
+import { createOrderSubmissionGuard } from "@/utils/order-submission.mjs";
 import type {
   PublicLoyaltyCustomerProfile,
   LoyaltyProgram,
@@ -470,6 +471,13 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderMessage, setOrderMessage] = useState("");
   const [orderError, setOrderError] = useState("");
+  const orderSubmissionGuardRef = useRef<
+    ReturnType<typeof createOrderSubmissionGuard> | null
+  >(null);
+
+  if (orderSubmissionGuardRef.current === null) {
+    orderSubmissionGuardRef.current = createOrderSubmissionGuard();
+  }
 
 const [currentOrders, setCurrentOrders] = useState<CurrentOrder[]>([]);
 const [activeOrderType, setActiveOrderType] =
@@ -930,6 +938,22 @@ switch (appliedFilters.sortBy) {
       return;
     }
 
+    const requestBody = {
+      customerPhone: customerPhone.trim() || undefined,
+      items: cart.map((item) => ({
+        menuItemId: item.id,
+        quantity: item.quantity,
+      })),
+    };
+    const submissionGuard = orderSubmissionGuardRef.current;
+    const idempotencyKey = submissionGuard?.begin(
+      JSON.stringify(requestBody),
+    );
+
+    if (!idempotencyKey || !submissionGuard) {
+      return;
+    }
+
     setOrderMessage("");
     setOrderError("");
     setIsPlacingOrder(true);
@@ -942,14 +966,9 @@ switch (appliedFilters.sortBy) {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
     },
-          body: JSON.stringify({
-            customerPhone: customerPhone.trim() || undefined,
-            items: cart.map((item) => ({
-              menuItemId: item.id,
-              quantity: item.quantity,
-            })),
-          }),
+          body: JSON.stringify(requestBody),
         },
       );
 
@@ -978,6 +997,8 @@ switch (appliedFilters.sortBy) {
         throw new Error("The café server returned an invalid order response.");
       }
 
+      submissionGuard.complete();
+
     
       setOrderMessage(
         "Order placed successfully. You can track or follow its progress below.",
@@ -1003,6 +1024,7 @@ switch (appliedFilters.sortBy) {
 setIsOrderDrawerOpen(true);
 
     } catch (caughtError) {
+      submissionGuard.fail();
       setOrderError(
         caughtError instanceof Error
           ? caughtError.message
