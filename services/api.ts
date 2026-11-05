@@ -2,6 +2,9 @@ import axios, {
   AxiosError,
     InternalAxiosRequestConfig,
 } from "axios";
+import { clearAuth } from "@/utils/auth";
+import { createSingleFlight } from "@/utils/single-flight.mjs";
+import { synchronizeSocketAuth } from "@/lib/socket";
 
 interface RetryAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -23,6 +26,8 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+const runSingleRefresh = createSingleFlight(() => clearAuthAndRedirect());
 
 let isRefreshing = false;
 
@@ -49,8 +54,7 @@ const processQueue = (
 const clearAuthAndRedirect = () => {
   if (typeof window === "undefined") return;
 
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
+  clearAuth();
 
   const currentPath =
     window.location.pathname + window.location.search;
@@ -130,22 +134,25 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const response = await axios.post<RefreshResponse>(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`,
-        {
-          refreshToken,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
+      const newAccessToken = await runSingleRefresh(async () => {
+        const response = await axios.post<RefreshResponse>(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`,
+          {
+            refreshToken,
           },
-          timeout: 10000,
-        }
-      );
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            timeout: 10000,
+          }
+        );
 
-      const newAccessToken = response.data.data.accessToken;
-
-      localStorage.setItem("accessToken", newAccessToken);
+        const newAccessToken = response.data.data.accessToken;
+        localStorage.setItem("accessToken", newAccessToken);
+        synchronizeSocketAuth(newAccessToken);
+        return newAccessToken;
+      });
 
       api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
 
@@ -156,8 +163,6 @@ api.interceptors.response.use(
       return api(originalRequest);
     } catch (refreshError) {
       processQueue(refreshError, null);
-
-      clearAuthAndRedirect();
 
       return Promise.reject(refreshError);
     } finally {
