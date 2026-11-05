@@ -2,8 +2,14 @@ import axios, {
   AxiosError,
     InternalAxiosRequestConfig,
 } from "axios";
-import { clearAuth } from "@/utils/auth";
+import {
+  clearAuth,
+  getEmployee,
+  getRefreshToken,
+  saveRefreshedTokens,
+} from "@/utils/auth";
 import { createSingleFlight } from "@/utils/single-flight.mjs";
+import { createCrossTabRefresh } from "@/utils/cross-tab-refresh.mjs";
 import { synchronizeSocketAuth } from "@/lib/socket";
 
 interface RetryAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -15,6 +21,7 @@ interface RefreshResponse {
   message: string;
   data: {
     accessToken: string;
+    refreshToken: string;
   };
 }
 
@@ -28,28 +35,11 @@ const api = axios.create({
 });
 
 const runSingleRefresh = createSingleFlight(() => clearAuthAndRedirect());
-
-let isRefreshing = false;
-
-let failedQueue: {
-  resolve: (token: string) => void;
-  reject: (error: unknown) => void;
-}[] = [];
-
-const processQueue = (
-  error: unknown,
-  accessToken: string | null = null
-) => {
-  failedQueue.forEach((promise) => {
-    if (error) {
-      promise.reject(error);
-    } else if (accessToken) {
-      promise.resolve(accessToken);
-    }
-  });
-
-  failedQueue = [];
-};
+const runCrossTabRefresh = createCrossTabRefresh<string>(
+  () => typeof navigator !== "undefined" ? navigator.locks : null,
+  () => typeof window !== "undefined" ? window.localStorage : null,
+  () => getEmployee()?.id ?? null,
+);
 
 const clearAuthAndRedirect = () => {
   if (typeof window === "undefined") return;
@@ -112,61 +102,54 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const refreshToken = localStorage.getItem("refreshToken");
+    const refreshToken = getRefreshToken();
+    const employeeId = getEmployee()?.id ?? null;
 
     if (!refreshToken) {
       clearAuthAndRedirect();
       return Promise.reject(error);
     }
 
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({
-          resolve: (token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(api(originalRequest));
-          },
-          reject,
-        });
-      });
-    }
-
-    isRefreshing = true;
-
     try {
-      const newAccessToken = await runSingleRefresh(async () => {
-        const response = await axios.post<RefreshResponse>(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`,
-          {
-            refreshToken,
+      const newAccessToken = await runSingleRefresh(() =>
+        runCrossTabRefresh(
+          refreshToken,
+          employeeId,
+          async () => {
+            const response = await axios.post<RefreshResponse>(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`,
+              {
+                refreshToken,
+              },
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                timeout: 10000,
+              }
+            );
+
+            const {
+              accessToken,
+              refreshToken: nextRefreshToken,
+            } = response.data.data;
+            saveRefreshedTokens({
+              accessToken,
+              refreshToken: nextRefreshToken,
+            });
+            return accessToken;
           },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-            timeout: 10000,
-          }
-        );
+        ),
+      );
 
-        const newAccessToken = response.data.data.accessToken;
-        localStorage.setItem("accessToken", newAccessToken);
-        synchronizeSocketAuth(newAccessToken);
-        return newAccessToken;
-      });
-
+      synchronizeSocketAuth(newAccessToken);
       api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-
-      processQueue(null, newAccessToken);
 
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
       return api(originalRequest);
     } catch (refreshError) {
-      processQueue(refreshError, null);
-
       return Promise.reject(refreshError);
-    } finally {
-      isRefreshing = false;
     }
   }
 );

@@ -15,3 +15,8 @@ export function persistAuth(
   storage: AuthStorage,
   data: AuthData,
 ): void;
+
+export function persistTokens(
+  storage: AuthStorage,
+  data: Pick<AuthData, "accessToken" | "refreshToken">,
+): void;

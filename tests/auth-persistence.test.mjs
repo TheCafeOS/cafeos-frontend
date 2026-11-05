@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { persistAuth } from "../utils/auth-persistence.mjs";
+import {
+  persistAuth,
+  persistTokens,
+} from "../utils/auth-persistence.mjs";
 
 function createStorage(initialValues = {}, failOnWriteNumber = null) {
   const values = new Map(Object.entries(initialValues));
@@ -89,4 +92,43 @@ test("failed auth persistence restores the prior complete auth state", () => {
     JSON.parse(storage.getItem("employee")),
     previousEmployee,
   );
+});
+
+test("refreshed access and refresh tokens persist together", () => {
+  const storage = createStorage({
+    accessToken: "old-access",
+    refreshToken: "old-refresh",
+    employee: JSON.stringify({ id: "employee-1" }),
+  });
+
+  persistTokens(storage, {
+    accessToken: "new-access",
+    refreshToken: "new-refresh",
+  });
+
+  assert.equal(storage.getItem("accessToken"), "new-access");
+  assert.equal(storage.getItem("refreshToken"), "new-refresh");
+  assert.equal(
+    JSON.parse(storage.getItem("employee")).id,
+    "employee-1",
+  );
+});
+
+test("failed refreshed-token persistence restores both prior token values", () => {
+  const storage = createStorage({
+    accessToken: "old-access",
+    refreshToken: "old-refresh",
+  }, 2);
+
+  assert.throws(
+    () =>
+      persistTokens(storage, {
+        accessToken: "new-access",
+        refreshToken: "new-refresh",
+      }),
+    /Storage write failed/,
+  );
+
+  assert.equal(storage.getItem("accessToken"), "old-access");
+  assert.equal(storage.getItem("refreshToken"), "old-refresh");
 });

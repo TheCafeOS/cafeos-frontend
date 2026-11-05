@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { changePassword } from "@/services/auth.service";
+import { clearAuth } from "@/utils/auth";
 import type { AccountSettings } from "@/types/settings";
 
 type AccountCardProps = {
@@ -62,8 +63,10 @@ export function AccountCard({
       setNewPassword("");
       setConfirmPassword("");
 
-      toast.success("Password changed successfully.");
+      toast.success("Password changed successfully. Please sign in again.");
       setShowChangePassword(false);
+      clearAuth();
+      window.location.replace("/login");
     } catch (error) {
       console.error(error);
       toast.error("Failed to change password.");
