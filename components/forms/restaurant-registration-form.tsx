@@ -9,11 +9,13 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { connectSocket } from "@/lib/socket";
 import {
   restaurantRegistrationSchema,
   type RestaurantRegistrationFormValues,
 } from "@/schemas/auth.schema";
 import { registerRestaurant } from "@/services/auth.service";
+import { saveAuth } from "@/utils/auth";
 
 export function RestaurantRegistrationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,21 +55,16 @@ export function RestaurantRegistrationForm() {
         password: values.password,
       });
 
-     if (!response.accessToken || !response.refreshToken) {
-  throw new Error(
-    "Registration succeeded but authentication tokens were not returned."
-  );
-}
+      saveAuth({
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        employee: response.employee,
+      });
+      connectSocket();
 
-localStorage.setItem("accessToken", response.accessToken);
-localStorage.setItem("refreshToken", response.refreshToken);
-
-setIsSuccess(true);
+      setIsSuccess(true);
       toast.success("Restaurant registered successfully. Opening dashboard...");
-
-      window.setTimeout(() => {
-        router.replace("/dashboard");
-      }, 600);
+      router.replace("/dashboard");
     } catch (error) {
       console.error("Restaurant registration failed:", error);
 

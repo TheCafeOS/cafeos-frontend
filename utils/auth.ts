@@ -1,4 +1,5 @@
 import { disconnectSocket } from "@/lib/socket";
+import { persistAuth } from "@/utils/auth-persistence.mjs";
 
 import type { AuthEmployee } from "@/types/auth.types";
 
@@ -47,9 +48,7 @@ export function saveAuth(data: {
   refreshToken: string;
   employee: AuthEmployee;
 }) {
-  localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
-  localStorage.setItem(EMPLOYEE_KEY, JSON.stringify(data.employee));
+  persistAuth(localStorage, data);
 }
 
 export function clearAuth() {
