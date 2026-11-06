@@ -55,3 +55,15 @@ export type ChangePasswordRequest = {
   currentPassword: string;
   newPassword: string;
 };
+
+export type AuthSession = {
+  id: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  current: boolean;
+};
+
+export type LogoutAllResponse = {
+  revokedCount: number;
+};

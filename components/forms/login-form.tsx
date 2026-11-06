@@ -40,7 +40,7 @@ export function LoginForm() {
         email: values.email,
         password: values.password,
       });
-saveAuth({
+await saveAuth({
   accessToken: response.accessToken,
   refreshToken: response.refreshToken,
   employee: response.employee,

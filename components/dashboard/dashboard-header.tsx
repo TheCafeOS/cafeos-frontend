@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useRouter, usePathname } from "next/navigation";
 import { Bell, LogOut, Menu } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { clearAuth } from "@/utils/auth";
+import { logoutCurrentSession } from "@/services/auth.service";
 import NotificationDropdown from "@/components/notifications/NotificationDropdown";
 import { useOrderDialogStore } from "@/lib/order-dialog-store";
 import {
@@ -38,14 +39,28 @@ export function DashboardHeader({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const showLogout =
     pathname === "/dashboard" ||
     pathname === "/dashboard/settings";
 
-  const handleLogout = () => {
-    clearAuth();
-    router.push("/login");
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      const serverRevoked = await logoutCurrentSession();
+      if (serverRevoked) {
+        toast.success("Logged out successfully.");
+      } else {
+        toast.warning(
+          "Logged out on this device, but server revocation could not be confirmed.",
+        );
+      }
+    } finally {
+      router.replace("/login");
+      setIsLoggingOut(false);
+    }
   };
 
   useEffect(() => {
@@ -295,6 +310,7 @@ useEffect(() => {
             aria-label="Logout"
             title="Logout"
             onClick={handleLogout}
+            disabled={isLoggingOut}
           >
             <LogOut className="h-5 w-5" />
           </Button>

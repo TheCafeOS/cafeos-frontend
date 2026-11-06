@@ -1,10 +1,15 @@
+import {
+  isAuthIdentityCurrent,
+  isAuthSnapshotCurrent,
+  readAuthSnapshot,
+} from "./auth-persistence.mjs";
+import { AUTH_STATE_LOCK_NAME } from "./auth-state-lock.mjs";
+
 export function createCrossTabRefresh(
   getLockManager,
   getStorage,
-  getEmployeeId,
-  lockName = "cafeos-auth-refresh",
 ) {
-  return function run(refreshToken, employeeId, operation) {
+  return function run(expectedSnapshot, operation) {
     const lockManager = getLockManager();
     const storage = getStorage();
 
@@ -14,26 +19,34 @@ export function createCrossTabRefresh(
       );
     }
 
-    return lockManager.request(lockName, async () => {
-      const currentRefreshToken = storage.getItem("refreshToken");
+    return lockManager.request(AUTH_STATE_LOCK_NAME, async () => {
+      if (!isAuthIdentityCurrent(storage, expectedSnapshot)) {
+        throw new Error("Authentication state changed during refresh.");
+      }
 
-      if (currentRefreshToken !== refreshToken) {
-        if (
-          !employeeId ||
-          getEmployeeId() !== employeeId
-        ) {
-          throw new Error("Authentication state changed during refresh.");
-        }
+      const current = readAuthSnapshot(storage);
 
-        const accessToken = storage.getItem("accessToken");
-        if (!accessToken) {
+      if (current.refreshToken !== expectedSnapshot.refreshToken) {
+        if (!current.accessToken) {
           throw new Error("Authentication state is incomplete.");
         }
 
-        return accessToken;
+        return current.accessToken;
       }
 
-      return operation();
+      if (!isAuthSnapshotCurrent(storage, expectedSnapshot)) {
+        throw new Error("Authentication state changed during refresh.");
+      }
+
+      const accessToken = await operation(expectedSnapshot);
+      if (
+        !isAuthIdentityCurrent(storage, expectedSnapshot) ||
+        storage.getItem("accessToken") !== accessToken
+      ) {
+        throw new Error("Authentication state changed during refresh.");
+      }
+
+      return accessToken;
     });
   };
 }

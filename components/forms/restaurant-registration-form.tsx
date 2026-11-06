@@ -55,7 +55,7 @@ export function RestaurantRegistrationForm() {
         password: values.password,
       });
 
-      saveAuth({
+      await saveAuth({
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         employee: response.employee,

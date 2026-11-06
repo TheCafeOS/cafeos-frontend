@@ -65,7 +65,7 @@ export function AccountCard({
 
       toast.success("Password changed successfully. Please sign in again.");
       setShowChangePassword(false);
-      clearAuth();
+      await clearAuth();
       window.location.replace("/login");
     } catch (error) {
       console.error(error);

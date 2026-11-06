@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  clearAuthState,
+  invalidateAuthState,
+  isAuthIdentityCurrent,
+  readAuthSnapshot,
   persistAuth,
   persistTokens,
 } from "../utils/auth-persistence.mjs";
@@ -9,6 +13,7 @@ import {
 function createStorage(initialValues = {}, failOnWriteNumber = null) {
   const values = new Map(Object.entries(initialValues));
   let writeCount = 0;
+  let writeToFail = failOnWriteNumber;
 
   return {
     getItem(key) {
@@ -16,10 +21,13 @@ function createStorage(initialValues = {}, failOnWriteNumber = null) {
     },
     setItem(key, value) {
       writeCount += 1;
-      if (writeCount === failOnWriteNumber) {
+      if (writeCount === writeToFail) {
         throw new Error("Storage write failed");
       }
       values.set(key, String(value));
+    },
+    failAfterWrites(count) {
+      writeToFail = writeCount + count;
     },
     removeItem(key) {
       values.delete(key);
@@ -100,11 +108,17 @@ test("refreshed access and refresh tokens persist together", () => {
     refreshToken: "old-refresh",
     employee: JSON.stringify({ id: "employee-1" }),
   });
+  persistAuth(storage, {
+    accessToken: "old-access",
+    refreshToken: "old-refresh",
+    employee: { id: "employee-1" },
+  });
+  const snapshot = readAuthSnapshot(storage);
 
   persistTokens(storage, {
     accessToken: "new-access",
     refreshToken: "new-refresh",
-  });
+  }, snapshot);
 
   assert.equal(storage.getItem("accessToken"), "new-access");
   assert.equal(storage.getItem("refreshToken"), "new-refresh");
@@ -118,17 +132,56 @@ test("failed refreshed-token persistence restores both prior token values", () =
   const storage = createStorage({
     accessToken: "old-access",
     refreshToken: "old-refresh",
-  }, 2);
+  });
+  persistAuth(storage, {
+    accessToken: "old-access",
+    refreshToken: "old-refresh",
+    employee: { id: "employee-1" },
+  });
+  storage.failAfterWrites(2);
+  const snapshot = readAuthSnapshot(storage);
 
   assert.throws(
     () =>
       persistTokens(storage, {
         accessToken: "new-access",
         refreshToken: "new-refresh",
-      }),
+      }, snapshot),
     /Storage write failed/,
   );
 
   assert.equal(storage.getItem("accessToken"), "old-access");
   assert.equal(storage.getItem("refreshToken"), "old-refresh");
+});
+
+test("a late refresh cannot overwrite the next account's credentials", () => {
+  const storage = createStorage();
+  persistAuth(storage, {
+    accessToken: "account-a-access",
+    refreshToken: "account-a-refresh",
+    employee: { id: "account-a" },
+  });
+  const accountASnapshot = readAuthSnapshot(storage);
+
+  invalidateAuthState(storage);
+  clearAuthState(storage);
+  persistAuth(storage, {
+    accessToken: "account-b-access",
+    refreshToken: "account-b-refresh",
+    employee: { id: "account-b" },
+  });
+
+  assert.throws(
+    () => persistTokens(storage, {
+      accessToken: "late-account-a-access",
+      refreshToken: "late-account-a-refresh",
+    }, accountASnapshot),
+    /Authentication state changed/,
+  );
+  assert.equal(storage.getItem("accessToken"), "account-b-access");
+  assert.equal(storage.getItem("refreshToken"), "account-b-refresh");
+  assert.equal(
+    isAuthIdentityCurrent(storage, accountASnapshot),
+    false,
+  );
 });
