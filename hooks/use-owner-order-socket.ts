@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { getSocket } from "@/lib/socket";
+import { connectSocket } from "@/lib/socket";
 
 type OwnerOrderSocketOptions = {
   onOrderCreated: () => void;
@@ -13,15 +13,17 @@ export function useOwnerOrderSocket({
   onOrderUpdated,
 }: OwnerOrderSocketOptions) {
   useEffect(() => {
-    const socket = getSocket();
+    const socket = connectSocket();
 
-  const handleOrderCreated = () => {
-  onOrderCreated();
-};
+    const handleOrderCreated = () => {
+      console.log(" ORDERS PAGE: ORDER_CREATED received");
+      onOrderCreated();
+    };
 
-const handleOrderUpdated = () => {
-  onOrderUpdated();
-};
+    const handleOrderUpdated = () => {
+      console.log(" ORDERS PAGE: ORDER_UPDATED received");
+      onOrderUpdated();
+    };
 
     socket.on("ORDER_CREATED", handleOrderCreated);
     socket.on("ORDER_UPDATED", handleOrderUpdated);

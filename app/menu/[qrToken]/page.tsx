@@ -480,6 +480,7 @@ export default function CustomerMenuPage({ params }: MenuPageProps) {
   }
 
 const [currentOrders, setCurrentOrders] = useState<CurrentOrder[]>([]);
+
 const [activeOrderType, setActiveOrderType] =
   useState<"NONE" | "COMBINED" | "SEPARATE">("NONE");
 const [combinedTotal, setCombinedTotal] = useState(0);
@@ -565,17 +566,33 @@ setLoyaltyProfile(profile);
         const activeOrders =
           unwrapApiResponse<ActiveOrdersResponse>(responseBody);
 
-        setCurrentOrders(
-          Array.isArray(activeOrders.orders)
-            ? activeOrders.orders
-            : [],
-        );
+        const backendOrders = Array.isArray(activeOrders.orders)
+  ? activeOrders.orders
+  : [];
 
-        setActiveOrderType(activeOrders.type ?? "NONE");
+setCurrentOrders((previousOrders) => {
+  const backendOrderMap = new Map(
+    backendOrders.map((order) => [order.id, order]),
+  );
 
-        setCombinedTotal(
-          Number(activeOrders.combinedTotal ?? 0),
-        );
+  // Keep previously visible orders that have reached a final state.
+  const completedOrders = previousOrders.filter(
+    (order) =>
+      !backendOrderMap.has(order.id) &&
+      (order.status === "COMPLETED" || order.status === "CANCELLED"),
+  );
+
+  return [...backendOrders, ...completedOrders];
+});
+
+setActiveOrderType(
+  activeOrders.type ??
+    (backendOrders.length > 0 ? "SEPARATE" : "NONE"),
+);
+
+setCombinedTotal(
+  Number(activeOrders.combinedTotal ?? 0),
+);
       } catch (caughtError) {
         setCurrentOrderError(
           caughtError instanceof Error
@@ -588,7 +605,7 @@ setLoyaltyProfile(profile);
         }
       }
     },
-    [qrToken],
+       [qrToken],
   );
 
   useEffect(() => {
@@ -715,6 +732,18 @@ const response = await fetch(
 
   socket.on("ORDER_UPDATED", (payload: OrderUpdatedPayload) => {
     console.log("ORDER_UPDATED received:", payload);
+
+    setCurrentOrders((previousOrders) =>
+      previousOrders.map((order) =>
+        order.id === payload.orderId
+          ? {
+              ...order,
+              status: payload.status,
+              updatedAt: payload.timestamp,
+            }
+          : order,
+      ),
+    );
 
     void fetchActiveOrders(false);
   });
@@ -999,7 +1028,6 @@ switch (appliedFilters.sortBy) {
 
       submissionGuard.complete();
 
-    
       setOrderMessage(
         "Order placed successfully. You can track or follow its progress below.",
       );
